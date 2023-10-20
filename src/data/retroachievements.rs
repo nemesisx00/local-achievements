@@ -7,16 +7,16 @@ use ::serde::{Deserialize, Serialize};
 The combination of username and API key used to authenticate with the
 RetroAchievements API.
 */
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct AuthObject
 {
 	/// The user's exact username used to access the RetroAchievements.org website.
-	username: String,
+	pub username: String,
 	/**
 	The case-sensitive 32 character alphanumeric key associated with the
 	user's account on the RetroAchievements.org website.
 	*/
-	key: String,
+	pub key: String,
 }
 
 impl AuthObject

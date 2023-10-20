@@ -10,9 +10,12 @@ mod components;
 mod data;
 mod io;
 
-use crate::components::App;
+use ::dioxus_desktop::{launch_with_props, Config};
+use crate::components::{App, AppProps};
+use crate::io::readAuth_RetroAchievements;
 
 fn main()
 {
-	dioxus_desktop::launch(App);
+	let auth = readAuth_RetroAchievements().unwrap();
+	launch_with_props(App, AppProps { auth: Some(auth.to_owned()) }, Config::default());
 }
