@@ -2,8 +2,8 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use ::dioxus::prelude::*;
-use crate::data::retroachievements::AuthObject;
 use crate::io::writeAuth_RetroAchievements;
+use crate::platforms::retroachievements::AuthObject;
 
 #[derive(PartialEq, Props)]
 pub struct AppProps

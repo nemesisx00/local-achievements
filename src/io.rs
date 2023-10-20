@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter, ErrorKind};
 use std::path::Path;
 use ::anyhow::{Error, Result};
 use ::directories::ProjectDirs;
-use crate::data::retroachievements::AuthObject;
+use crate::platforms::retroachievements::AuthObject;
 
 const Application: &str = "local-achievements";
 const Organization: &str = "";

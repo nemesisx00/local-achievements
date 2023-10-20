@@ -7,7 +7,7 @@ and tracking your achievements across multiple platforms in one unified UI.
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 mod components;
-mod data;
+mod platforms;
 mod io;
 
 use ::dioxus_desktop::{launch_with_props, Config};
