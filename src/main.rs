@@ -8,6 +8,7 @@ and tracking your achievements across multiple platforms in one unified UI.
 
 mod components;
 mod data;
+mod io;
 
 use crate::components::App;
 
