@@ -1,11 +1,13 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
+use ::serde::{Deserialize, Serialize};
+
 /**
 The combination of username and API key used to authenticate with the
 RetroAchievements API.
 */
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct AuthObject
 {
 	/// The user's exact username used to access the RetroAchievements.org website.
@@ -19,6 +21,8 @@ pub struct AuthObject
 
 impl AuthObject
 {
+	/// The filename to be used when this struct is read from, or stored to, file.
+	pub const FileName: &str = "ra-auth.json";
 	/// The expected length of the RetroAchievements API key.
 	const KeyLength: usize = 32;
 	
