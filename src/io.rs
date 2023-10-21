@@ -15,6 +15,22 @@ const Organization: &str = "";
 const Qualifier: &str = "";
 
 /**
+Get the cache directory specific to this application.
+*/
+pub fn getCacheDir(create: bool) -> Option<String>
+{
+	let dirs = ProjectDirs::from(Qualifier, Organization, Application)?;
+	let path = dirs.cache_dir().to_str()?.to_string();
+	
+	if create
+	{
+		let _ = create_dir_all(path.clone());
+	}
+	
+	return Some(path);
+}
+
+/**
 Get the configuration directory specific to this application.
 */
 pub fn getConfigDir(create: bool) -> Option<String>
@@ -31,12 +47,12 @@ pub fn getConfigDir(create: bool) -> Option<String>
 }
 
 /**
-Get the cache directory specific to this application.
+Get the data directory specific to this application.
 */
-pub fn getCacheDir(create: bool) -> Option<String>
+pub fn getDataDir(create: bool) -> Option<String>
 {
 	let dirs = ProjectDirs::from(Qualifier, Organization, Application)?;
-	let path = dirs.cache_dir().to_str()?.to_string();
+	let path = dirs.data_dir().to_str()?.to_string();
 	
 	if create
 	{
