@@ -3,13 +3,18 @@
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
-use ::anyhow::{Error, Result};
+use ::anyhow::Result;
+use ::reqwest::Client;
+use serde::de::DeserializeOwned;
+use crate::error;
+
 use super::data::{AuthData, ResponseGetPlayerSummaries};
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
 {
 	pub auth: AuthData,
+	pub client: Client,
 }
 
 impl Api
@@ -18,39 +23,74 @@ impl Api
 	const Service_User: &str = "ISteamUser/";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002/";
 	
-	fn buildUrl(&self, service: &str, endpoint: &str, parameters: Option<HashMap<String, String>>) -> String
+	pub fn new(auth: AuthData) -> Result<Self>
 	{
-		let url = format!("{}{}{}", Self::BaseUrl, service, endpoint);
+		let client = Client::new();
 		
-		let mut params = String::new();
-		if let Some(map) = parameters
+		return match auth.validate()
 		{
-			for (k, v) in map
-			{
-				params = format!("{}&{}={}", params, k, v);
-			}
-		}
-		
-		return format!("{}?{}", url, params);
+			true => Ok(Self { auth, client, }),
+			false => Err(error!(ErrorKind::InvalidInput)),
+		};
 	}
 	
 	pub async fn getPlayerSummaries(&self) -> Result<ResponseGetPlayerSummaries>
 	{
 		if self.auth.validate()
 		{
-			let mut parameters = HashMap::new();
+			let mut parameters = HashMap::<String, String>::new();
 			parameters.insert("key".into(), self.auth.key.clone());
 			parameters.insert("steamids".into(), self.auth.id.clone());
 			
-			let url = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries, Some(parameters));
-			let response = reqwest::get(url)
-				.await?
-				.json::<ResponseGetPlayerSummaries>()
+			let url = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries);
+			let response = self.get::<ResponseGetPlayerSummaries>(url, parameters)
 				.await?;
 			
 			return Ok(response);
 		}
-	
-		return Err(Error::from(std::io::Error::from(ErrorKind::InvalidInput)));
+		
+		return Err(error!(ErrorKind::InvalidInput));
 	}
+	
+	fn buildUrl(&self, service: &str, endpoint: &str) -> String
+	{
+		return format!("{}{}{}", Self::BaseUrl, service, endpoint);
+	}
+	
+	async fn get<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
+		where T: DeserializeOwned
+	{
+		let mut params = "?format=json".to_string();
+		for (k, v) in parameters
+		{
+			params = format!("{}&{}={}", params, k, v);
+		}
+		
+		let requestUrl = format!("{}{}", url, params);
+		let response = self.client.get(requestUrl)
+			.send()
+			.await?
+			.json::<T>()
+			.await?;
+		
+		return Ok(response);
+	}
+	
+	/*
+	async fn post<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
+		where T: DeserializeOwned
+	{
+		let mut params = parameters.clone();
+		params.insert("format".into(), "json".into());
+		
+		let response = self.client.post(url)
+			.form(&params)
+			.send()
+			.await?
+			.json::<T>()
+			.await?;
+		
+		return Ok(response);
+	}
+	*/
 }
