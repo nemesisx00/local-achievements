@@ -20,8 +20,8 @@ Get the configuration directory specific to this application.
 pub fn getConfigDir(create: bool) -> Option<String>
 {
 	let dirs = ProjectDirs::from(Qualifier, Organization, Application)?;
-	
 	let path = dirs.config_dir().to_str()?.to_string();
+	
 	if create
 	{
 		let _ = create_dir_all(path.clone());
@@ -36,8 +36,8 @@ Get the cache directory specific to this application.
 pub fn getCacheDir(create: bool) -> Option<String>
 {
 	let dirs = ProjectDirs::from(Qualifier, Organization, Application)?;
-	
 	let path = dirs.cache_dir().to_str()?.to_string();
+	
 	if create
 	{
 		let _ = create_dir_all(path.clone());
