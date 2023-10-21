@@ -6,6 +6,7 @@ use std::io::{BufReader, BufWriter, ErrorKind};
 use std::path::Path;
 use ::anyhow::{Error, Result};
 use ::directories::ProjectDirs;
+use crate::error;
 use crate::platforms::retroachievements::AuthObject;
 use crate::platforms::steam::AuthData;
 
@@ -68,7 +69,7 @@ pub fn writeAuth_RetroAchievements(auth: AuthObject) -> Result<()>
 		return Ok(());
 	}
 	
-	return Err(Error::from(std::io::Error::from(ErrorKind::NotFound)));
+	return Err(error!(ErrorKind::NotFound));
 }
 
 pub fn writeAuth_Steam(auth: AuthData) -> Result<()>
@@ -82,5 +83,5 @@ pub fn writeAuth_Steam(auth: AuthData) -> Result<()>
 		return Ok(());
 	}
 	
-	return Err(Error::from(std::io::Error::from(ErrorKind::NotFound)));
+	return Err(error!(ErrorKind::NotFound));
 }
