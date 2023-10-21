@@ -7,8 +7,9 @@ and tracking your achievements across multiple platforms in one unified UI.
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 mod components;
-mod platforms;
 mod io;
+mod macros;
+mod platforms;
 
 use ::dioxus_desktop::{launch_with_props, Config};
 use crate::components::{App, AppProps};
@@ -16,7 +17,17 @@ use crate::io::{readAuth_RetroAchievements, readAuth_Steam};
 
 fn main()
 {
-	let retro = readAuth_RetroAchievements().unwrap();
-	let steam = readAuth_Steam().unwrap();
-	launch_with_props(App, AppProps { retroAuth: Some(retro.to_owned()), steamAuth: Some(steam.to_owned()) }, Config::default());
+	let retroAuth = match readAuth_RetroAchievements()
+	{
+		Ok(auth) => Some(auth),
+		Err(_) => None,
+	};
+	
+	let steamAuth = match readAuth_Steam()
+	{
+		Ok(auth) => Some(auth),
+		Err(_) => None,
+	};
+	
+	launch_with_props(App, AppProps { retroAuth, steamAuth }, Config::default());
 }
