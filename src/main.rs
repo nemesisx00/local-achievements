@@ -12,10 +12,11 @@ mod io;
 
 use ::dioxus_desktop::{launch_with_props, Config};
 use crate::components::{App, AppProps};
-use crate::io::readAuth_RetroAchievements;
+use crate::io::{readAuth_RetroAchievements, readAuth_Steam};
 
 fn main()
 {
-	let auth = readAuth_RetroAchievements().unwrap();
-	launch_with_props(App, AppProps { auth: Some(auth.to_owned()) }, Config::default());
+	let retro = readAuth_RetroAchievements().unwrap();
+	let steam = readAuth_Steam().unwrap();
+	launch_with_props(App, AppProps { retroAuth: Some(retro.to_owned()), steamAuth: Some(steam.to_owned()) }, Config::default());
 }
