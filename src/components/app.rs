@@ -18,16 +18,13 @@ The root component of the application.
 */
 pub fn App<'a>(cx: Scope<AppProps>) -> Element
 {
-	let api = use_ref(cx, || SteamApi::default());
-	let id = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().id.to_owned(), _ => String::new() });
-	let apiKey = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().key.to_owned(), _ => String::new() });
-	let shouldRunFuture = use_state(cx, || true);
+	let api = use_ref(cx, || match cx.props.steamAuth.is_some() { true => SteamApi::new(cx.props.steamAuth.as_ref().unwrap().clone()).unwrap(), false => SteamApi::default() });
+	let id = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().id.to_owned(), false => String::new() });
+	let apiKey = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().key.to_owned(), false => String::new() });
 	
 	let apiClone = api.read().clone();
-	to_owned![shouldRunFuture];
 	let future = use_future(cx, (), |_| async move
 	{
-		println!("{:?}", apiClone.auth.clone());
 		let response = apiClone.getPlayerSummaries().await;
 		let value = match response
 		{
@@ -35,7 +32,6 @@ pub fn App<'a>(cx: Scope<AppProps>) -> Element
 			Err(e) => format!("{:?}", e),
 		};
 		
-		shouldRunFuture.set(false);
 		return value;
 	});
 	
@@ -60,7 +56,8 @@ pub fn App<'a>(cx: Scope<AppProps>) -> Element
 			{
 				onclick: move |_| {
 					let auth = AuthData { id: id.to_string(), key: apiKey.to_string() };
-					let _result = writeAuth_Steam(auth);
+					let _result = writeAuth_Steam(auth.clone());
+					api.write().auth = auth.to_owned();
 				},
 				"Update"
 			}
@@ -73,16 +70,14 @@ pub fn App<'a>(cx: Scope<AppProps>) -> Element
 			{
 				onclick: move |_|
 				{
-					if let Some(auth) = &cx.props.steamAuth
+					if api.read().auth.validate()
 					{
-						api.write().auth = auth.to_owned();
-					}
-					
-					future.restart();
-					
-					if let Some(summary) = future.value()
-					{
-						println!("{}", summary);
+						future.restart();
+						match future.value()
+						{
+							Some(summary) => println!("{}", summary),
+							None => println!("No future value!"),
+						}
 					}
 				},
 				"Run GetPlayerSummaries Request"
