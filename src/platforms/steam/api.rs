@@ -20,8 +20,16 @@ pub struct Api
 impl Api
 {
 	const BaseUrl: &str = "https://api.steampowered.com/";
+	
 	const Service_User: &str = "ISteamUser/";
+	
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002/";
+	
+	const Parameter_Format: &str = "format";
+	const Parameter_Key: &str = "key";
+	const Parameter_SteamIds: &str = "steamids";
+	
+	const Format_Json: &str = "json";
 	
 	pub fn new(auth: AuthData) -> Result<Self>
 	{
@@ -39,8 +47,8 @@ impl Api
 		if self.auth.validate()
 		{
 			let mut parameters = HashMap::<String, String>::new();
-			parameters.insert("key".into(), self.auth.key.clone());
-			parameters.insert("steamids".into(), self.auth.id.clone());
+			parameters.insert(Self::Parameter_Key.into(), self.auth.key.clone());
+			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.clone());
 			
 			let url = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries);
 			let response = self.get::<ResponseGetPlayerSummaries>(url, parameters)
@@ -60,7 +68,7 @@ impl Api
 	async fn get<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
-		let mut params = "?format=json".to_string();
+		let mut params = format!("?{}={}", Self::Parameter_Format, Self::Format_Json);
 		for (k, v) in parameters
 		{
 			params = format!("{}&{}={}", params, k, v);
