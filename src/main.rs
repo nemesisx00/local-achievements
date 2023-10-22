@@ -11,6 +11,7 @@ mod data;
 mod io;
 mod macros;
 mod platforms;
+mod state;
 
 use ::dioxus_desktop::{launch_with_props, Config};
 use crate::components::{App, AppProps};
