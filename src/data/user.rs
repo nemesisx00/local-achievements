@@ -152,3 +152,13 @@ pub struct SteamProfile
 	/// The user's current publicly visible display name.
 	pub name: String,
 }
+
+impl SteamProfile
+{
+	pub fn update(&mut self, id: String, name: String, avatar: Option<String>)
+	{
+		self.id = id;
+		self.name = name;
+		self.avatar = avatar;
+	}
+}
