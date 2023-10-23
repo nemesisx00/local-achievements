@@ -2,7 +2,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use ::serde::{Deserialize, Serialize};
-use crate::platforms::steam::GameInfo;
+use crate::platforms::steam::SteamGame;
 use super::achievement::Mode;
 use super::game::Game;
 
@@ -26,11 +26,13 @@ pub struct User
 	pub steam: SteamProfile,
 }
 
+unsafe impl Send for User {}
+
 impl User
 {
 	pub const Filename: &str = "data.json";
 	
-	pub fn processSteamGames(&mut self, games: Vec<GameInfo>)
+	pub fn processSteamGames(&mut self, games: Vec<SteamGame>)
 	{
 		for info in games
 		{

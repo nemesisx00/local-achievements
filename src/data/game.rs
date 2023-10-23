@@ -3,7 +3,7 @@
 
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
-use crate::platforms::steam::GameInfo;
+use crate::platforms::steam::SteamGame;
 use super::achievement::{Achievement, Mode};
 
 /**
@@ -42,7 +42,7 @@ pub struct Game
 
 impl Game
 {
-	pub fn new(info: GameInfo) -> Self
+	pub fn new(info: SteamGame) -> Self
 	{
 		let mut instance = Self::default();
 		instance.setSteamInfo(info);
@@ -132,7 +132,7 @@ impl Game
 	Create or update this game's SteamInfo based on the information returned
 	from the Steam Web API.
 	*/
-	pub fn setSteamInfo(&mut self, info: GameInfo)
+	pub fn setSteamInfo(&mut self, info: SteamGame)
 	{
 		self.name = info.name.to_owned();
 		match self.steam.as_mut()
@@ -165,14 +165,14 @@ pub struct SteamInfo
 
 impl SteamInfo
 {
-	pub fn new(info: GameInfo) -> Self
+	pub fn new(info: SteamGame) -> Self
 	{
 		let mut instance = Self::default();
 		instance.update(info);
 		return instance;
 	}
 	
-	pub fn update(&mut self, info: GameInfo)
+	pub fn update(&mut self, info: SteamGame)
 	{
 		self.id = info.appid;
 		self.lastPlayed = info.rtime_last_played;
@@ -195,7 +195,7 @@ pub struct SteamPlaytime
 
 impl SteamPlaytime
 {
-	pub fn update(&mut self, info: GameInfo)
+	pub fn update(&mut self, info: SteamGame)
 	{
 		self.linux = info.playtime_linux_forever;
 		self.mac = info.playtime_mac_forever;

@@ -4,5 +4,5 @@
 mod api;
 mod data;
 
-pub use data::{AuthData, GameInfo};
+pub use data::{AuthData as SteamAuth, GameInfo as SteamGame};
 pub use api::Api as SteamApi;
