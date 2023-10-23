@@ -36,25 +36,6 @@ pub fn loadUserData() -> Result<User>
 }
 
 /**
-
-*/
-pub fn saveUserData(user: User) -> Result<()>
-{
-	if let Some(dir) = getDataDir(true)
-	{
-		let path = Path::new(dir.as_str()).join(User::Filename);
-		let file = File::create(&path.as_path())
-			.context(format!("Failed creating or truncating the file at: '{}'", path.as_path().to_str().unwrap()))?;
-		let buffer = BufWriter::new(file);
-		serde_json::to_writer(buffer, &user)
-			.context("serde_json failed writing User data to BufWriter")?;
-		return Ok(());
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
-}
-
-/**
 Read the RetroAchievements API authorization data from file.
 */
 pub fn readAuth_RetroAchievements() -> Result<AuthObject>
@@ -89,6 +70,25 @@ pub fn readAuth_Steam() -> Result<AuthData>
 		let instance = serde_json::from_reader(reader)
 			.context("Failed parsing Steam AuthData file as JSON")?;
 		return Ok(instance);
+	}
+	
+	return Err(error!(ErrorKind::NotFound));
+}
+
+/**
+
+*/
+pub fn saveUserData(user: User) -> Result<()>
+{
+	if let Some(dir) = getDataDir(true)
+	{
+		let path = Path::new(dir.as_str()).join(User::Filename);
+		let file = File::create(&path.as_path())
+			.context(format!("Failed creating or truncating the file at: '{}'", path.as_path().to_str().unwrap()))?;
+		let buffer = BufWriter::new(file);
+		serde_json::to_writer(buffer, &user)
+			.context("serde_json failed writing User data to BufWriter")?;
+		return Ok(());
 	}
 	
 	return Err(error!(ErrorKind::NotFound));
