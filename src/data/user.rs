@@ -2,6 +2,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use ::serde::{Deserialize, Serialize};
+use crate::platforms::steam::GameInfo;
 use super::achievement::Mode;
 use super::game::Game;
 
@@ -19,17 +20,51 @@ pub struct User
 	pub games: Vec<Game>,
 	
 	/// This user's RetroAchievements profile information.
-	pub retroAchievements: RetroAchievementsInfo,
+	pub retroAchievements: RetroAchievementsProfile,
 	
 	/// This user's Steam profile information.
-	pub steam: SteamInfo,
+	pub steam: SteamProfile,
+}
+
+impl User
+{
+	pub const Filename: &str = "data.json";
+	
+	pub fn processSteamGames(&mut self, games: Vec<GameInfo>)
+	{
+		for info in games
+		{
+			// Game already exists, just update metadata
+			if let Some(game) = self.games.iter_mut().find(|g| g.steam.as_ref().is_some_and(|si| si.id == info.appid))
+			{
+				game.setSteamInfo(info);
+			}
+			// Game already exists as a duplicate, just update metadata
+			else if let Some(game) = self.games.iter_mut().find(|g| g.duplicates.as_ref().is_some_and(|list| list.iter().any(|dupe| dupe.steam.as_ref().is_some_and(|si| si.id == info.appid))))
+			{
+				if let Some(list) = game.duplicates.as_mut()
+				{
+					if let Some(dupe) = list.iter_mut().find(|d| d.steam.as_ref().is_some_and(|si| si.id == info.appid))
+					{
+						dupe.setSteamInfo(info);
+					}
+				}
+			}
+			// Game does not exist
+			else
+			{
+				let game = Game::new(info);
+				self.games.push(game);
+			}
+		}
+	}
 }
 
 /**
 Profile information for a RetroAchievements user.
 */
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct RetroAchievementsInfo
+pub struct RetroAchievementsProfile
 {
 	/// The user's username
 	pub username: String,
@@ -39,7 +74,7 @@ pub struct RetroAchievementsInfo
 	pub softcore: RetroAchievementsRank,
 }
 
-impl Default for RetroAchievementsInfo
+impl Default for RetroAchievementsProfile
 {
 	fn default() -> Self
 	{
@@ -104,7 +139,7 @@ impl RetroAchievementsRank
 Profile information for a Steam user.
 */
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct SteamInfo
+pub struct SteamProfile
 {
 	/// The path to the user's avatar
 	pub avatar: Option<String>,
