@@ -3,4 +3,4 @@
 
 mod app;
 
-pub use app::{App, AppProps};
+pub use app::App;

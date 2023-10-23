@@ -13,23 +13,10 @@ mod macros;
 mod platforms;
 mod state;
 
-use ::dioxus_desktop::{launch_with_props, Config};
-use crate::components::{App, AppProps};
-use crate::io::{readAuth_RetroAchievements, readAuth_Steam};
+use ::dioxus_desktop::launch;
+use crate::components::App;
 
 fn main()
 {
-	let retroAuth = match readAuth_RetroAchievements()
-	{
-		Ok(auth) => Some(auth),
-		Err(_) => None,
-	};
-	
-	let steamAuth = match readAuth_Steam()
-	{
-		Ok(auth) => Some(auth),
-		Err(_) => None,
-	};
-	
-	launch_with_props(App, AppProps { retroAuth, steamAuth }, Config::default());
+	launch(App);
 }

@@ -3,35 +3,64 @@
 
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
-use crate::io::writeAuth_Steam;
-use crate::platforms::retroachievements::AuthObject;
-use crate::platforms::steam::{AuthData, SteamApi};
-use crate::state::{User, loadState, saveState};
-
-#[derive(PartialEq, Props)]
-pub struct AppProps
-{
-	pub retroAuth: Option<AuthObject>,
-	pub steamAuth: Option<AuthData>,
-}
+use crate::platforms::steam::SteamApi;
+use crate::state::{User, RetroAchievementsAuth, SteamAuth, loadUserData, saveUserData};
 
 /**
 The root component of the application.
 */
-pub fn App<'a>(cx: Scope<AppProps>) -> Element
+pub fn App(cx: Scope) -> Element
 {
 	fermi::use_init_atom_root(cx);
 	
+	let _retroAuth = use_atom_ref(cx, &RetroAchievementsAuth);
+	let steamAuth = use_atom_ref(cx, &SteamAuth);
 	let user = use_atom_ref(cx, &User);
 	
-	let api = use_ref(cx, || match cx.props.steamAuth.is_some() { true => SteamApi::new(cx.props.steamAuth.as_ref().unwrap().clone()).unwrap(), false => SteamApi::default() });
-	let id = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().id.to_owned(), false => String::new() });
-	let apiKey = use_state(cx, || match cx.props.steamAuth.is_some() { true => cx.props.steamAuth.as_ref().unwrap().key.to_owned(), false => String::new() });
+	let api = use_ref(cx, || SteamApi::new(steamAuth.read().clone()).unwrap());
+	let id = use_state(cx, || steamAuth.read().id.to_owned());
+	let apiKey = use_state(cx, || steamAuth.read().key.to_owned());
 	
-	let apiClone = api.read().clone();
-	let future = use_future(cx, (), |_| async move
+	let api1 = api.clone();
+	let user1 = user.clone();
+	let playerSummaries = use_future(cx, (), |_| async move
 	{
-		return apiClone.getPlayerSummaries().await;
+		println!("api1 auth: {:?}", api1.read().auth);
+		println!("api1 validate? {}", api1.read().auth.validate());
+		
+		match api1.read().getPlayerSummaries().await
+		{
+			Ok(payload) => {
+				println!("{:?}", payload);
+				match payload.response.players.first()
+				{
+					Some(profile) => {
+						let mut userRef = user1.write();
+						userRef.steam.name = profile.personaname.clone();
+						userRef.steam.id = profile.steamid.clone();
+					},
+					None => {},
+				}
+			},
+			Err(e) => println!("Failed to retrieve player summaries! {:?}", e),
+		}
+	});
+	
+	let api2 = api.clone();
+	let user2 = user.clone();
+	let ownedGames = use_future(cx, (), |_| async move
+	{
+		println!("api2 auth: {:?}", api2.read().auth);
+		println!("api2 validate? {}", api2.read().auth.validate());
+		
+		match api2.read().getOwnedGames().await
+		{
+			Ok(payload) => {
+				println!("game count: {}", payload.response.game_count);
+				user2.write().processSteamGames(payload.response.games.clone());
+			},
+			Err(e) => println!("Failed to retrieve owned games! {:?}", e),
+		}
 	});
 	
 	return cx.render(rsx!
@@ -54,9 +83,10 @@ pub fn App<'a>(cx: Scope<AppProps>) -> Element
 			button
 			{
 				onclick: move |_| {
-					let auth = AuthData { id: id.to_string(), key: apiKey.to_string() };
-					let _result = writeAuth_Steam(auth.clone());
-					api.write().auth = auth.to_owned();
+					let mut steamRef = steamAuth.write();
+					steamRef.id = id.to_string();
+					steamRef.key = apiKey.to_string();
+					api.write().auth = steamRef.clone();
 				},
 				"Update"
 			}
@@ -65,67 +95,79 @@ pub fn App<'a>(cx: Scope<AppProps>) -> Element
 		div
 		{
 			h3 { "Steam" }
-			button
+			
+			div
 			{
-				onclick: move |_|
+				div
 				{
-					if api.read().auth.validate()
+					button
 					{
-						future.restart();
-						match future.value()
-						{
-							Some(result) => match result
+						onclick: move |_| println!("Steam Info: {:?}", user.read().steam),
+						"Print Steam Info"
+					}
+				}
+				div
+				{
+					button
+					{
+						onclick: move |_| {
+							match loadUserData()
 							{
-								Ok(summary) => {
-									println!("{:?}", summary);
-									
-									match summary.response.players.first()
-									{
-										Some(profile) => {
-											let mut userRef = user.write();
-											userRef.steam.name = profile.personaname.clone();
-											userRef.steam.id = profile.steamid.clone();
-										},
-										None => {},
-									}
-									
+								Ok(data) => {
+									println!("Profile loaded!");
+									*user.write() = data;
 								},
-								Err(_) => println!("Failed to complete request!"),
-							},
-							None => println!("No future value!"),
+								Err(_) => println!("Failed to load profile!"),
+							}
+						},
+						"Load Profile Data"
+					}
+				}
+				div
+				{
+					button
+					{
+						onclick: move |_| {
+							match saveUserData(user.read().clone())
+							{
+								Ok(_) => println!("Profile saved!"),
+								Err(_) => println!("Failed to save profile!"),
+							}
+						},
+						"Save Profile Data"
+					}
+				}
+			}
+			
+			div
+			{
+				button
+				{
+					onclick: move |_|
+					{
+						if api.read().auth.validate()
+						{
+							playerSummaries.cancel(cx);
+							playerSummaries.restart();
 						}
-					}
-				},
-				"Run GetPlayerSummaries Request"
-			}
-			button
-			{
-				onclick: move |_| println!("Steam Info: {:?}", user.read().steam),
-				"Print Steam Info"
+					},
+					"Get Player Summaries"
+				}
 			}
 			
-			button
+			div
 			{
-				onclick: move |_| {
-					match loadState(cx)
-					{
-						Ok(_) => println!("Profile loaded!"),
-						Err(_) => println!("Failed to load profile!"),
-					}
-				},
-				"Load Profile Data"
-			}
-			
-			button
-			{
-				onclick: move |_| {
-					match saveState(cx)
-					{
-						Ok(_) => println!("Profile saved!"),
-						Err(_) => println!("Failed to save profile!"),
-					}
-				},
-				"Save Profile Data"
+				button
+				{
+					onclick: move |_| {
+						if api.read().auth.validate()
+						{
+							ownedGames.cancel(cx);
+							ownedGames.restart();
+						}
+					},
+					"Get Owned Games"
+				}
 			}
 		}
 	});
