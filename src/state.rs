@@ -9,12 +9,12 @@ use ::fermi::AtomRef;
 use crate::error;
 use crate::data::User;
 use crate::io::{getConfigDir, getDataDir};
-use crate::platforms::retroachievements::AuthObject;
-use crate::platforms::steam::AuthData;
+use crate::platforms::retroachievements::{RetroAchievementsApi, RetroAchievementsAuth};
+use crate::platforms::steam::{SteamApi, SteamAuth};
 
-pub static RetroAchievementsAuth: AtomRef<AuthObject> = AtomRef(|_| match readAuth_RetroAchievements() { Ok(auth) => auth, Err(_) => AuthObject::default() });
-pub static SteamAuth: AtomRef<AuthData> = AtomRef(|_| match readAuth_Steam() { Ok(auth) => auth, Err(_) => AuthData::default() });
-pub static User: AtomRef<User> = AtomRef(|_| match loadUserData() { Ok(user) => user, Err(_) => User::default() });
+pub static RetroAchievements: AtomRef<RetroAchievementsApi> = AtomRef(|_| match readAuth_RetroAchievements() { Ok(auth) => RetroAchievementsApi::new(auth), Err(_) => RetroAchievementsApi::default() });
+pub static Steam: AtomRef<SteamApi> = AtomRef(|_| match readAuth_Steam() { Ok(auth) => SteamApi::new(auth), Err(_) => SteamApi::default() });
+pub static UserData: AtomRef<User> = AtomRef(|_| match loadUserData() { Ok(user) => user, Err(_) => User::default() });
 
 /**
 
@@ -38,17 +38,17 @@ pub fn loadUserData() -> Result<User>
 /**
 Read the RetroAchievements API authorization data from file.
 */
-pub fn readAuth_RetroAchievements() -> Result<AuthObject>
+pub fn readAuth_RetroAchievements() -> Result<RetroAchievementsAuth>
 {
 	if let Some(dir) = getConfigDir(true)
 	{
 		let path = Path::new(dir.as_str())
-			.join(AuthObject::FileName);
+			.join(RetroAchievementsAuth::FileName);
 		let file = File::open(path.as_path())
 			.context(format!("Failed opening file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let reader = BufReader::new(file);
 		let instance = serde_json::from_reader(reader)
-			.context("Failed parsing RetroAchievements AuthObject file as JSON")?;
+			.context("Failed parsing RetroAchievementsAuth file as JSON")?;
 		return Ok(instance);
 	}
 	
@@ -58,17 +58,17 @@ pub fn readAuth_RetroAchievements() -> Result<AuthObject>
 /**
 Read the Steam API authorization data from file.
 */
-pub fn readAuth_Steam() -> Result<AuthData>
+pub fn readAuth_Steam() -> Result<SteamAuth>
 {
 	if let Some(path) = getConfigDir(true)
 	{
 		let finalPath = Path::new(path.as_str())
-			.join(AuthData::FileName);
+			.join(SteamAuth::FileName);
 		let file = File::open(finalPath.as_path())
 			.context(format!("Failed opening file at: '{}'", finalPath.as_path().to_str().unwrap()))?;
 		let reader = BufReader::new(file);
 		let instance = serde_json::from_reader(reader)
-			.context("Failed parsing Steam AuthData file as JSON")?;
+			.context("Failed parsing SteamAuth file as JSON")?;
 		return Ok(instance);
 	}
 	
@@ -97,17 +97,17 @@ pub fn saveUserData(user: User) -> Result<()>
 /**
 Write the RetroAchievements API authorization data to file.
 */
-pub fn writeAuth_RetroAchievements(auth: AuthObject) -> Result<()>
+pub fn writeAuth_RetroAchievements(auth: RetroAchievementsAuth) -> Result<()>
 {
 	if let Some(dir) = getConfigDir(true)
 	{
 		let path = Path::new(dir.as_str())
-			.join(AuthObject::FileName);
+			.join(RetroAchievementsAuth::FileName);
 		let file = File::create(path.as_path())
 			.context(format!("Failed creating or truncating the file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let writer = BufWriter::new(file);
 		serde_json::to_writer(writer, &auth)
-			.context("serde_json failed writing RetroAchievements AuthObject to BufWriter")?;
+			.context("serde_json failed writing RetroAchievementsAuth to BufWriter")?;
 		return Ok(());
 	}
 	
@@ -117,17 +117,17 @@ pub fn writeAuth_RetroAchievements(auth: AuthObject) -> Result<()>
 /**
 Write the Steam API authorization data to file.
 */
-pub fn writeAuth_Steam(auth: AuthData) -> Result<()>
+pub fn writeAuth_Steam(auth: SteamAuth) -> Result<()>
 {
 	if let Some(path) = getConfigDir(true)
 	{
 		let finalPath = Path::new(path.as_str())
-			.join(AuthData::FileName);
+			.join(SteamAuth::FileName);
 		let file = File::create(finalPath.as_path())
 			.context(format!("Failed creating or truncating the file at: '{}'", finalPath.as_path().to_str().unwrap()))?;
 		let writer = BufWriter::new(file);
 		serde_json::to_writer(writer, &auth)
-			.context("serde_json failed writing Steam AuthData to BufWriter")?;
+			.context("serde_json failed writing SteamAuth to BufWriter")?;
 		return Ok(());
 	}
 	
