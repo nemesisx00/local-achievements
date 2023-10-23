@@ -38,13 +38,9 @@ impl Api
 	const Value_False: &str = "0";
 	const Value_True: &str = "1";
 	
-	pub fn new(auth: AuthData) -> Result<Self>
+	pub fn new(auth: AuthData) -> Self
 	{
-		return match auth.validate()
-		{
-			true => Ok(Self { auth, client: Client::new(), }),
-			false => Err(error!(ErrorKind::InvalidInput)),
-		};
+		return Self { auth, ..Default::default() };
 	}
 	
 	/**
