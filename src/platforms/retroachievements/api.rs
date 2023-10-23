@@ -19,6 +19,11 @@ impl Api
 	const BaseUrl: &str = "https://retroachievements.org/API/";
 	const Endpoint_GetUserRecentlyPlayedGames: &str = "API_GetUserRecentlyPlayedGames.php";
 	
+	pub fn new(auth: AuthObject) -> Self
+	{
+		return Self { auth, };
+	}
+	
 	fn buildUrl(&self, endpoint: &str, parameters: Option<HashMap<String, String>>) -> String
 	{
 		let url = format!("{}{}?z={}&y={}", Self::BaseUrl, endpoint, self.auth.username, self.auth.key);
