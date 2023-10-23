@@ -25,9 +25,6 @@ pub fn App(cx: Scope) -> Element
 	let user1 = user.clone();
 	let playerSummaries = use_future(cx, (), |_| async move
 	{
-		println!("api1 auth: {:?}", api1.read().auth);
-		println!("api1 validate? {}", api1.read().auth.validate());
-		
 		match api1.read().getPlayerSummaries().await
 		{
 			Ok(payload) => {
@@ -50,9 +47,6 @@ pub fn App(cx: Scope) -> Element
 	let user2 = user.clone();
 	let ownedGames = use_future(cx, (), |_| async move
 	{
-		println!("api2 auth: {:?}", api2.read().auth);
-		println!("api2 validate? {}", api2.read().auth.validate());
-		
 		match api2.read().getOwnedGames().await
 		{
 			Ok(payload) => {
