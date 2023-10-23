@@ -1,9 +1,9 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
-use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
+use crate::platforms::steam::GameInfo;
 use super::achievement::{Achievement, Mode};
 
 /**
@@ -30,15 +30,25 @@ pub struct Game
 	*/
 	pub duplicates: Option<Vec<Game>>,
 	
-	/// The platform-specific IDs of this game.
-	pub ids: HashMap<Platform, String>,
-	
 	/// The title of this game.
 	pub name: String,
+	
+	/// Information specific to RetroAchievements.org
+	pub retroAchievements: Option<RetroAchievementsInfo>,
+	
+	/// Information specific to Steam
+	pub steam: Option<SteamInfo>,
 }
 
 impl Game
 {
+	pub fn new(info: GameInfo) -> Self
+	{
+		let mut instance = Self::default();
+		instance.setSteamInfo(info);
+		return instance;
+	}
+	
 	/**
 	Add a game to this game's list of duplicates.
 	
@@ -117,12 +127,89 @@ impl Game
 		
 		return points;
 	}
+	
+	/**
+	Create or update this game's SteamInfo based on the information returned
+	from the Steam Web API.
+	*/
+	pub fn setSteamInfo(&mut self, info: GameInfo)
+	{
+		self.name = info.name.to_owned();
+		match self.steam.as_mut()
+		{
+			Some(steam) => steam.update(info),
+			None => self.steam = Some(SteamInfo::new(info)),
+		}
+	}
+}
+
+/**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct RetroAchievementsInfo
+{
+	pub id: String,
+}
+
+/**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct SteamInfo
+{
+	pub id: usize,
+	pub lastPlayed: usize,
+	pub playtime: SteamPlaytime,
+}
+
+impl SteamInfo
+{
+	pub fn new(info: GameInfo) -> Self
+	{
+		let mut instance = Self::default();
+		instance.update(info);
+		return instance;
+	}
+	
+	pub fn update(&mut self, info: GameInfo)
+	{
+		self.id = info.appid;
+		self.lastPlayed = info.rtime_last_played;
+		self.playtime.update(info);
+	}
+}
+
+/**
+
+*/
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct SteamPlaytime
+{
+	pub linux: usize,
+	pub mac: usize,
+	pub offline: usize,
+	pub total: usize,
+	pub windows: usize,
+}
+
+impl SteamPlaytime
+{
+	pub fn update(&mut self, info: GameInfo)
+	{
+		self.linux = info.playtime_linux_forever;
+		self.mac = info.playtime_mac_forever;
+		self.offline = info.playtime_disconnected;
+		self.total = info.playtime_forever;
+		self.windows = info.playtime_windows_forever;
+	}
 }
 
 #[cfg(test)]
 mod tests
 {
     use super::*;
+	use std::collections::HashMap;
 	use crate::data::PlatformInfo;
 	use crate::data::achievement::Mode;
 	
