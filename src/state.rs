@@ -24,7 +24,7 @@ pub fn loadUserData() -> Result<User>
 	if let Some(dir) = getDataDir(false)
 	{
 		let path = Path::new(dir.as_str()).join(User::Filename);
-		let file = File::open(&path.as_path())
+		let file = File::open(&path)
 			.context(format!("Failed opening file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let buffer = BufReader::new(file);
 		let instance: User = serde_json::from_reader(buffer)
@@ -44,7 +44,7 @@ pub fn readAuth_RetroAchievements() -> Result<RetroAchievementsAuth>
 	{
 		let path = Path::new(dir.as_str())
 			.join(RetroAchievementsAuth::FileName);
-		let file = File::open(path.as_path())
+		let file = File::open(&path)
 			.context(format!("Failed opening file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let reader = BufReader::new(file);
 		let instance = serde_json::from_reader(reader)
@@ -64,7 +64,7 @@ pub fn readAuth_Steam() -> Result<SteamAuth>
 	{
 		let finalPath = Path::new(path.as_str())
 			.join(SteamAuth::FileName);
-		let file = File::open(finalPath.as_path())
+		let file = File::open(&finalPath)
 			.context(format!("Failed opening file at: '{}'", finalPath.as_path().to_str().unwrap()))?;
 		let reader = BufReader::new(file);
 		let instance = serde_json::from_reader(reader)
@@ -83,7 +83,7 @@ pub fn saveUserData(user: User) -> Result<()>
 	if let Some(dir) = getDataDir(true)
 	{
 		let path = Path::new(dir.as_str()).join(User::Filename);
-		let file = File::create(&path.as_path())
+		let file = File::create(&path)
 			.context(format!("Failed creating or truncating the file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let buffer = BufWriter::new(file);
 		serde_json::to_writer(buffer, &user)
@@ -103,7 +103,7 @@ pub fn writeAuth_RetroAchievements(auth: RetroAchievementsAuth) -> Result<()>
 	{
 		let path = Path::new(dir.as_str())
 			.join(RetroAchievementsAuth::FileName);
-		let file = File::create(path.as_path())
+		let file = File::create(&path)
 			.context(format!("Failed creating or truncating the file at: '{}'", path.as_path().to_str().unwrap()))?;
 		let writer = BufWriter::new(file);
 		serde_json::to_writer(writer, &auth)
@@ -123,7 +123,7 @@ pub fn writeAuth_Steam(auth: SteamAuth) -> Result<()>
 	{
 		let finalPath = Path::new(path.as_str())
 			.join(SteamAuth::FileName);
-		let file = File::create(finalPath.as_path())
+		let file = File::create(&finalPath)
 			.context(format!("Failed creating or truncating the file at: '{}'", finalPath.as_path().to_str().unwrap()))?;
 		let writer = BufWriter::new(file);
 		serde_json::to_writer(writer, &auth)
