@@ -21,7 +21,7 @@ pub struct Api
 
 impl Api
 {
-	const Platform: &str = "Steam";
+	pub const Platform: &str = "Steam";
 	
 	const BaseUrl: &str = "https://api.steampowered.com/";
 	
