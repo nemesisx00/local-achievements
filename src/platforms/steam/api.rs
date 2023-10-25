@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
-use ::anyhow::Result;
+use ::anyhow::{Context, Result};
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::error;
@@ -212,28 +212,12 @@ impl Api
 		let requestUrl = format!("{}{}", url, params);
 		let response = self.client.get(requestUrl)
 			.send()
-			.await?
+			.await
+				.context("Error retrieving Steam API response")?
 			.json::<T>()
-			.await?;
+			.await
+				.context("Error parsing Steam API response as JSON")?;
 		
 		return Ok(response);
 	}
-	
-	/*
-	async fn post<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
-		where T: DeserializeOwned
-	{
-		let mut params = parameters.clone();
-		params.insert("format".into(), "json".into());
-		
-		let response = self.client.post(url)
-			.form(&params)
-			.send()
-			.await?
-			.json::<T>()
-			.await?;
-		
-		return Ok(response);
-	}
-	*/
 }
