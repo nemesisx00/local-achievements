@@ -3,7 +3,7 @@
 
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
-use crate::state::{UserData, RetroAchievements, Steam};
+use crate::state::{UserData, RetroAchievements, Steam, saveUserData};
 
 /**
 The root component of the application.
@@ -16,8 +16,8 @@ pub fn App(cx: Scope) -> Element
 	let steam = use_atom_ref(cx, &Steam);
 	let userData = use_atom_ref(cx, &UserData);
 	
-	let id = use_state(cx, || String::new());
-	let apiKey = use_state(cx, || String::new());
+	let id = use_state(cx, || steam.read().auth.id.clone());
+	let apiKey = use_state(cx, || steam.read().auth.key.clone());
 	
 	return cx.render(rsx!
 	{
@@ -41,7 +41,6 @@ pub fn App(cx: Scope) -> Element
 			button
 			{
 				onclick: move |_| {
-					
 					let mut steamRef = steam.write();
 					steamRef.auth.id = id.to_string();
 					steamRef.auth.key = apiKey.to_string();
@@ -110,10 +109,26 @@ pub fn App(cx: Scope) -> Element
 							{
 								println!("Game count: {}", payload.response.game_count);
 								userData.write().processSteamGames(payload.response.games);
+								steam.read().cacheGameIcons(userData.read().getAllSteamInfo()).await;
 							}
 						}
 					}),
 					"Get Owned Games"
+				}
+			}
+			
+			div
+			{
+				button
+				{
+					onclick: move |_| {
+						match saveUserData(userData.read().clone())
+						{
+							Ok(_) => println!("User data saved!"),
+							Err(e) => println!("Error saving user data: {:?}", e),
+						}
+					},
+					"Save Data"
 				}
 			}
 		}
