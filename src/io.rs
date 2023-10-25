@@ -12,7 +12,7 @@ const Application: &str = "local-achievements";
 const Organization: &str = "";
 const Qualifier: &str = "";
 
-pub const Path_Images: &str = "/images/";
+pub const Path_Images: &str = "images";
 
 /**
 Save an image to file in the cache directory specific to this application.
@@ -21,15 +21,21 @@ pub fn cacheImage(platform: String, fileName: String, buffer: &[u8]) -> Result<(
 {
 	if let Some(dir) = getCacheDir(true)
 	{
-		let path = Path::new(dir.as_str())
+		let mut path = Path::new(dir.as_str())
 			.join(Path_Images)
-			.join(format!("/{}/", platform.to_lowercase()))
-			.join(fileName);
+			.join(platform.to_lowercase());
 		
-		let mut file = File::create(path)
-			.context("")?;
+		if !path.exists()
+		{
+			let _ = create_dir_all(&path);
+		}
+		
+		path = path.join(&fileName);
+		
+		let mut file = File::create(&path)
+			.context(format!("Error opening file for writing: {}/{}", platform.to_lowercase(), fileName))?;
 		file.write_all(buffer)
-			.context("")?;
+			.context(format!("Error writing to file: {}/{}", platform.to_lowercase(), fileName))?;
 		
 		return Ok(());
 	}
@@ -47,7 +53,7 @@ pub fn getCacheDir(create: bool) -> Option<String>
 	
 	if create
 	{
-		let _ = create_dir_all(path.clone());
+		let _ = create_dir_all(&path);
 	}
 	
 	return Some(path);
@@ -83,4 +89,17 @@ pub fn getDataDir(create: bool) -> Option<String>
 	}
 	
 	return Some(path);
+}
+
+/**
+Get the absolute path to a cached image, if it exists.
+*/
+pub fn getImagePath(platform: String, fileName: String) -> Option<String>
+{
+	return Some(Path::new(getCacheDir(false)?.as_str())
+		.join(Path_Images)
+		.join(platform.to_lowercase())
+		.join(fileName)
+		.to_str()?
+		.into());
 }
