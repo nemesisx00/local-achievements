@@ -3,11 +3,12 @@
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
+use std::path::Path;
 use ::anyhow::{Context, Result};
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::error;
-use crate::io::cacheImage;
+use crate::io::{cacheImage, getImagePath};
 use crate::data::SteamInfo;
 use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerSummariesPayload};
 
@@ -51,26 +52,53 @@ impl Api
 		return Self { auth, ..Default::default() };
 	}
 	
+	pub fn iconFileName(appId: usize) -> String
+	{
+		return format!("{}_icon.jpg", appId);
+	}
+	
+	/**
+	
+	*/
+	pub async fn cacheGameIcons(&self, games: Vec<SteamInfo>)
+	{
+		for game in games.iter()
+		{
+			if let Some(path) = getImagePath(Self::Platform.into(), Self::iconFileName(game.id))
+			{
+				if !Path::new(&path).exists()
+				{
+					match self.cacheGameIcon(game.id, game.iconHash.to_owned()).await
+					{
+						Ok(_) => println!("Icon image cached for {}", game.id),
+						Err(e) => println!("Error caching icon image for {}: {:?}", game.id, e),
+					}
+				}
+			}
+		}
+		println!("Done with SteamApi::cacheGameIcons()");
+	}
+	
 	/**
 	Retrieve a Steam game's icon and cache it locally.
 	
 	The url used to retrieve the icon:
 	`https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`
 	*/
-	pub async fn cacheGameIcon(&self, game: SteamInfo) -> Result<()>
+	async fn cacheGameIcon(&self, appId: usize, hash: String) -> Result<()>
 	{
 		let url = Self::GameIconUrl
-			.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
-			.replace(Self::Replace_GameIconHash, &game.iconHash);
+			.replace(Self::Replace_GameIconId, appId.to_string().as_str())
+			.replace(Self::Replace_GameIconHash, &hash);
 		
 		let response = self.client.get(url)
 			.send().await
-				.context(format!("Error retrieving Steam Game Icon image for app id {} with hash {}", game.id, game.iconHash))?
+				.context(format!("Error retrieving Steam Game Icon image for app id {} with hash {}", appId, hash))?
 			.bytes().await
-				.context("Error converting the Steam Game Icon response into an instance of Bytes")?;
+				.context(format!("Error converting the Steam Game Icon response into an instance of Bytes for app id: {}", appId))?;
 		
-		cacheImage(Self::Platform.into(), format!("{}_icon.jpg", game.id), response.as_ref())
-			.context(format!("Error saving Steam Game Icon to file for app id {}", game.id))?;
+		cacheImage(Self::Platform.into(), Self::iconFileName(appId), response.as_ref())
+			.context(format!("Error saving Steam Game Icon to file for app id {}", appId))?;
 		
 		return Ok(());
 	}
