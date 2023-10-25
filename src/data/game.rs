@@ -40,6 +40,16 @@ pub struct Game
 	pub steam: Option<SteamInfo>,
 }
 
+// Simple ordering based solely on the game's name.
+impl PartialOrd for Game
+{
+	fn ge(&self, other: &Self) -> bool { return self.name.to_lowercase().ge(&other.name.to_lowercase()); }
+	fn gt(&self, other: &Self) -> bool { return self.name.to_lowercase().gt(&other.name.to_lowercase()); }
+	fn le(&self, other: &Self) -> bool { return self.name.to_lowercase().le(&other.name.to_lowercase()); }
+	fn lt(&self, other: &Self) -> bool { return self.name.to_lowercase().lt(&other.name.to_lowercase()); }
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { return self.name.to_lowercase().partial_cmp(&other.name.to_lowercase()); }
+}
+
 impl Game
 {
 	pub fn new(info: SteamGame) -> Self
