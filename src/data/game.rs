@@ -159,6 +159,7 @@ pub struct RetroAchievementsInfo
 pub struct SteamInfo
 {
 	pub id: usize,
+	pub iconHash: String,
 	pub lastPlayed: usize,
 	pub playtime: SteamPlaytime,
 }
@@ -175,6 +176,7 @@ impl SteamInfo
 	pub fn update(&mut self, info: SteamGame)
 	{
 		self.id = info.appid;
+		self.iconHash = info.img_icon_url.to_owned();
 		self.lastPlayed = info.rtime_last_played;
 		self.playtime.update(info);
 	}
