@@ -4,6 +4,7 @@
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
 use crate::state::{UserData, RetroAchievements, Steam, saveUserData};
+use super::gamelist::GameList;
 
 /**
 The root component of the application.
@@ -12,9 +13,9 @@ pub fn App(cx: Scope) -> Element
 {
 	fermi::use_init_atom_root(cx);
 	
+	let userData = use_atom_ref(cx, &UserData);
 	let _retroA = use_atom_ref(cx, &RetroAchievements);
 	let steam = use_atom_ref(cx, &Steam);
-	let userData = use_atom_ref(cx, &UserData);
 	
 	let id = use_state(cx, || steam.read().auth.id.clone());
 	let apiKey = use_state(cx, || steam.read().auth.key.clone());
@@ -131,6 +132,8 @@ pub fn App(cx: Scope) -> Element
 					"Save Data"
 				}
 			}
+			
+			GameList {}
 		}
 	});
 }
