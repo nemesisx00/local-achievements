@@ -7,6 +7,8 @@ use ::anyhow::{Context, Result};
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::error;
+use crate::io::cacheImage;
+use crate::data::SteamInfo;
 use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerSummariesPayload};
 
 #[derive(Clone, Debug, Default)]
@@ -18,6 +20,8 @@ pub struct Api
 
 impl Api
 {
+	const Platform: &str = "Steam";
+	
 	const BaseUrl: &str = "https://api.steampowered.com/";
 	
 	const Service_Player: &str = "IPlayerService/";
@@ -38,9 +42,37 @@ impl Api
 	const Value_False: &str = "0";
 	const Value_True: &str = "1";
 	
+	const GameIconUrl: &str = "https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
+	const Replace_GameIconHash: &str = "{hash}";
+	const Replace_GameIconId: &str = "{appid}";
+	
 	pub fn new(auth: AuthData) -> Self
 	{
 		return Self { auth, ..Default::default() };
+	}
+	
+	/**
+	Retrieve a Steam game's icon and cache it locally.
+	
+	The url used to retrieve the icon:
+	`https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`
+	*/
+	pub async fn cacheGameIcon(&self, game: SteamInfo) -> Result<()>
+	{
+		let url = Self::GameIconUrl
+			.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
+			.replace(Self::Replace_GameIconHash, &game.iconHash);
+		
+		let response = self.client.get(url)
+			.send().await
+				.context(format!("Error retrieving Steam Game Icon image for app id {} with hash {}", game.id, game.iconHash))?
+			.bytes().await
+				.context("Error converting the Steam Game Icon response into an instance of Bytes")?;
+		
+		cacheImage(Self::Platform.into(), format!("{}_icon.jpg", game.id), response.as_ref())
+			.context(format!("Error saving Steam Game Icon to file for app id {}", game.id))?;
+		
+		return Ok(());
 	}
 	
 	/**
@@ -93,8 +125,8 @@ impl Api
 			parameters.insert(Self::Parameter_IncludePlayedFreeGames.into(), Self::Value_True.into());
 			
 			let url = self.buildUrl(Self::Service_Player, Self::Endpoint_GetOwnedGames);
-			let response = self.get::<GetOwnedGamesPayload>(url, parameters)
-				.await?;
+			let response = self.get::<GetOwnedGamesPayload>(url, parameters).await
+				.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
 			
 			return Ok(response);
 		}
@@ -176,8 +208,8 @@ impl Api
 			parameters.insert(Self::Parameter_Format.into(), Self::Format_Json.into());
 			
 			let url = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries);
-			let response = self.get::<GetPlayerSummariesPayload>(url, parameters)
-				.await?;
+			let response = self.get::<GetPlayerSummariesPayload>(url, parameters).await
+				.context(format!("Error retrieving player summary from Steam Web API for Steam ID {}", self.auth.id))?;
 			
 			return Ok(response);
 		}
