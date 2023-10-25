@@ -4,7 +4,7 @@
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::steam::SteamGame;
 use super::achievement::Mode;
-use super::game::Game;
+use super::game::{Game, SteamInfo};
 
 /**
 A single user, containing platform-specific profile information and its combined
@@ -59,6 +59,19 @@ impl User
 				self.games.push(game);
 			}
 		}
+	}
+	
+	pub fn getAllSteamInfo(&self) -> Vec<SteamInfo>
+	{
+		let mut list = vec![];
+		for game in self.games.iter()
+		{
+			if let Some(info) = &game.steam
+			{
+				list.push(info.clone());
+			}
+		}
+		return list;
 	}
 }
 
