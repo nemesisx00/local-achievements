@@ -66,7 +66,7 @@ pub fn App(cx: Scope) -> Element
 			
 			div
 			{
-				img { src: "/{avatar}" }
+				img { alt: "Steam Avatar", src: "/{avatar}" }
 			}
 			
 			div
