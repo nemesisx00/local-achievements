@@ -4,7 +4,7 @@
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
 use crate::data::Game;
-use crate::io::getImagePath;
+use crate::io::{Path_Games, getImagePath};
 use crate::platforms::steam::SteamApi;
 use crate::state::UserData;
 
@@ -33,7 +33,7 @@ pub fn Game(cx: Scope, game: Game, first: bool, hasAchievements: bool) -> Elemen
 		None => 0,
 	};
 	
-	let iconPath = match getImagePath(SteamApi::Platform.into(), SteamApi::iconFileName(id))
+	let iconPath = match getImagePath(SteamApi::Platform.into(), Path_Games.into(), SteamApi::iconFileName(id))
 	{
 		Some(path) => path,
 		None => String::new(),
