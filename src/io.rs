@@ -12,18 +12,19 @@ const Application: &str = "local-achievements";
 const Organization: &str = "";
 const Qualifier: &str = "";
 
-pub const Path_Images: &str = "images";
+pub const Path_Avatars: &str = "avatars";
+pub const Path_Games: &str = "games";
 
 /**
 Save an image to file in the cache directory specific to this application.
 */
-pub fn cacheImage(platform: String, fileName: String, buffer: &[u8]) -> Result<()>
+pub fn cacheImage(platform: String, group: String, fileName: String, buffer: &[u8]) -> Result<()>
 {
 	if let Some(dir) = getCacheDir(true)
 	{
 		let mut path = Path::new(dir.as_str())
-			.join(Path_Images)
-			.join(platform.to_lowercase());
+			.join(platform.to_lowercase())
+			.join(group);
 		
 		if !path.exists()
 		{
@@ -94,11 +95,11 @@ pub fn getDataDir(create: bool) -> Option<String>
 /**
 Get the absolute path to a cached image, if it exists.
 */
-pub fn getImagePath(platform: String, fileName: String) -> Option<String>
+pub fn getImagePath(platform: String, group: String, fileName: String) -> Option<String>
 {
 	return Some(Path::new(getCacheDir(false)?.as_str())
-		.join(Path_Images)
 		.join(platform.to_lowercase())
+		.join(group)
 		.join(fileName)
 		.to_str()?
 		.into());
