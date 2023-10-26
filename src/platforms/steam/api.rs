@@ -10,7 +10,7 @@ use ::serde::de::DeserializeOwned;
 use crate::{error, join};
 use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
-use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerSummariesPayload};
+use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetSchemaForGamePayload};
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
@@ -28,14 +28,19 @@ impl Api
 	
 	const Service_Player: &str = "IPlayerService";
 	const Service_User: &str = "ISteamUser";
+	const Service_UserStats: &str = "ISteamUserStats";
 	
 	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001";
+	const Endpoint_GetPlayerAchievements: &str = "GetPlayerAchievements/v0001";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
+	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGames/v0002";
 	
+	const Parameter_AppId: &str = "appid";
 	const Parameter_Format: &str = "format";
 	const Parameter_IncludeAppInfo: &str = "include_appinfo";
 	const Parameter_IncludePlayedFreeGames: &str = "include_played_free_games";
 	const Parameter_Key: &str = "key";
+	const Parameter_Language: &str = "l";
 	const Parameter_SteamId: &str = "steamid";
 	const Parameter_SteamIds: &str = "steamids";
 	
@@ -126,7 +131,67 @@ impl Api
 	}
 	
 	/**
-	Call the GetOwnedGames endpoint to retrieve the current user's list of owned (or played free) games.
+	Cal the GetSchemaForGame endpoint to retrieve detailed information about the
+	given app id's achievements
+	
+	# [GetSchemaForGame (v0002)](https://wiki.teamfortress.com/wiki/WebAPI/GetSchemaForGame)
+	
+	GET `http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2`
+	
+	---
+	
+	## Method-specific parameters
+	
+	Name | Description
+	---|----
+	appid | **uint32** appid of game
+	l | **Optional string** localized language to return (english, french, etc.)
+	
+	---
+	
+	## Result data
+	
+	- game
+		- gameName (string) Steam internal (non-localized) name of game.
+		- gameVersion (int) Steam release version number currently live on Steam.
+		- availableGameStats
+			- achievements (Optional) (array)
+				- name (string) API Name of achievement.
+				-  defaultvalue (int) Always 0 (player's default state is unachieved).
+				-  displayName (string) Display title string of achievement.
+				-  hidden (int) If achievement is hidden to the user before earning achievement, value is 1. 0 if public.
+				-  description (string) Display description string of achievement.
+				-  icon (string) Absolute URL of earned achievement icon art.
+				-  icongray (string) Absolute URL of un-earned achievement icon art.
+			- stats (Optional) (array)
+				-  name (string) API name of stat.
+				-  defaultvalue (int) Default value of stat.
+				-  displayName (string) Developer provided name of string.
+	*/
+	pub async fn getSchemaForGame(&self, appId: usize, language: String) -> Result<GetSchemaForGamePayload>
+	{
+		if self.auth.validate()
+		{
+			let mut parameters = self.generateParameterMap();
+			parameters.remove(Self::Parameter_SteamId.into());
+			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
+			parameters.insert(Self::Parameter_Language.into(), language);
+			
+			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetSchemaForGame)
+			{
+				let response = self.get::<GetSchemaForGamePayload>(url, parameters).await
+					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
+				
+				return Ok(response);
+			}
+		}
+		
+		return Err(error!(ErrorKind::InvalidInput));
+	}
+	
+	/**
+	Call the GetOwnedGames endpoint to retrieve the current user's list of owned
+	(or played free) games.
 	
 	---
 	
@@ -187,7 +252,63 @@ impl Api
 	}
 	
 	/**
-	Call the GetPlayerSummaries endpoint to retrieve the current user's profile information.
+	Call the GetPlayerAchievements endpoint to retrieve the current user's
+	achievement information for the given app id.
+	
+	# [GetPlayerAchievements (v0001)](https://developer.valvesoftware.com/wiki/Steam_Web_API#GetPlayerAchievements_.28v0001.29)
+	
+	Returns a list of achievements for this user by app id
+	
+	Example URL:
+	`http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=440&key=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&steamid=76561197972495328`
+	
+	---
+	
+	## Arguments
+	
+	Name | Description
+	---|---
+	steamid | 64 bit Steam ID for which to return the achievement list.
+	appid | The ID of the game you're requesting
+	l | (Optional) Language. If specified, it will return language data for the requested language.
+	
+	---
+	
+	## Result Data
+	
+	A list of achievements.
+	
+	Name | Description
+	---|---
+	apiname | The API name of the achievement
+	achieved | Whether or not the achievement has been completed.
+	unlocktime | Date when the achievement was unlocked.
+	name | **Optional** Localized achievement name
+	description | **Optional** Localized description of the achievement
+	*/
+	pub async fn getPlayerAchievements(&self, appId: usize, language: String) -> Result<GetPlayerAchievementsPayload>
+	{
+		if self.auth.validate()
+		{
+			let mut parameters = self.generateParameterMap();
+			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
+			parameters.insert(Self::Parameter_Language.into(), language);
+			
+			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetPlayerAchievements)
+			{
+				let response = self.get::<GetPlayerAchievementsPayload>(url, parameters).await
+					.context(format!("Error retrieving the list of achievements from Steam Web API for App ID: {}", appId))?;
+				
+				return Ok(response);
+			}
+		}
+		
+		return Err(error!(ErrorKind::InvalidData));
+	}
+	
+	/**
+	Call the GetPlayerSummaries endpoint to retrieve the current user's profile
+	information.
 	
 	---
 	
@@ -254,10 +375,9 @@ impl Api
 	{
 		if self.auth.validate()
 		{
-			let mut parameters = HashMap::<String, String>::new();
-			parameters.insert(Self::Parameter_Key.into(), self.auth.key.clone());
+			let mut parameters = self.generateParameterMap();
+			parameters.remove(Self::Parameter_SteamId.into());
 			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.clone());
-			parameters.insert(Self::Parameter_Format.into(), Self::Format_Json.into());
 			
 			if let Some(url) = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries)
 			{
