@@ -3,6 +3,8 @@
 
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
+use crate::io::{Path_Avatars, getImagePath};
+use crate::platforms::steam::SteamApi;
 use crate::state::{UserData, RetroAchievements, Steam, saveUserData};
 use super::gamelist::GameList;
 
@@ -19,6 +21,12 @@ pub fn App(cx: Scope) -> Element
 	
 	let id = use_state(cx, || steam.read().auth.id.clone());
 	let apiKey = use_state(cx, || steam.read().auth.key.clone());
+	
+	let avatar = match getImagePath(SteamApi::Platform.into(), Path_Avatars.into(), format!("{}_full.jpg", userData.read().steam.id))
+	{
+		Some(path) => path,
+		None => String::new(),
+	};
 	
 	return cx.render(rsx!
 	{
@@ -58,6 +66,11 @@ pub fn App(cx: Scope) -> Element
 			
 			div
 			{
+				img { src: "/{avatar}" }
+			}
+			
+			div
+			{
 				div
 				{
 					button
@@ -90,6 +103,15 @@ pub fn App(cx: Scope) -> Element
 											false => Some(profile.avatarhash.to_owned()),
 										}
 									);
+									
+									if let Some(hash) = &userData.read().steam.avatar
+									{
+										match steam.read().cacheProfileAvatar(userData.read().steam.id.to_owned(), hash.to_owned(), false).await
+										{
+											Ok(_) => println!("Avatars cached"),
+											Err(e) => println!("Error caching avatars: {:?}", e),
+										}
+									}
 								}
 							}
 						}
