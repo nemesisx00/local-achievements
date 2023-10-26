@@ -30,6 +30,25 @@ impl AuthData
 	}
 }
 
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GameAchievement
+{
+	pub name: String,
+	pub defaultvalue: usize,
+	pub displayName: String,
+	pub hidden: usize,
+	pub description: String,
+	pub icon: String,
+	pub icongray: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GameAvailableStats
+{
+	pub achievements: Option<Vec<GameAchievement>>,
+	pub stats: Option<Vec<GameStat>>,
+}
+
 /**
 The data returned by GetOwnedGames describing a single game.
 */
@@ -48,6 +67,22 @@ pub struct GameInfo
 	pub rtime_last_played: usize,
 }
 
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GameSchema
+{
+	pub gameName: String,
+	pub gameVersion: String,
+	pub availableGameStats: GameAvailableStats,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GameStat
+{
+	pub name: String,
+	pub defaultvalue: isize,
+	pub displayName: String,
+}
+
 /**
 The expected response data returned by the GetOwnedGames endpoint.
 */
@@ -55,6 +90,15 @@ The expected response data returned by the GetOwnedGames endpoint.
 pub struct GetOwnedGamesPayload
 {
 	pub response: OwnedGames,
+}
+
+/**
+The expected response data returned by the GetPlayerAchievements (v0001) endpoint.
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GetPlayerAchievementsPayload
+{
+	pub playerstats: PlayerStats,
 }
 
 /**
@@ -67,6 +111,15 @@ pub struct GetPlayerSummariesPayload
 }
 
 /**
+The expected response data returned by the GetSchemaForGame endpoint.
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GetSchemaForGamePayload
+{
+	pub game: GameSchema,
+}
+
+/**
 The count and list of games returned from the GetOwnedGames endpoint.
 */
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -74,6 +127,30 @@ pub struct OwnedGames
 {
 	pub game_count: usize,
 	pub games: Vec<GameInfo>,
+}
+
+/**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct PlayerAchievement
+{
+	pub apiname: String,
+	pub achieved: usize,
+	pub unlocktime: usize,
+	pub name: String,
+	pub description: String,
+}
+
+/**
+The player stats for a given game.
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct PlayerStats
+{
+	pub steamID: String,
+	pub gameName: String,
+	pub achievements: Vec<PlayerAchievement>,
 }
 
 /**
