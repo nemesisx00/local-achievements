@@ -24,7 +24,7 @@ pub fn cacheImage(platform: String, group: String, fileName: String, buffer: &[u
 	{
 		let mut path = Path::new(dir.as_str())
 			.join(platform.to_lowercase())
-			.join(group);
+			.join(group.to_lowercase());
 		
 		if !path.exists()
 		{
