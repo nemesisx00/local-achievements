@@ -8,7 +8,7 @@ use ::anyhow::{Context, Result};
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::error;
-use crate::io::{cacheImage, getImagePath};
+use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
 use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerSummariesPayload};
 
@@ -25,11 +25,11 @@ impl Api
 	
 	const BaseUrl: &str = "https://api.steampowered.com/";
 	
-	const Service_Player: &str = "IPlayerService/";
-	const Service_User: &str = "ISteamUser/";
+	const Service_Player: &str = "IPlayerService";
+	const Service_User: &str = "ISteamUser";
 	
-	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001/";
-	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002/";
+	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001";
+	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
 	
 	const Parameter_Format: &str = "format";
 	const Parameter_IncludeAppInfo: &str = "include_appinfo";
@@ -43,9 +43,15 @@ impl Api
 	const Value_False: &str = "0";
 	const Value_True: &str = "1";
 	
+	const Replace_Hash: &str = "{hash}";
+	const Replace_Size: &str = "{size}";
+	
 	const GameIconUrl: &str = "https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
-	const Replace_GameIconHash: &str = "{hash}";
 	const Replace_GameIconId: &str = "{appid}";
+	
+	const AvatarUrl: &str = "https://avatars.steamstatic.com/{hash}{size}.jpg";
+	const Replace_AvatarMedium: &str = "_medium";
+	const Replace_AvatarFull: &str = "_full";
 	
 	pub fn new(auth: AuthData) -> Self
 	{
@@ -64,11 +70,15 @@ impl Api
 	{
 		for game in games.iter()
 		{
-			if let Some(path) = getImagePath(Self::Platform.into(), Self::iconFileName(game.id))
+			if let Some(path) = getImagePath(Self::Platform.into(), Path_Games.into(), Self::iconFileName(game.id))
 			{
 				if !Path::new(&path).exists()
 				{
-					match self.cacheGameIcon(game.id, game.iconHash.to_owned()).await
+					let url = Self::GameIconUrl
+						.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
+						.replace(Self::Replace_Hash, &game.iconHash);
+					
+					match self.cacheImage(url, Self::Platform.into(), Self::iconFileName(game.id)).await
 					{
 						Ok(_) => println!("Icon image cached for {}", game.id),
 						Err(e) => println!("Error caching icon image for {}: {:?}", game.id, e),
@@ -79,26 +89,36 @@ impl Api
 		println!("Done with SteamApi::cacheGameIcons()");
 	}
 	
-	/**
-	Retrieve a Steam game's icon and cache it locally.
-	
-	The url used to retrieve the icon:
-	`https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`
-	*/
-	async fn cacheGameIcon(&self, appId: usize, hash: String) -> Result<()>
+	pub async fn cacheProfileAvatar(&self, steamId: String, hash: String, refresh: bool) -> Result<()>
 	{
-		let url = Self::GameIconUrl
-			.replace(Self::Replace_GameIconId, appId.to_string().as_str())
-			.replace(Self::Replace_GameIconHash, &hash);
-		
-		let response = self.client.get(url)
-			.send().await
-				.context(format!("Error retrieving Steam Game Icon image for app id {} with hash {}", appId, hash))?
-			.bytes().await
-				.context(format!("Error converting the Steam Game Icon response into an instance of Bytes for app id: {}", appId))?;
-		
-		cacheImage(Self::Platform.into(), Self::iconFileName(appId), response.as_ref())
-			.context(format!("Error saving Steam Game Icon to file for app id {}", appId))?;
+		let mut nameMod = String::new();
+		for i in 0..3
+		{
+			match i
+			{
+				1 => nameMod = Self::Replace_AvatarMedium.into(),
+				2 => nameMod = Self::Replace_AvatarFull.into(),
+				_ => {},
+			}
+			
+			let url = Self::AvatarUrl
+				.replace(Self::Replace_Hash, hash.as_str())
+				.replace(Self::Replace_Size, nameMod.as_str());
+			
+			let filename = format!("{}{}.jpg", steamId, nameMod);
+			
+			if let Some(path) = getImagePath(Self::Platform.into(), Path_Avatars.into(), filename.to_owned())
+			{
+				if refresh || !Path::new(&path).exists()
+				{
+					match self.cacheImage(url, Path_Avatars.into(), filename.to_owned()).await
+					{
+						Ok(_) => println!("Cached avatar with filename: {}", filename),
+						Err(e) => println!("Error caching avatar with filename {}: {:?}", filename, e),
+					}
+				}
+			}
+		}
 		
 		return Ok(());
 	}
@@ -152,11 +172,13 @@ impl Api
 			parameters.insert(Self::Parameter_IncludeAppInfo.into(), Self::Value_True.into());
 			parameters.insert(Self::Parameter_IncludePlayedFreeGames.into(), Self::Value_True.into());
 			
-			let url = self.buildUrl(Self::Service_Player, Self::Endpoint_GetOwnedGames);
-			let response = self.get::<GetOwnedGamesPayload>(url, parameters).await
-				.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
-			
-			return Ok(response);
+			if let Some(url) = self.buildUrl(Self::Service_Player, Self::Endpoint_GetOwnedGames)
+			{
+				let response = self.get::<GetOwnedGamesPayload>(url, parameters).await
+					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
+				
+				return Ok(response);
+			}
 		}
 		
 		return Err(error!(ErrorKind::InvalidInput));
@@ -235,19 +257,39 @@ impl Api
 			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.clone());
 			parameters.insert(Self::Parameter_Format.into(), Self::Format_Json.into());
 			
-			let url = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries);
-			let response = self.get::<GetPlayerSummariesPayload>(url, parameters).await
-				.context(format!("Error retrieving player summary from Steam Web API for Steam ID {}", self.auth.id))?;
-			
-			return Ok(response);
+			if let Some(url) = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries)
+			{
+				let response = self.get::<GetPlayerSummariesPayload>(url, parameters).await
+					.context(format!("Error retrieving player summary from Steam Web API for Steam ID {}", self.auth.id))?;
+				
+				return Ok(response);
+			}
 		}
 		
 		return Err(error!(ErrorKind::InvalidInput));
 	}
 	
-	fn buildUrl(&self, service: &str, endpoint: &str) -> String
+	fn buildUrl(&self, service: &str, endpoint: &str) -> Option<String>
 	{
-		return format!("{}{}{}", Self::BaseUrl, service, endpoint);
+		return Some(Path::new(Self::BaseUrl)
+			.join(service)
+			.join(endpoint)
+			.to_str()?
+			.into());
+	}
+	
+	async fn cacheImage(&self, url: String, group: String, filename: String) -> Result<()>
+	{
+		let response = self.client.get(&url)
+			.send().await
+				.context(format!("Error retrieving image at url: {}", url))?
+			.bytes().await
+				.context(format!("Error converting the image response into an instance of Bytes for url: {}", url))?;
+		
+		cacheImage(Self::Platform.into(), group.into(), filename, response.as_ref())
+			.context(format!("Error saving image to file from url: {}", url))?;
+		
+		return Ok(());
 	}
 	
 	fn generateParameterMap(&self) -> HashMap<String, String>
