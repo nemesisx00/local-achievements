@@ -7,7 +7,7 @@ use std::path::Path;
 use ::anyhow::{Context, Result};
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
-use crate::error;
+use crate::{error, join};
 use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
 use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerSummariesPayload};
@@ -21,6 +21,7 @@ pub struct Api
 
 impl Api
 {
+	pub const GameIcon: &str = "game-icon.jpg";
 	pub const Platform: &str = "Steam";
 	
 	const BaseUrl: &str = "https://api.steampowered.com/";
@@ -70,7 +71,8 @@ impl Api
 	{
 		for game in games.iter()
 		{
-			if let Some(path) = getImagePath(Self::Platform.into(), Path_Games.into(), Self::iconFileName(game.id))
+			let group = join!(Path_Games, game.id);
+			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), Self::GameIcon.into())
 			{
 				if !Path::new(&path).exists()
 				{
@@ -78,7 +80,7 @@ impl Api
 						.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
 						.replace(Self::Replace_Hash, &game.iconHash);
 					
-					match self.cacheImage(url, Self::Platform.into(), Self::iconFileName(game.id)).await
+					match self.cacheImage(url, group.to_owned(), Self::GameIcon.into()).await
 					{
 						Ok(_) => println!("Icon image cached for {}", game.id),
 						Err(e) => println!("Error caching icon image for {}: {:?}", game.id, e),
