@@ -193,6 +193,24 @@ pub fn App(cx: Scope) -> Element
 				}
 			}
 			
+			div
+			{
+				button
+				{
+					onclick: move |_| cx.spawn(
+					{
+						to_owned![steam];
+						async move {
+							if let Ok(payload) = steam.read().getRecentlyPlayedGames().await
+							{
+								println!("{:?}", payload);
+							}
+						}
+					}),
+					"Get Recently Played Games"
+				}
+			}
+			
 			GameList { refresh: steamRefresh.get().to_owned() }
 		}
 	});
