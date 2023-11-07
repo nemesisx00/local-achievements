@@ -3,11 +3,6 @@
 
 mod api;
 mod data;
-mod getgameschema;
-mod getownedgames;
-mod getplayerachievements;
-mod getplayersummaries;
 
-pub use data::AuthData as SteamAuth;
-pub use getownedgames::GameInfo as SteamGame;
+pub use data::{AuthData as SteamAuth, GameInfo as SteamGame};
 pub use api::Api as SteamApi;
