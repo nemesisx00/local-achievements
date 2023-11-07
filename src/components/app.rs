@@ -89,6 +89,21 @@ pub fn App(cx: Scope) -> Element
 			{
 				button
 				{
+					onclick: move |_| {
+						match saveUserData(userData.read().clone())
+						{
+							Ok(_) => println!("User data saved!"),
+							Err(e) => println!("Error saving user data: {:?}", e),
+						}
+					},
+					"Save Data"
+				}
+			}
+			
+			div
+			{
+				button
+				{
 					onclick: move |_| cx.spawn(
 					{
 						to_owned![steam, userData, steamRefresh];
@@ -163,14 +178,18 @@ pub fn App(cx: Scope) -> Element
 			{
 				button
 				{
-					onclick: move |_| {
-						match saveUserData(userData.read().clone())
-						{
-							Ok(_) => println!("User data saved!"),
-							Err(e) => println!("Error saving user data: {:?}", e),
+					onclick: move |_| cx.spawn(
+					{
+						to_owned![steam];
+						async move {
+							let tekken7 = 389730;
+							if let Ok(payload) = steam.read().getGlobalPercentages(tekken7).await
+							{
+								println!("{:?}", payload.asMap());
+							}
 						}
-					},
-					"Save Data"
+					}),
+					"Get Global Percentages"
 				}
 			}
 			
