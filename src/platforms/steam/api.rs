@@ -10,11 +10,7 @@ use ::serde::de::DeserializeOwned;
 use crate::{error, join};
 use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
-use super::data::AuthData;
-use super::getgameschema::GetSchemaForGamePayload;
-use super::getownedgames::GetOwnedGamesPayload;
-use super::getplayerachievements::GetPlayerAchievementsPayload;
-use super::getplayersummaries::GetPlayerSummariesPayload;
+use super::data::{AuthData, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload};
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
@@ -34,6 +30,7 @@ impl Api
 	const Service_User: &str = "ISteamUser";
 	const Service_UserStats: &str = "ISteamUserStats";
 	
+	const Endpoint_GetGlobalAchievementPercentagesForApp: &str = "GetGlobalAchievementPercentagesForApp/v0002";
 	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001";
 	const Endpoint_GetPlayerAchievements: &str = "GetPlayerAchievements/v0001";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
@@ -41,6 +38,7 @@ impl Api
 	
 	const Parameter_AppId: &str = "appid";
 	const Parameter_Format: &str = "format";
+	const Parameter_GameId: &str = "gameid";
 	const Parameter_IncludeAppInfo: &str = "include_appinfo";
 	const Parameter_IncludePlayedFreeGames: &str = "include_played_free_games";
 	const Parameter_Key: &str = "key";
@@ -165,56 +163,39 @@ impl Api
 	}
 	
 	/**
-	Cal the GetSchemaForGame endpoint to retrieve detailed information about the
-	given app id's achievements
-	
-	# [GetSchemaForGame (v0002)](https://wiki.teamfortress.com/wiki/WebAPI/GetSchemaForGame)
-	
-	GET `http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2`
+	Get the global completion percentages of each achievment for an individual game.
 	
 	---
 	
-	## Method-specific parameters
+	# [GetGlobalAchievementPercentagesForApp (v0002)](https://developer.valvesoftware.com/wiki/Steam_Web_API#GetGlobalAchievementPercentagesForApp_.28v0002.29)
+	
+	Returns on global achievements overview of a specific game in percentages.
+	
+	Example URL:
+	`http://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=440&format=xml`
+	
+	---
+	
+	## Arguments
 	
 	Name | Description
-	---|----
-	appid | **uint32** appid of game
-	l | **Optional string** localized language to return (english, french, etc.)
-	
-	---
-	
-	## Result data
-	
-	- game
-		- gameName (string) Steam internal (non-localized) name of game.
-		- gameVersion (int) Steam release version number currently live on Steam.
-		- availableGameStats
-			- achievements (Optional) (array)
-				- name (string) API Name of achievement.
-				-  defaultvalue (int) Always 0 (player's default state is unachieved).
-				-  displayName (string) Display title string of achievement.
-				-  hidden (int) If achievement is hidden to the user before earning achievement, value is 1. 0 if public.
-				-  description (string) Display description string of achievement.
-				-  icon (string) Absolute URL of earned achievement icon art.
-				-  icongray (string) Absolute URL of un-earned achievement icon art.
-			- stats (Optional) (array)
-				-  name (string) API name of stat.
-				-  defaultvalue (int) Default value of stat.
-				-  displayName (string) Developer provided name of string.
+	---|---
+	gameid | AppID of the game you want the news of.
+	format | Output format. json (default), xml or vdf.
 	*/
-	pub async fn getSchemaForGame(&self, appId: usize, language: String) -> Result<GetSchemaForGamePayload>
+	pub async fn getGlobalPercentages(&self, gameId: usize) -> Result<GetGlobalPercentagesPayload>
 	{
 		if self.auth.validate()
 		{
 			let mut parameters = self.generateParameterMap();
-			parameters.remove(Self::Parameter_SteamId.into());
-			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language);
+			parameters.remove(Self::Parameter_Key);
+			parameters.remove(Self::Parameter_SteamId);
+			parameters.insert(Self::Parameter_GameId.into(), gameId.to_string());
 			
-			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetSchemaForGame)
+			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetGlobalAchievementPercentagesForApp)
 			{
-				let response = self.get::<GetSchemaForGamePayload>(url, parameters).await
-					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
+				let response = self.get::<GetGlobalPercentagesPayload>(url, parameters).await
+					.context(format!("Error retrieving list of global percentages from Steam Web API for Game ID {}", gameId))?;
 				
 				return Ok(response);
 			}
@@ -425,6 +406,68 @@ impl Api
 		return Err(error!(ErrorKind::InvalidInput));
 	}
 	
+	/**
+	Cal the GetSchemaForGame endpoint to retrieve detailed information about the
+	given app id's achievements
+	
+	# [GetSchemaForGame (v0002)](https://wiki.teamfortress.com/wiki/WebAPI/GetSchemaForGame)
+	
+	GET `http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2`
+	
+	---
+	
+	## Method-specific parameters
+	
+	Name | Description
+	---|----
+	appid | **uint32** appid of game
+	l | **Optional string** localized language to return (english, french, etc.)
+	
+	---
+	
+	## Result data
+	
+	- game
+		- gameName (string) Steam internal (non-localized) name of game.
+		- gameVersion (int) Steam release version number currently live on Steam.
+		- availableGameStats
+			- achievements (Optional) (array)
+				- name (string) API Name of achievement.
+				-  defaultvalue (int) Always 0 (player's default state is unachieved).
+				-  displayName (string) Display title string of achievement.
+				-  hidden (int) If achievement is hidden to the user before earning achievement, value is 1. 0 if public.
+				-  description (string) Display description string of achievement.
+				-  icon (string) Absolute URL of earned achievement icon art.
+				-  icongray (string) Absolute URL of un-earned achievement icon art.
+			- stats (Optional) (array)
+				-  name (string) API name of stat.
+				-  defaultvalue (int) Default value of stat.
+				-  displayName (string) Developer provided name of string.
+	*/
+	pub async fn getSchemaForGame(&self, appId: usize, language: String) -> Result<GetSchemaForGamePayload>
+	{
+		if self.auth.validate()
+		{
+			let mut parameters = self.generateParameterMap();
+			parameters.remove(Self::Parameter_SteamId.into());
+			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
+			parameters.insert(Self::Parameter_Language.into(), language);
+			
+			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetSchemaForGame)
+			{
+				let response = self.get::<GetSchemaForGamePayload>(url, parameters).await
+					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
+				
+				return Ok(response);
+			}
+		}
+		
+		return Err(error!(ErrorKind::InvalidInput));
+	}
+	
+	/**
+	Construct the fully qualified URL for an endpoint.
+	*/
 	fn buildUrl(&self, service: &str, endpoint: &str) -> Option<String>
 	{
 		return Some(Path::new(Self::BaseUrl)
@@ -434,6 +477,9 @@ impl Api
 			.into());
 	}
 	
+	/**
+	Retrieve the image from a `url` and store it in the cache directory.
+	*/
 	async fn cacheImage(&self, url: String, group: String, filename: String) -> Result<()>
 	{
 		let response = self.client.get(&url)
@@ -448,6 +494,9 @@ impl Api
 		return Ok(());
 	}
 	
+	/**
+	Generate a default parameter map containing the most commonly used parameters.
+	*/
 	fn generateParameterMap(&self) -> HashMap<String, String>
 	{
 		let mut map = HashMap::new();
@@ -458,6 +507,9 @@ impl Api
 		return map;
 	}
 	
+	/**
+	Execute an HTTP GET request.
+	*/
 	async fn get<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
