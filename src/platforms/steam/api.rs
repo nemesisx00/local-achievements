@@ -10,7 +10,7 @@ use ::serde::de::DeserializeOwned;
 use crate::{error, join};
 use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
-use super::data::{AuthData, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload};
+use super::data::{AuthData, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
@@ -34,6 +34,7 @@ impl Api
 	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001";
 	const Endpoint_GetPlayerAchievements: &str = "GetPlayerAchievements/v0001";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
+	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
 	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGames/v0002";
 	
 	const Parameter_AppId: &str = "appid";
@@ -398,6 +399,58 @@ impl Api
 			{
 				let response = self.get::<GetPlayerSummariesPayload>(url, parameters).await
 					.context(format!("Error retrieving player summary from Steam Web API for Steam ID {}", self.auth.id))?;
+				
+				return Ok(response);
+			}
+		}
+		
+		return Err(error!(ErrorKind::InvalidInput));
+	}
+	
+	/**
+	
+	
+	---
+	
+	# [GetRecentlyPlayedGames (v0001)](https://developer.valvesoftware.com/wiki/Steam_Web_API#GetRecentlyPlayedGames_.28v0001.29)
+	
+	GetRecentlyPlayedGames returns a list of games a player has played in the
+	last two weeks, if the profile is publicly visible. Private, friends-only,
+	and other privacy settings are not supported unless you are asking for your
+	own personal details (ie the WebAPI key you are using is linked to the
+	steamid you are requesting).
+	
+	Example URL:
+	`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=XXXXXXXXXXXXXXXXX&steamid=76561197960434622&format=json`
+	
+	---
+	
+	## Arguments
+	
+	Name | Description
+	---|---
+	steamid | The SteamID of the account.
+	count | Optionally limit to a certain number of games (the number of games a person has played in the last 2 weeks is typically very small)
+	format | Output format. json (default), xml or vdf.
+	
+	## Result layout
+	
+	- total_count - the total number of unique games the user has played in the last two weeks. This is mostly significant if you opted to return a limited number of games with the count input parameter
+	- games - A games array, with the following contents:
+		- appid - Unique identifier for the game
+		- name - The name of the game
+		- playtime_2weeks - The total number of minutes played in the last 2 weeks
+		- playtime_forever - The total number of minutes played "on record", since Steam began tracking total playtime in early 2009.
+		- img_icon_url, img_logo_url - These are the filenames of various images for the game. To construct the URL to the image, use this format: `http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`. For example, the TF2 logo is returned as `07385eb55b5ba974aebbe74d3c99626bda7920b8`, which maps to the URL: `http://media.steampowered.com/steamcommunity/public/images/apps/440/07385eb55b5ba974aebbe74d3c99626bda7920b8.jpg`
+	*/
+	pub async fn getRecentlyPlayedGames(&self) -> Result<GetRecentlyPlayedGamesPayload>
+	{
+		if self.auth.validate()
+		{
+			if let Some(url) = self.buildUrl(Self::Service_Player, Self::Endpoint_GetRecentlyPlayedGames)
+			{
+				let response = self.get::<GetRecentlyPlayedGamesPayload>(url, self.generateParameterMap()).await
+					.context(format!("Error retrieving recently played games from Steam Web API for Steam ID {}", self.auth.id))?;
 				
 				return Ok(response);
 			}
