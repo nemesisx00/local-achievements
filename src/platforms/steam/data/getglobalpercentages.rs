@@ -10,7 +10,7 @@ endpoint.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GetGlobalPercentagesPayload
 {
-	achievementpercentages: GlobalPercentages,
+	pub achievementpercentages: GlobalPercentages,
 }
 
 /**
@@ -19,7 +19,7 @@ The list of achievements and their global percentages.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GlobalPercentages
 {
-	achievements: Vec<GlobalPercentage>,
+	pub achievements: Vec<GlobalPercentage>,
 }
 
 /**
@@ -28,6 +28,6 @@ The global percentage for a single achievement.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GlobalPercentage
 {
-	name: String,
-	percent: f64,
+	pub name: String,
+	pub percent: f64,
 }
