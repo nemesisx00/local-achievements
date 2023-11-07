@@ -132,7 +132,17 @@ pub fn App(cx: Scope) -> Element
 							{
 								println!("Game count: {}", payload.response.game_count);
 								userData.write().processSteamGames(payload.response.games);
-								steam.read().cacheGameIcons(userData.read().getAllSteamInfo()).await;
+								let failed = steam.read().cacheGameIcons(userData.read().getAllSteamInfo(), false).await;
+								
+								match failed
+								{
+									None => println!("SteamApi: Icon images cached for owned games!"),
+									Some(games) => {
+										let mut idList = String::new();
+										games.iter().for_each(|game| idList = format!("{}, {}", idList, game.id));
+										println!("SteamApi: Error caching icon images for {}", idList[2..].to_string());
+									}
+								}
 							}
 						}
 					}),

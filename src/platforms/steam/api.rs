@@ -74,33 +74,63 @@ impl Api
 	}
 	
 	/**
+	Retrieve and cache the icon images for a list of `games`.
 	
+	---
+	
+	Parameter | Description
+	---|---
+	games | The list of games for which to retrieve icon images.
+	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
+	
+	---
+	
+	#### Returns
+	
+	If any icons result in an error, the list of all games for which no icon
+	could be retrieved is returned. Otherwise, returns `NONE`.
 	*/
-	pub async fn cacheGameIcons(&self, games: Vec<SteamInfo>)
+	pub async fn cacheGameIcons(&self, games: Vec<SteamInfo>, force: bool) -> Option<Vec<SteamInfo>>
 	{
+		let mut failed = vec![];
 		for game in games.iter()
 		{
 			let group = join!(Path_Games, game.id);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), Self::GameIcon.into())
 			{
-				if !Path::new(&path).exists()
+				if force || !Path::new(&path).exists()
 				{
 					let url = Self::GameIconUrl
 						.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
 						.replace(Self::Replace_Hash, &game.iconHash);
 					
-					match self.cacheImage(url, group.to_owned(), Self::GameIcon.into()).await
+					if let Err(_) = self.cacheImage(url, group.to_owned(), Self::GameIcon.into()).await
 					{
-						Ok(_) => println!("Icon image cached for {}", game.id),
-						Err(e) => println!("Error caching icon image for {}: {:?}", game.id, e),
+						failed.push(game.clone());
 					}
 				}
 			}
 		}
-		println!("Done with SteamApi::cacheGameIcons()");
+		
+		return match failed.is_empty()
+		{
+			true => None,
+			false => Some(failed),
+		};
 	}
 	
-	pub async fn cacheProfileAvatar(&self, steamId: String, hash: String, refresh: bool) -> Result<()>
+	/**
+	Retrieve and cache all three sizes of avatar image for the given `steamId` and `hash`.
+	
+	---
+	
+	Parameter | Description
+	---|---
+	steamId | The 64-bit Steam ID identifying the user whose avatar images are being retrieved.
+	hash | The hash value used to build the URL for retrieving the avatar images.
+	force | If `TRUE`, retrieve all the images and overwrite the cache. Otherwise, only retrieve non-cached images.
+	*/
+	pub async fn cacheProfileAvatar(&self, steamId: String, hash: String, force: bool) -> Result<()>
 	{
 		let mut nameMod = String::new();
 		for i in 0..3
@@ -120,7 +150,7 @@ impl Api
 			
 			if let Some(path) = getImagePath(Self::Platform.into(), Path_Avatars.into(), filename.to_owned())
 			{
-				if refresh || !Path::new(&path).exists()
+				if force || !Path::new(&path).exists()
 				{
 					match self.cacheImage(url, Path_Avatars.into(), filename.to_owned()).await
 					{
