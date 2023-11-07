@@ -68,6 +68,22 @@ impl Achievement
 	{
 		return self.details.iter().any(|pi| pi.isUnlocked());
 	}
+	
+	/**
+	
+	*/
+	pub fn updateGlobalPercentage(&mut self, platform: Platform, percentage: f64)
+	{
+		match self.details.iter_mut().find(|pi| pi.platform == platform)
+		{
+			Some(info) => info.globalPercentage = Some(percentage),
+			None => {
+				let mut info = PlatformInfo::new(platform);
+				info.globalPercentage = Some(percentage);
+				self.details.push(info);
+			},
+		}
+	}
 }
 
 /**
@@ -97,6 +113,22 @@ pub struct PlatformInfo
 
 impl PlatformInfo
 {
+	/**
+	
+	*/
+	pub fn new(platform: Platform) -> Self
+	{
+		return Self
+		{
+			globalPercentage: None,
+			icon: None,
+			mode: None,
+			platform,
+			points: None,
+			timestamp: None,
+		}
+	}
+	
 	/**
 	Is this achievement unlocked on this platform?
 	*/
