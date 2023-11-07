@@ -1,6 +1,7 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
+use std::path::Path;
 use ::dioxus::prelude::*;
 use ::fermi::use_atom_ref;
 use crate::io::{Path_Avatars, getImagePath};
@@ -21,12 +22,15 @@ pub fn App(cx: Scope) -> Element
 	
 	let id = use_state(cx, || steam.read().auth.id.clone());
 	let apiKey = use_state(cx, || steam.read().auth.key.clone());
+	let steamRefresh = use_state(cx, || false);
 	
 	let avatar = match getImagePath(SteamApi::Platform.into(), Path_Avatars.into(), format!("{}_full.jpg", userData.read().steam.id))
 	{
 		Some(path) => path,
 		None => String::new(),
 	};
+	
+	let avatarExists = !avatar.is_empty() && Path::new(&avatar).exists();
 	
 	return cx.render(rsx!
 	{
@@ -66,7 +70,7 @@ pub fn App(cx: Scope) -> Element
 			
 			div
 			{
-				img { alt: "Steam Avatar", src: "/{avatar}" }
+				avatarExists.then(|| rsx!(img { alt: "Steam Avatar", src: "/{avatar}" }))
 			}
 			
 			div
@@ -87,7 +91,7 @@ pub fn App(cx: Scope) -> Element
 				{
 					onclick: move |_| cx.spawn(
 					{
-						to_owned![steam, userData];
+						to_owned![steam, userData, steamRefresh];
 						async move {
 							if let Ok(payload) = steam.read().getPlayerSummaries().await
 							{
@@ -108,7 +112,10 @@ pub fn App(cx: Scope) -> Element
 									{
 										match steam.read().cacheProfileAvatar(userData.read().steam.id.to_owned(), hash.to_owned(), false).await
 										{
-											Ok(_) => println!("Avatars cached"),
+											Ok(_) => {
+												println!("Avatars cached");
+												steamRefresh.set(!steamRefresh.get());
+											},
 											Err(e) => println!("Error caching avatars: {:?}", e),
 										}
 									}
@@ -126,7 +133,7 @@ pub fn App(cx: Scope) -> Element
 				{
 					onclick: move |_| cx.spawn(
 					{
-						to_owned![steam, userData];
+						to_owned![steam, userData, steamRefresh];
 						async move {
 							if let Ok(payload) = steam.read().getOwnedGames().await
 							{
@@ -143,6 +150,8 @@ pub fn App(cx: Scope) -> Element
 										println!("SteamApi: Error caching icon images for {}", idList[2..].to_string());
 									}
 								}
+								
+								steamRefresh.set(!steamRefresh.get());
 							}
 						}
 					}),
@@ -165,7 +174,7 @@ pub fn App(cx: Scope) -> Element
 				}
 			}
 			
-			GameList {}
+			GameList { refresh: steamRefresh.get().to_owned() }
 		}
 	});
 }
