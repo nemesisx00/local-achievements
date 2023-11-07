@@ -10,7 +10,11 @@ use ::serde::de::DeserializeOwned;
 use crate::{error, join};
 use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
 use crate::data::SteamInfo;
-use super::data::{AuthData, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetSchemaForGamePayload};
+use super::data::AuthData;
+use super::getgameschema::GetSchemaForGamePayload;
+use super::getownedgames::GetOwnedGamesPayload;
+use super::getplayerachievements::GetPlayerAchievementsPayload;
+use super::getplayersummaries::GetPlayerSummariesPayload;
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
