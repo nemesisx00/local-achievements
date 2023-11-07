@@ -2,15 +2,15 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 mod auth;
-mod getgameschema;
-mod getglobalpercentages;
-mod getownedgames;
-mod getplayerachievements;
-mod getplayersummaries;
+mod gameschema;
+mod globalpercentages;
+mod ownedgames;
+mod playerachievements;
+mod playersummaries;
 
 pub use auth::AuthData;
-pub use getgameschema::GetSchemaForGamePayload;
-pub use getglobalpercentages::GetGlobalPercentagesPayload;
-pub use getownedgames::{GameInfo, GetOwnedGamesPayload};
-pub use getplayerachievements::GetPlayerAchievementsPayload;
-pub use getplayersummaries::GetPlayerSummariesPayload;
+pub use gameschema::GetSchemaForGamePayload;
+pub use globalpercentages::GetGlobalPercentagesPayload;
+pub use ownedgames::{GameInfo, GetOwnedGamesPayload};
+pub use playerachievements::GetPlayerAchievementsPayload;
+pub use playersummaries::GetPlayerSummariesPayload;
