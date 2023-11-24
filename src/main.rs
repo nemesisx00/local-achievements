@@ -30,6 +30,7 @@ fn main()
 		.with_min_inner_size(MinimumWindowSize)
 		.with_title(format!("{} {}", AppTitle, AppVersion));
 	
+	//TODO: Find a better solution for having working styles in dx serve
 	let css = format!(r#"<link rel="stylesheet" href="{}" />"#, match cfg!(debug_assertions)
 	{
 		true =>  format!("static/{}", CssFile),
