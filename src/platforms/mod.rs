@@ -12,3 +12,15 @@ pub enum Platform
 	RetroAchievements,
 	Steam,
 }
+
+impl Platform
+{
+	pub fn nameOf(platform: Platform) -> String
+	{
+		return match platform
+		{
+			Self::RetroAchievements => "Retro Achievements",
+			Self::Steam => "Steam",
+		}.to_string();
+	}
+}
