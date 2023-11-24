@@ -1,0 +1,15 @@
+.gameList
+{
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	width: 100%;
+}
+
+.gameList .game
+{
+	flex-grow: 1;
+	margin: .25rem 0;
+	width: 90%;
+}
