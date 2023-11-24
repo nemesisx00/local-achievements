@@ -11,6 +11,7 @@ title = "Local Achievements"
 
 [web.watcher]
 reload_html = true
+index_on_404 = true
 watch_path = ["src", "static"]
 
 [web.resource]
