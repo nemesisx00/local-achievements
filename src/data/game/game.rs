@@ -107,6 +107,16 @@ impl Game
 	}
 	
 	/**
+	Check if any of this game's achievements are missing a global percentage
+	value for a given platform.
+	*/
+	pub fn isGlobalPercentageMissing(&self, platform: Platform) -> bool
+	{
+		return self.achievements.iter()
+			.any(|a| !a.hasGlobalPercentage(platform));
+	}
+	
+	/**
 	Retrieve either the total accumulated points or the maximum possible points
 	awarded for this game's achievements on RetroAchievements.org.
 	
@@ -204,7 +214,7 @@ mod tests
 	}
 	
     #[test]
-    fn Game_RetroPoints()
+    fn RetroPoints()
 	{
 		let mut instance = Game::default();
 		instance.achievements.push(setupAchievement("A1", Platform::RetroAchievements, 10, 5, Some(Mode::Softcore)));
@@ -226,5 +236,18 @@ mod tests
 		let scTotalExpected = 40;
 		let scTotalResult = instance.retroPoints(Mode::Softcore, true);
 		assert_eq!(scTotalExpected, scTotalResult);
+	}
+	
+	#[test]
+	fn GlobalPercentage()
+	{
+		let mut instance = Game::default();
+		instance.achievements.push(setupAchievement("A1", Platform::Steam, 0, 0, None));
+		
+		assert!(instance.isGlobalPercentageMissing(Platform::Steam));
+		assert!(!instance.achievements[0].hasGlobalPercentage(Platform::Steam));
+		instance.achievements[0].details.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
+		assert!(instance.achievements[0].hasGlobalPercentage(Platform::Steam));
+		assert!(!instance.isGlobalPercentageMissing(Platform::Steam));
 	}
 }
