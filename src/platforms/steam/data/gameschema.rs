@@ -10,7 +10,7 @@ pub struct GameAchievement
 	pub defaultvalue: usize,
 	pub displayName: String,
 	pub hidden: usize,
-	pub description: String,
+	pub description: Option<String>,
 	pub icon: String,
 	pub icongray: String,
 }
@@ -25,9 +25,9 @@ pub struct GameAvailableStats
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameSchema
 {
+	pub availableGameStats: GameAvailableStats,
 	pub gameName: String,
 	pub gameVersion: String,
-	pub availableGameStats: GameAvailableStats,
 }
 
 /**
@@ -38,7 +38,6 @@ pub struct GetSchemaForGamePayload
 {
 	pub game: GameSchema,
 }
-
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameStat
