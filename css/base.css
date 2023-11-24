@@ -1,0 +1,12 @@
+
+body
+{
+	color: var(--color);
+	background-color: var(--backgroundColor);
+}
+
+button
+{
+	color: var(--color);
+	background-color: var(--backgroundColorButton);
+}
