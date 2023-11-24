@@ -130,18 +130,15 @@ impl Game
 		let mut points = 0;
 		for achievement in &self.achievements
 		{
-			if achievement.platforms.contains(&Platform::RetroAchievements)
+			if let Some(info) = achievement.platforms.iter().find(|a| a.platform == Platform::RetroAchievements)
 			{
-				if let Some(info) = achievement.details.iter().find(|a| a.platform == Platform::RetroAchievements)
+				if maximumPossible == true || info.mode.is_some_and(|m| m == mode)
 				{
-					if maximumPossible == true || info.mode.is_some_and(|m| m == mode)
+					if let Some(map) = &info.points
 					{
-						if let Some(map) = &info.points
+						if let Some(value) = map.get(&mode)
 						{
-							if let Some(value) = map.get(&mode)
-							{
-								points += *value;
-							}
+							points += *value;
 						}
 					}
 				}
@@ -170,9 +167,27 @@ impl Game
 		for (id, percentage) in percentages
 		{
 			if let Some(achievement) = self.achievements.iter_mut()
-				.find(|a| a.id.contains_key(&platform) && a.id[&platform] == id)
+				.find(|a| match a.platforms.iter().find(|pi| pi.platform == platform)
+				{
+					Some(pi) => pi.id == id,
+					None => false,
+				})
 			{
 				achievement.updateGlobalPercentage(platform, percentage);
+			}
+		}
+	}
+	
+	pub fn updateAchievementMetadata(&mut self, achievements: Vec<Achievement>)
+	{
+		for achievement in achievements
+		{
+			let ids = achievement.getIds();
+			match self.achievements.iter_mut()
+				.find(|a| a.platforms.iter().find(|p| ids.contains(&p.id)).is_some())
+			{
+				Some(chievo) => chievo.update(achievement),
+				None => self.achievements.push(achievement.to_owned()),
 			}
 		}
 	}
@@ -188,27 +203,27 @@ mod tests
 	
 	fn setupAchievement(name: &str, platform: Platform, hcPoints: usize, scPoints: usize, mode: Option<Mode>) -> Achievement
 	{
-		let mut achievement = Achievement::default();
-		achievement.name = name.to_string();
-		achievement.platforms.push(platform);
-		
 		let mut points = HashMap::new();
 		points.insert(Mode::Hardcore, hcPoints);
 		points.insert(Mode::Softcore, scPoints);
 		
-		achievement.details.push(PlatformInfo
-		{
-			globalPercentage: None,
-			icon: None,
-			mode: mode,
-			platform: platform,
-			points: Some(points),
-			timestamp: match mode
+		let achievement = Achievement::new(PlatformInfo
 			{
-				Some(_) => Some(1),
-				None => None,
-			}
-		});
+				description: String::default(),
+				globalPercentage: None,
+				id: String::default(),
+				icon: None,
+				iconLocked: None,
+				mode: mode,
+				name: name.to_string(),
+				platform: platform,
+				points: Some(points),
+				timestamp: match mode
+				{
+					Some(_) => Some(1),
+					None => None,
+				}
+			});
 		
 		return achievement;
 	}
@@ -245,7 +260,7 @@ mod tests
 		instance.achievements.push(setupAchievement("A1", Platform::Steam, 0, 0, None));
 		
 		assert!(instance.isGlobalPercentageMissing(Platform::Steam));
-		instance.achievements[0].details.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
+		instance.achievements[0].platforms.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
 		assert!(!instance.isGlobalPercentageMissing(Platform::Steam));
 	}
 }
