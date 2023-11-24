@@ -1,9 +1,10 @@
 [package]
 authors = ["Peter Lunneberg"]
 description = "A desktop application for collecting, storing, and tracking achievement data."
-name = "local-achievements"
-version = "0.1.0"
 edition = "2021"
+name = "local-achievements"
+publish = false
+version = "0.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,7 +14,9 @@ dioxus = "~0"
 dioxus-desktop = "~0"
 directories = "~5"
 fermi = "~0"
-lightningcss = "1.0.0-alpha.51"
 reqwest = { version = "~0", features = [ "json" ] }
 serde = "~1"
 serde_json = "~1"
+
+[build-dependencies]
+lightningcss = "1.0.0-alpha.51"
