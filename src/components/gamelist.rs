@@ -29,12 +29,13 @@ pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
 	{
 		div
 		{
+			class: "gameList",
 			id: "steamGameList",
 			"refresh": doRefresh,
 			
 			for game in games.iter()
 			{
-				Game { game: game.clone(), first: games.first().is_some_and(|f| f == game), refresh: doRefresh }
+				Game { game: game.clone(), refresh: doRefresh }
 			}
 		}
 	});
