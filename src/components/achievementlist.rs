@@ -38,7 +38,7 @@ pub fn AchievementList(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	{
 		div
 		{
-			class: "achievementsList",
+			class: "achievementList",
 			"refresh": doRefresh,
 			
 			for (i, achievement) in achievements.iter().enumerate()
