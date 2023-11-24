@@ -3,6 +3,7 @@
 
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::steam::SteamGame;
+use super::Achievement;
 use super::achievement::Mode;
 use super::game::{Game, SteamInfo};
 
@@ -31,6 +32,20 @@ unsafe impl Send for User {}
 impl User
 {
 	pub const Filename: &str = "data.json";
+	
+	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<Achievement>)
+	{
+		if let Some(game) = self.games.iter_mut()
+			.find(|g| match &g.steam
+				{
+					Some(s) => s.id == id,
+					None => false,
+				})
+			.as_mut()
+		{
+			game.updateAchievementMetadata(achievements);
+		}
+	}
 	
 	pub fn processSteamGames(&mut self, games: Vec<SteamGame>)
 	{
