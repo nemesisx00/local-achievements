@@ -14,8 +14,7 @@ mod macros;
 mod platforms;
 mod state;
 
-use dioxus_desktop::{WindowBuilder, LogicalSize};
-use ::dioxus_desktop::{Config, launch_cfg};
+use ::dioxus_desktop::{Config, LogicalSize, WindowBuilder, launch_cfg};
 use crate::components::App;
 
 pub const AppTitle: &str = "Local Achievements";
