@@ -160,3 +160,49 @@ impl PlatformInfo
 		return self.timestamp.is_some();
 	}
 }
+
+#[cfg(test)]
+mod tests
+{
+    use super::*;
+	use std::collections::HashMap;
+	use crate::data::PlatformInfo;
+	use crate::data::achievement::Mode;
+	
+	fn setupAchievement(name: &str, platform: Platform, hcPoints: usize, scPoints: usize, mode: Option<Mode>) -> Achievement
+	{
+		let mut achievement = Achievement::default();
+		achievement.name = name.to_string();
+		achievement.platforms.push(platform);
+		
+		let mut points = HashMap::new();
+		points.insert(Mode::Hardcore, hcPoints);
+		points.insert(Mode::Softcore, scPoints);
+		
+		achievement.details.push(PlatformInfo
+		{
+			globalPercentage: None,
+			icon: None,
+			mode: mode,
+			platform: platform,
+			points: Some(points),
+			timestamp: match mode
+			{
+				Some(_) => Some(1),
+				None => None,
+			}
+		});
+		
+		return achievement;
+	}
+	
+	#[test]
+	fn GlobalPercentage()
+	{
+		let mut a1 = setupAchievement("A1", Platform::Steam, 0, 0, None);
+		
+		assert!(!a1.hasGlobalPercentage(Platform::Steam));
+		a1.details.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
+		assert!(a1.hasGlobalPercentage(Platform::Steam));
+	}
+}

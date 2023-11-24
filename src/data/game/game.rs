@@ -245,9 +245,7 @@ mod tests
 		instance.achievements.push(setupAchievement("A1", Platform::Steam, 0, 0, None));
 		
 		assert!(instance.isGlobalPercentageMissing(Platform::Steam));
-		assert!(!instance.achievements[0].hasGlobalPercentage(Platform::Steam));
 		instance.achievements[0].details.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
-		assert!(instance.achievements[0].hasGlobalPercentage(Platform::Steam));
 		assert!(!instance.isGlobalPercentageMissing(Platform::Steam));
 	}
 }
