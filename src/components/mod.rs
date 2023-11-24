@@ -6,5 +6,6 @@ mod achievementlist;
 mod app;
 mod game;
 mod gamelist;
+mod platformdata;
 
 pub use app::App;
