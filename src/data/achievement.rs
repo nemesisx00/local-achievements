@@ -62,11 +62,34 @@ pub struct Achievement
 impl Achievement
 {
 	/**
+	Does this achievement have a global percentage value for a specific `Platform`?
+	*/
+	pub fn hasGlobalPercentage(&self, platform: Platform) -> bool
+	{
+		return self.details
+			.iter()
+			.find(|pi| pi.platform == platform)
+			.is_some_and(|pi| pi.globalPercentage != None);
+	}
+	
+	/**
 	Is this achievement unlocked on at least one platform?
 	*/
 	pub fn isUnlocked(&self) -> bool
 	{
-		return self.details.iter().any(|pi| pi.isUnlocked());
+		return self.details
+			.iter()
+			.any(|pi| pi.isUnlocked());
+	}
+	
+	/**
+	Is this achievement unlocked on every platform?
+	*/
+	pub fn isUnlockedAll(&self) -> bool
+	{
+		return self.details
+			.iter()
+			.all(|pi| pi.isUnlocked());
 	}
 	
 	/**
