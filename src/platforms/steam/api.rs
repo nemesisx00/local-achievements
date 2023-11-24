@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
 use ::anyhow::{Context, Result};
+use ::path_slash::PathExt;
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::{error, join};
@@ -24,7 +25,8 @@ impl Api
 	pub const GameIcon: &str = "game-icon.jpg";
 	pub const Platform: &str = "Steam";
 	
-	const BaseUrl: &str = "https://api.steampowered.com/";
+	const Protocol: &str = "https://";
+	const Domain: &str = "api.steampowered.com/";
 	
 	const Service_Player: &str = "IPlayerService";
 	const Service_User: &str = "ISteamUser";
@@ -35,7 +37,9 @@ impl Api
 	const Endpoint_GetPlayerAchievements: &str = "GetPlayerAchievements/v0001";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
 	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
-	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGames/v0002";
+	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGame/v0002";
+	
+	pub const Language_English: &str = "english";
 	
 	const Parameter_AppId: &str = "appid";
 	const Parameter_Format: &str = "format";
@@ -523,11 +527,15 @@ impl Api
 	*/
 	fn buildUrl(&self, service: &str, endpoint: &str) -> Option<String>
 	{
-		return Some(Path::new(Self::BaseUrl)
-			.join(service)
-			.join(endpoint)
-			.to_str()?
-			.into());
+		return Some(format!(
+			"{}{}",
+			Self::Protocol,
+			Path::new(Self::Domain)
+				.join(service)
+				.join(endpoint)
+				.to_slash()?
+				.into_owned()
+		));
 	}
 	
 	/**
