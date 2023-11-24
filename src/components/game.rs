@@ -23,7 +23,7 @@ first | Is this the first game in the list?
 refresh | An optional boolean property used to force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn Game(cx: Scope, game: Game, first: bool, refresh: Option<bool>) -> Element
+pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 {
 	let userData = use_atom_ref(cx, &UserData);
 	let steam = use_atom_ref(cx, &Steam);
@@ -47,19 +47,15 @@ pub fn Game(cx: Scope, game: Game, first: bool, refresh: Option<bool>) -> Elemen
 	
 	return cx.render(rsx!
 	{
-		if !first
-		{
-			rsx!(hr {})
-		}
-		
 		div
 		{
+			class: "game",
 			"appid": "{id}",
 			"refresh": doRefresh,
 			
 			if iconExists
 			{
-				rsx!(h3 { img { src: "/{iconPath}", }, "{game.name}", })
+				rsx!(h3 { img { alt: "Game Icon", src: "/{iconPath}", }, "{game.name}", })
 			}
 			else
 			{
