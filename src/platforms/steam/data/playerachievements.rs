@@ -22,7 +22,7 @@ pub struct PlayerAchievement
 	pub achieved: usize,
 	pub unlocktime: usize,
 	pub name: String,
-	pub description: String,
+	pub description: Option<String>,
 }
 
 /**
