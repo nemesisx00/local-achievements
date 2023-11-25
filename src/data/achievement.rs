@@ -125,12 +125,6 @@ pub struct PlatformInfo
 	/// The platform-specific ID of this achievement.
 	pub id: String,
 	
-	/// The path to the platform's associated icon for this achievement.
-	pub icon: Option<String>,
-	
-	/// The path to the platform's associated locked icon for this achievement.
-	pub iconLocked: Option<String>,
-	
 	/// The mode under which this achievement was unlocked.
 	pub mode: Option<Mode>,
 	
@@ -159,8 +153,6 @@ impl PlatformInfo
 			description,
 			globalPercentage: None,
 			id,
-			icon: None,
-			iconLocked: None,
 			mode: None,
 			name,
 			platform,
@@ -173,8 +165,6 @@ impl PlatformInfo
 	{
 		self.description = info.description.to_owned();
 		self.globalPercentage = info.globalPercentage.to_owned();
-		self.icon = info.icon.to_owned();
-		self.iconLocked = info.iconLocked.to_owned();
 		self.id = info.id.to_owned();
 		self.mode = info.mode.to_owned();
 		self.name = info.name.to_owned();
@@ -211,8 +201,6 @@ mod tests
 				description: String::default(),
 				globalPercentage: None,
 				id: String::default(),
-				icon: None,
-				iconLocked: None,
 				mode: mode,
 				name: name.to_string(),
 				platform: platform,

@@ -56,10 +56,7 @@ impl GetSchemaForGamePayload
 					None => String::default(),
 				};
 				
-				let mut pi = PlatformInfo::new(ga.name.to_owned(), ga.displayName.to_owned(), description, Platform::Steam);
-				pi.icon = Some(ga.icon.to_owned());
-				pi.iconLocked = Some(ga.icongray.to_owned());
-				
+				let pi = PlatformInfo::new(ga.name.to_owned(), ga.displayName.to_owned(), description, Platform::Steam);
 				let mut achievement = Achievement::default();
 				achievement.platforms.push(pi);
 				
