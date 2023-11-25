@@ -61,6 +61,7 @@ pub fn App(cx: Scope) -> Element
 			
 			div
 			{
+				class: "steam",
 				onclick: move |_| {
 					settingsActive.set(false);
 					steamActive.set(true);
@@ -69,6 +70,7 @@ pub fn App(cx: Scope) -> Element
 			}
 			div
 			{
+				class: "settings",
 				onclick: move |_| {
 					steamActive.set(false);
 					settingsActive.set(true);

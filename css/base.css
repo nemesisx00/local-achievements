@@ -21,7 +21,7 @@ img
 
 #fixedBackground
 {
-	background: linear-gradient(var(--backgroundGradient2) 0%, var(--backgroundGradient1) 100%);
+	background: linear-gradient(var(--backgroundGradient1) 0%, var(--backgroundGradient2) 50%, var(--backgroundGradient1) 100%);
     height: 100vh;
     left: 0;
     position: fixed;
