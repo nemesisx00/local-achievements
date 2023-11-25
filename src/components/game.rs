@@ -29,6 +29,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	let steam = use_atom_ref(cx, &Steam);
 	
 	let internalRefresh = use_state(cx, || false);
+	let showAchievements = use_state(cx, || false);
 	
 	let id = match &game.steam
 	{
@@ -46,6 +47,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
 	let hasAchievements = !game.achievements.is_empty();
+	let displayAchievements = hasAchievements && *showAchievements.get();
 	
 	return cx.render(rsx!
 	{
@@ -59,13 +61,20 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			{
 				rsx!(header
 				{
+					onclick: move |_| showAchievements.set(!showAchievements.get()),
+					
 					img { class: "icon", alt: "Game Icon", src: "/{iconPath}", title: "{game.name}", },
 					h3 { "{game.name}" }
 				})
 			}
 			else
 			{
-				rsx!(header { h3 { "{game.name}", } })
+				rsx!(header
+				{
+					onclick: move |_| showAchievements.set(!showAchievements.get()),
+					
+					h3 { "{game.name}", }
+				})
 			}
 			
 			(id > 0).then(|| rsx!{
@@ -119,7 +128,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 				}
 			})
 			
-			hasAchievements.then(|| rsx!{
+			displayAchievements.then(|| rsx!{
 				AchievementList { game: game.clone(), refresh: *internalRefresh.get() }
 			})
 		}
