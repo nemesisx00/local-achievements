@@ -33,6 +33,8 @@
 	min-width: 10%;
 }
 
+.achievementList .achievement .platform .icon img { width: 64px; height: 64px; }
+
 .achievementList .achievement .platform .data
 {
 	align-items: flex-start;
