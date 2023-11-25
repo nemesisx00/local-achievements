@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
+use crate::platforms::steam::SteamAchievement;
 
 /**
 The mode representing the conditions under which an achievment was unlocked.
@@ -46,17 +47,17 @@ impl Achievement
 		return ids;
 	}
 	
-	pub fn update(&mut self, other: Achievement)
+	pub fn update(&mut self, achievement: SteamAchievement)
 	{
-		for pi in other.platforms
+		match self.platforms.iter_mut()
+			.find(|p| p.platform == Platform::Steam)
+			.as_mut()
 		{
-			match self.platforms.iter_mut()
-				.find(|p| p.platform == pi.platform)
-				.as_mut()
-			{
-				Some(info) => info.update(pi),
-				None => self.platforms.push(pi),
-			}
+			Some(info) => info.update(achievement),
+			None => {
+				let info = PlatformInfo::from(achievement);
+				self.platforms.push(info);
+			},
 		}
 	}
 	
@@ -107,6 +108,15 @@ impl Achievement
 				*/
 			},
 		}
+	}
+}
+
+impl From<SteamAchievement> for Achievement
+{
+	fn from(value: SteamAchievement) -> Self
+	{
+		let info = PlatformInfo::from(value);
+		return Achievement::new(info);
 	}
 }
 
@@ -161,16 +171,15 @@ impl PlatformInfo
 		}
 	}
 	
-	pub fn update(&mut self, info: PlatformInfo)
+	pub fn update(&mut self, achievement: SteamAchievement)
 	{
-		self.description = info.description.to_owned();
-		self.globalPercentage = info.globalPercentage.to_owned();
-		self.id = info.id.to_owned();
-		self.mode = info.mode.to_owned();
-		self.name = info.name.to_owned();
-		self.platform = info.platform.to_owned();
-		self.points = info.points.to_owned();
-		self.timestamp = info.timestamp.to_owned();
+		self.description = match achievement.description
+		{
+			Some(d) => d,
+			None => String::default(),
+		};
+		self.id = achievement.name.to_owned();
+		self.name = achievement.displayName.to_owned();
 	}
 	
 	/**
@@ -179,6 +188,19 @@ impl PlatformInfo
 	pub fn isUnlocked(&self) -> bool
 	{
 		return self.timestamp.is_some();
+	}
+}
+
+impl From<SteamAchievement> for PlatformInfo
+{
+	fn from(value: SteamAchievement) -> Self
+	{
+		return Self::new(
+			value.name,
+			value.displayName,
+			value.description.unwrap_or_default(),
+			Platform::Steam
+		);
 	}
 }
 

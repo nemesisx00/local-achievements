@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
-use crate::platforms::steam::SteamGame;
+use crate::platforms::steam::{SteamAchievement, SteamGame};
 use super::super::achievement::{Achievement, Mode};
 use super::retroachievements::RetroAchievementsInfo;
 use super::steam::SteamInfo;
@@ -195,16 +195,15 @@ impl Game
 		}
 	}
 	
-	pub fn updateAchievementMetadata(&mut self, achievements: Vec<Achievement>)
+	pub fn updateAchievementMetadata(&mut self, achievements: Vec<SteamAchievement>)
 	{
 		for achievement in achievements
 		{
-			let ids = achievement.getIds();
 			match self.achievements.iter_mut()
-				.find(|a| a.platforms.iter().find(|p| ids.contains(&p.id)).is_some())
+				.find(|a| a.platforms.iter().find(|p| p.id == achievement.name).is_some())
 			{
 				Some(chievo) => chievo.update(achievement),
-				None => self.achievements.push(achievement.to_owned()),
+				None => self.achievements.push(Achievement::from(achievement)),
 			}
 		}
 	}
