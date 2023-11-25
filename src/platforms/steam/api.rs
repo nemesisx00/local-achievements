@@ -10,7 +10,8 @@ use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
 use crate::{error, join, jpg, jpgAlt};
 use crate::data::SteamInfo;
-use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
+use crate::io::{Path_Avatars, Path_Games, getImagePath};
+use crate::platforms::util::cacheImage;
 use super::data::{AuthData, GameAchievement, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
 
 #[derive(Clone, Debug, Default)]
@@ -105,27 +106,13 @@ impl Api
 			let filename = jpg!(achievement.name);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
 			{
-				if force || !Path::new(&path).exists()
-				{
-					match self.cacheImage(achievement.icon, group.to_owned(), filename.to_owned()).await
-					{
-						Ok(_) => println!("Cached avatar with filename: {}", filename),
-						Err(e) => println!("Error caching avatar with filename {}: {:?}", filename, e),
-					}
-				}
+				cacheImage(&self.client, achievement.icon, path, Self::Platform.into(), group.to_owned(), filename, force).await?;
 			}
 			
 			let filenameAlt = jpgAlt!(achievement.name, Self::Icon_Locked);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
 			{
-				if force || !Path::new(&path).exists()
-				{
-					match self.cacheImage(achievement.icongray, group.to_owned(), filenameAlt.to_owned()).await
-					{
-						Ok(_) => println!("Cached avatar with filename: {}", filenameAlt),
-						Err(e) => println!("Error caching avatar with filename {}: {:?}", filenameAlt, e),
-					}
-				}
+				cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
 			}
 		}
 		
@@ -157,16 +144,13 @@ impl Api
 			let group = join!(Path_Games, game.id);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), Self::GameIcon.into())
 			{
-				if force || !Path::new(&path).exists()
+				let url = Self::IconUrl_Game
+					.replace(Self::Replace_AppId, game.id.to_string().as_str())
+					.replace(Self::Replace_Hash, &game.iconHash);
+				
+				if let Err(_) = cacheImage(&self.client, url, path, Self::Platform.into(), group, Self::GameIcon.into(), force).await
 				{
-					let url = Self::IconUrl_Game
-						.replace(Self::Replace_AppId, game.id.to_string().as_str())
-						.replace(Self::Replace_Hash, &game.iconHash);
-					
-					if let Err(_) = self.cacheImage(url, group.to_owned(), Self::GameIcon.into()).await
-					{
-						failed.push(game.clone());
-					}
+					failed.push(game.clone());
 				}
 			}
 		}
@@ -209,14 +193,7 @@ impl Api
 			
 			if let Some(path) = getImagePath(Self::Platform.into(), Path_Avatars.into(), filename.to_owned())
 			{
-				if force || !Path::new(&path).exists()
-				{
-					match self.cacheImage(url, Path_Avatars.into(), filename.to_owned()).await
-					{
-						Ok(_) => println!("Cached avatar with filename: {}", filename),
-						Err(e) => println!("Error caching avatar with filename {}: {:?}", filename, e),
-					}
-				}
+				cacheImage(&self.client, url, path, Self::Platform.into(), Path_Avatars.into(), filename.to_owned(), force).await?;
 			}
 		}
 		
@@ -592,23 +569,6 @@ impl Api
 				.to_slash()?
 				.into_owned()
 		));
-	}
-	
-	/**
-	Retrieve the image from a `url` and store it in the cache directory.
-	*/
-	async fn cacheImage(&self, url: String, group: String, filename: String) -> Result<()>
-	{
-		let response = self.client.get(&url)
-			.send().await
-				.context(format!("Error retrieving image at url: {}", url))?
-			.bytes().await
-				.context(format!("Error converting the image response into an instance of Bytes for url: {}", url))?;
-		
-		cacheImage(Self::Platform.into(), group.into(), filename, response.as_ref())
-			.context(format!("Error saving image to file from url: {}", url))?;
-		
-		return Ok(());
 	}
 	
 	/**

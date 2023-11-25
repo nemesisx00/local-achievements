@@ -5,6 +5,7 @@ use ::serde::{Deserialize, Serialize};
 
 pub mod retroachievements;
 pub mod steam;
+mod util;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum Platform

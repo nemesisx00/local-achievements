@@ -18,7 +18,7 @@ pub const Path_Games: &str = "games";
 /**
 Save an image to file in the cache directory specific to this application.
 */
-pub fn cacheImage(platform: String, group: String, fileName: String, buffer: &[u8]) -> Result<()>
+pub fn saveImageToCache(platform: String, group: String, fileName: String, buffer: &[u8]) -> Result<()>
 {
 	if let Some(dir) = getCacheDir(true)
 	{
