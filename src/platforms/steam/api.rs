@@ -8,10 +8,10 @@ use ::anyhow::{Context, Result};
 use ::path_slash::PathExt;
 use ::reqwest::Client;
 use ::serde::de::DeserializeOwned;
-use crate::{error, join};
-use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
+use crate::{error, join, jpg, jpgAlt};
 use crate::data::SteamInfo;
-use super::data::{AuthData, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
+use crate::io::{Path_Avatars, Path_Games, cacheImage, getImagePath};
+use super::data::{AuthData, GameAchievement, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
@@ -56,15 +56,18 @@ impl Api
 	const Value_False: &str = "0";
 	const Value_True: &str = "1";
 	
+	const Replace_AppId: &str = "{appid}";
 	const Replace_Hash: &str = "{hash}";
 	const Replace_Size: &str = "{size}";
 	
-	const GameIconUrl: &str = "https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
-	const Replace_GameIconId: &str = "{appid}";
+	//const IconUrl_Achievement: &str = "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
+	const IconUrl_Game: &str = "https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
 	
 	const AvatarUrl: &str = "https://avatars.steamstatic.com/{hash}{size}.jpg";
-	const Replace_AvatarMedium: &str = "_medium";
-	const Replace_AvatarFull: &str = "_full";
+	const AvatarUrl_ReplaceMedium: &str = "_medium";
+	const AvatarUrl_ReplaceFull: &str = "_full";
+	
+	const Icon_Locked: &str = "locked";
 	
 	pub fn new(auth: AuthData) -> Self
 	{
@@ -74,6 +77,59 @@ impl Api
 	pub fn iconFileName(appId: usize) -> String
 	{
 		return format!("{}_icon.jpg", appId);
+	}
+	
+	/**
+	Retrieve and cache the icon images for a list of `achievements`.
+	
+	---
+	
+	Parameter | Description
+	---|---
+	appId | The app id to which these achievements belong.
+	achievements | The list of achievements for which to retrieve icon images.
+	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
+	
+	---
+	
+	#### Returns
+	
+	If any icons result in an error, the list of all games for which no icon
+	could be retrieved is returned. Otherwise, returns `NONE`.
+	*/
+	pub async fn cacheAchievementIcons(&self, appId: usize, achievements: Vec<GameAchievement>, force: bool) -> Result<()>
+	{
+		for achievement in achievements
+		{
+			let group = join!(Path_Games, appId);
+			let filename = jpg!(achievement.name);
+			let filenameAlt = jpgAlt!(achievement.name, Self::Icon_Locked);
+			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
+			{
+				if force || !Path::new(&path).exists()
+				{
+					match self.cacheImage(achievement.icon, group.to_owned(), filename.to_owned()).await
+					{
+						Ok(_) => println!("Cached avatar with filename: {}", filename),
+						Err(e) => println!("Error caching avatar with filename {}: {:?}", filename, e),
+					}
+				}
+			}
+			
+			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
+			{
+				if force || !Path::new(&path).exists()
+				{
+					match self.cacheImage(achievement.icongray, group.to_owned(), filenameAlt.to_owned()).await
+					{
+						Ok(_) => println!("Cached avatar with filename: {}", filenameAlt),
+						Err(e) => println!("Error caching avatar with filename {}: {:?}", filenameAlt, e),
+					}
+				}
+			}
+		}
+		
+		return Ok(());
 	}
 	
 	/**
@@ -103,8 +159,8 @@ impl Api
 			{
 				if force || !Path::new(&path).exists()
 				{
-					let url = Self::GameIconUrl
-						.replace(Self::Replace_GameIconId, game.id.to_string().as_str())
+					let url = Self::IconUrl_Game
+						.replace(Self::Replace_AppId, game.id.to_string().as_str())
 						.replace(Self::Replace_Hash, &game.iconHash);
 					
 					if let Err(_) = self.cacheImage(url, group.to_owned(), Self::GameIcon.into()).await
@@ -140,8 +196,8 @@ impl Api
 		{
 			match i
 			{
-				1 => nameMod = Self::Replace_AvatarMedium.into(),
-				2 => nameMod = Self::Replace_AvatarFull.into(),
+				1 => nameMod = Self::AvatarUrl_ReplaceMedium.into(),
+				2 => nameMod = Self::AvatarUrl_ReplaceFull.into(),
 				_ => {},
 			}
 			
