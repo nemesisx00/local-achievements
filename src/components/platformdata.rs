@@ -3,10 +3,10 @@
 
 use std::path::Path;
 use ::dioxus::prelude::*;
-use crate::{join, jpg};
+use crate::{join, jpg, jpgAlt};
 use crate::data::PlatformInfo;
 use crate::io::{Path_Games, getImagePath};
-use crate::platforms::Platform;
+use crate::platforms::{Icon_Locked, Platform};
 
 /**
 Component for displaying information about an individual achievement from an
@@ -34,7 +34,13 @@ pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Opti
 	let platform = Platform::nameOf(info.platform);
 	let group = join!(Path_Games, gameId);
 	
-	let iconPath = match getImagePath(platform.to_owned(), group.to_owned(), jpg!(info.id))
+	let filename = match true
+	{
+		true => jpgAlt!(info.id, Icon_Locked),
+		false => jpg!(info.id),
+	};
+	
+	let iconPath = match getImagePath(platform.to_owned(), group.to_owned(), filename)
 	{
 		Some(path) => path,
 		None => String::default(),
