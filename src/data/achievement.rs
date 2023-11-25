@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
-use crate::platforms::steam::SteamAchievement;
+use crate::platforms::steam::{SteamAchievement, SteamAchievementMetadata};
 
 /**
 The mode representing the conditions under which an achievment was unlocked.
@@ -47,17 +47,25 @@ impl Achievement
 		return ids;
 	}
 	
-	pub fn update(&mut self, achievement: SteamAchievement)
+	pub fn updateSteam(&mut self, achievement: SteamAchievement)
 	{
 		match self.platforms.iter_mut()
 			.find(|p| p.platform == Platform::Steam)
 			.as_mut()
 		{
-			Some(info) => info.update(achievement),
-			None => {
-				let info = PlatformInfo::from(achievement);
-				self.platforms.push(info);
-			},
+			Some(info) => info.updateSteam(achievement),
+			None => self.platforms.push(PlatformInfo::from(achievement)),
+		}
+	}
+	
+	pub fn updateSteamMetadata(&mut self, achievement: SteamAchievementMetadata)
+	{
+		match self.platforms.iter_mut()
+			.find(|p| p.platform == Platform::Steam)
+			.as_mut()
+		{
+			Some(info) => info.updateMetadataSteam(achievement),
+			None => self.platforms.push(PlatformInfo::from(achievement)),
 		}
 	}
 	
@@ -116,6 +124,15 @@ impl From<SteamAchievement> for Achievement
 	fn from(value: SteamAchievement) -> Self
 	{
 		let info = PlatformInfo::from(value);
+		return Self::new(info);
+	}
+}
+
+impl From<SteamAchievementMetadata> for Achievement
+{
+	fn from(value: SteamAchievementMetadata) -> Self
+	{
+		let info = PlatformInfo::from(value);
 		return Achievement::new(info);
 	}
 }
@@ -171,7 +188,15 @@ impl PlatformInfo
 		}
 	}
 	
-	pub fn update(&mut self, achievement: SteamAchievement)
+	pub fn updateSteam(&mut self, achievement: SteamAchievement)
+	{
+		if achievement.unlocktime > 0
+		{
+			self.timestamp = Some(achievement.unlocktime * 1000);
+		}
+	}
+	
+	pub fn updateMetadataSteam(&mut self, achievement: SteamAchievementMetadata)
 	{
 		self.description = match achievement.description
 		{
@@ -194,6 +219,26 @@ impl PlatformInfo
 impl From<SteamAchievement> for PlatformInfo
 {
 	fn from(value: SteamAchievement) -> Self
+	{
+		let mut instance = Self::new(
+			value.apiname,
+			value.name,
+			value.description.unwrap_or_default(),
+			Platform::Steam
+		);
+		
+		if value.unlocktime > 0
+		{
+			instance.timestamp = Some(value.unlocktime * 1000);
+		}
+		
+		return instance;
+	}
+}
+
+impl From<SteamAchievementMetadata> for PlatformInfo
+{
+	fn from(value: SteamAchievementMetadata) -> Self
 	{
 		return Self::new(
 			value.name,
