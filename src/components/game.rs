@@ -47,7 +47,40 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
 	let hasAchievements = !game.achievements.is_empty();
-	let displayAchievements = hasAchievements && *showAchievements.get();
+	let isHidden = match *showAchievements.get()
+	{
+		true => String::default(),
+		false => "hidden".to_string(),
+	};
+	
+	let headerClickHandler = move || {
+		showAchievements.set(!showAchievements.get());
+		
+		if id > 0 && game.achievements.is_empty()
+		{
+			cx.spawn(
+			{
+				to_owned![id, internalRefresh, steam, userData];
+				async move {
+					if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
+					{
+						if let Some(achievements) = payload.game.availableGameStats.achievements
+						{
+							userData.write().processSteamAchievementMetadata(id, achievements.to_owned());
+							let _ = steam.read().cacheAchievementsIcons(id, achievements, false).await;
+							internalRefresh.set(!internalRefresh.get());
+						}
+					}
+					
+					if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
+					{
+						userData.write().processSteamAchievements(id, payload.playerstats.achievements);
+						internalRefresh.set(!internalRefresh.get());
+					}
+				}
+			})
+		}
+	};
 	
 	return cx.render(rsx!
 	{
@@ -61,7 +94,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			{
 				rsx!(header
 				{
-					onclick: move |_| showAchievements.set(!showAchievements.get()),
+					onclick: move |_| headerClickHandler(),
 					
 					img { class: "icon", alt: "Game Icon", src: "/{iconPath}", title: "{game.name}", },
 					h3 { "{game.name}" }
@@ -71,65 +104,14 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			{
 				rsx!(header
 				{
-					onclick: move |_| showAchievements.set(!showAchievements.get()),
+					onclick: move |_| headerClickHandler(),
 					
 					h3 { "{game.name}", }
 				})
 			}
 			
-			(id > 0).then(|| rsx!{
-				div
-				{
-					button
-					{
-						onclick: move |_| cx.spawn(
-						{
-							to_owned![id, internalRefresh, steam, userData];
-							async move {
-								if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
-								{
-									if let Some(achievements) = payload.game.availableGameStats.achievements
-									{
-										userData.write().processSteamAchievementMetadata(id, achievements.to_owned());
-										match steam.read().cacheAchievementIcons(id, achievements.to_owned(), false).await
-										{
-											Ok(_) => {
-												println!("Achievement icons cached");
-												internalRefresh.set(!internalRefresh.get());
-											},
-											Err(e) => println!("Error caching achievement icons: {:?}", e),
-										}
-									}
-								}
-							}
-						}),
-						"Get Steam Achievements Schema"
-					}
-				}
-				
-				div
-				{
-					button
-					{
-						onclick: move |_| cx.spawn(
-						{
-							to_owned![id, internalRefresh, steam, userData];
-							async move {
-								if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
-								{
-									println!("{:?}", payload);
-									userData.write().processSteamAchievements(id, payload.playerstats.achievements);
-									internalRefresh.set(!internalRefresh.get());
-								}
-							}
-						}),
-						"Get Steam Achievements"
-					}
-				}
-			})
-			
-			displayAchievements.then(|| rsx!{
-				AchievementList { game: game.clone(), refresh: *internalRefresh.get() }
+			hasAchievements.then(|| rsx!{
+				AchievementList { class: isHidden, game: game.clone(), refresh: *internalRefresh.get() }
 			})
 		}
 	});

@@ -17,7 +17,7 @@ Property | Description
 refresh | An optional boolean property used to force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn AchievementList(cx: Scope, game: Game, refresh: Option<bool>) -> Element
+pub fn AchievementList(cx: Scope, class: Option<String>, game: Game, refresh: Option<bool>) -> Element
 {
 	let mut achievements = game.achievements.clone();
 	achievements.sort_by(|a, b| {
@@ -26,19 +26,24 @@ pub fn AchievementList(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 		{
 			if let Some(bd) = b.platforms.iter().find(|d| d.platform == ad.platform)
 			{
-				response = ad.name.partial_cmp(&bd.name).unwrap();
+				response = bd.timestamp.partial_cmp(&ad.timestamp).unwrap();
+				if response == Ordering::Equal
+				{
+					response = ad.name.partial_cmp(&bd.name).unwrap();
+				}
 			}
 		}
 		response
 	});
 	
+	let className = format!("achievementList {}", class.clone().unwrap_or_default());
 	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
 	return cx.render(rsx!
 	{
 		div
 		{
-			class: "achievementList",
+			class: "{className.trim()}",
 			"refresh": doRefresh,
 			
 			for (i, achievement) in achievements.iter().enumerate()
