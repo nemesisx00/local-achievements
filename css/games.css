@@ -13,3 +13,11 @@
 	margin: .25rem 0;
 	width: 90%;
 }
+
+.gameList .game img.icon
+{
+	--dimensionSize: 32px;
+	
+	width: var(--dimensionSize);
+	height: var(--dimensionSize);
+}
