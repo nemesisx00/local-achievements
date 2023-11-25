@@ -7,17 +7,62 @@
 	width: 100%;
 }
 
+.gameList .searchBar
+{
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-evenly;
+	margin: 1rem 0;
+	width: 90%;
+}
+
+.gameList .searchBar label
+{
+	flex-shrink: 1;
+	font-size: 1.1rem;
+	font-weight: bold;
+	margin-right: .5rem;
+}
+
+.gameList .searchBar input
+{
+	background-color: var(--backgroundColorButton);
+	border: 0;
+	border-radius: var(--borderRadius);
+	color: var(--color);
+	flex-grow: 1;
+	padding: .5rem 1rem;
+}
+
 .gameList .game
 {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
 	flex-grow: 1;
 	margin: .25rem 0;
 	width: 90%;
 }
+.gameList .game > * { width: 100%; }
+
+.gameList .game > header
+{
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	width: 35%;
+}
+
+/*.gameList .game > header h3 { width: 50%; }*/
 
 .gameList .game img.icon
 {
 	--dimensionSize: 32px;
 	
-	width: var(--dimensionSize);
 	height: var(--dimensionSize);
+	margin-right: 1rem;
+	width: var(--dimensionSize);
 }

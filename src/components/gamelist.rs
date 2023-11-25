@@ -19,6 +19,7 @@ refresh | An optional boolean property used to force Dioxus to redraw the compon
 pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
 {
 	let userData = use_atom_ref(cx, &UserData);
+	let searchTerm = use_state(cx, || String::default());
 	
 	let mut games = userData.read().games.clone();
 	games.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -33,9 +34,26 @@ pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
 			id: "steamGameList",
 			"refresh": doRefresh,
 			
-			for game in games.iter()
+			div
 			{
-				Game { game: game.clone(), refresh: doRefresh }
+				class: "searchBar",
+				
+				label { r#for: "searchTerm", "Search:" }
+				input
+				{
+					name: "searchTerm",
+					placeholder: "Start typing to search by title",
+					title: "Start typing to search by title",
+					r#type: "text",
+					oninput: move |e| searchTerm.set(e.value.to_owned()),
+				}
+			}
+			
+			for (i, game) in games.iter()
+				.filter(|g| g.name.to_lowercase().contains(&searchTerm.get().to_owned().to_lowercase()))
+				.enumerate()
+			{
+				Game { key: "{i}", game: game.clone(), refresh: doRefresh }
 			}
 		}
 	});

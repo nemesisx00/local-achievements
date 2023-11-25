@@ -5,6 +5,7 @@
 	flex-direction: column;
 	flex-grow: 1;
 	justify-content: flex-start;
+	width: 90%;
 }
 
 .content header
@@ -21,6 +22,8 @@
 	flex-direction: row;
 	justify-content: space-evenly;
 }
+
+.content section { width: 100%; }
 
 .content .active
 {
