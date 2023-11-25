@@ -1,0 +1,31 @@
+.navbar
+{
+	align-items: center;
+	cursor: pointer;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	user-select: none;
+}
+
+.navbar > *
+{
+	--dimensionValue: 6rem;
+	
+	border: .1rem solid var(--borderColor);
+	border-radius: var(--borderRadius);
+	font-weight: bold;
+	font-size: 1.5rem;
+	height: var(--dimensionValue);
+	line-height: var(--dimensionValue);
+	margin: 0 .5rem;
+	text-align: center;
+	transition: scale .1s ease;
+	width: calc(var(--dimensionValue) + 3rem);
+}
+
+.navbar > *:hover
+{
+	scale: calc(110%);
+	transition: scale .1s ease;
+}

@@ -9,3 +9,13 @@ button
 	color: var(--color);
 	background-color: var(--backgroundColorButton);
 }
+
+h1 { text-align: center; }
+
+img
+{
+	--dimensionValue: 64px;
+	
+	height: var(--dimensionValue);
+	width: var(--dimensionValue);
+}

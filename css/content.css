@@ -1,0 +1,14 @@
+.content .active
+{
+	opacity: 1;
+	transition: opacity 1s ease-in-out;
+}
+
+.content .inactive
+{
+	left: -100vw;
+	opacity: 0;
+	position: absolute;
+	transition: opacity 1s ease-in-out, left 0 ease 1s;
+	z-index: -10;
+}
