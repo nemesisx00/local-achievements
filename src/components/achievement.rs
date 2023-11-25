@@ -1,6 +1,7 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
+use std::collections::HashMap;
 use ::dioxus::prelude::*;
 use crate::data::Achievement;
 use crate::platforms::Platform;
@@ -18,7 +19,7 @@ platform | (Optional) Restrict the displayed information to this platform.
 refresh | (Optional) Force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn Achievement(cx: Scope, achievement: Achievement, platform: Option<Platform>, refresh: Option<bool>) -> Element
+pub fn Achievement(cx: Scope, gameIds: HashMap<Platform, String>, achievement: Achievement, platform: Option<Platform>, refresh: Option<bool>) -> Element
 {
 	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
@@ -29,14 +30,14 @@ pub fn Achievement(cx: Scope, achievement: Achievement, platform: Option<Platfor
 		Some(pl) => {
 			match achievement.platforms.iter().find(|p| pl == &p.platform)
 			{
-				Some(info) => data.push(rsx!(PlatformData { info: info.to_owned(), refresh: doRefresh })),
+				Some(info) => data.push(rsx!(PlatformData { gameId: gameIds[pl].to_owned(), info: info.to_owned(), refresh: doRefresh })),
 				None => data.push(rsx!(div { "No info found" }))
 			}
 		},
 		None => {
 			for info in &achievement.platforms
 			{
-				data.push(rsx!(PlatformData { key: "{info.id.to_owned()}", info: info.to_owned(), refresh: doRefresh }))
+				data.push(rsx!(PlatformData { key: "{info.id.to_owned()}", gameId: gameIds[&info.platform].to_owned(), info: info.to_owned(), refresh: doRefresh }))
 			}
 		}
 	}
