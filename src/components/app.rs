@@ -25,6 +25,9 @@ pub fn App(cx: Scope) -> Element
 	let apiKey = use_state(cx, || steam.read().auth.key.clone());
 	let internalRefresh = use_state(cx, || false);
 	
+	let steamActive = use_state(cx, || true);
+	let settingsActive = use_state(cx, || false);
+	
 	use_shared_state_provider(cx, || false);
 	let devRefresh = use_shared_state::<bool>(cx).unwrap();
 	
@@ -36,47 +39,91 @@ pub fn App(cx: Scope) -> Element
 	
 	let avatarExists = !avatar.is_empty() && Path::new(&avatar).exists();
 	
+	let steamClass = match steamActive.get()
+	{
+		true => "active",
+		false => "inactive",
+	};
+	
+	let settingsClass = match settingsActive.get()
+	{
+		true => "active",
+		false => "inactive",
+	};
+	
 	return cx.render(rsx!
 	{
 		h1 { "Local Achievements" }
 		
-		hr {}
-		
-		div
+		nav
 		{
-			h3 { "Update Steam Auth Info" }
+			class: "navbar",
+			
 			div
-			{
-				label { r#for: "authId", "Steam ID:" }
-				input { name: "authId", r#type: "text", value: "{id}", onchange: move |e| id.set(e.value.clone()) }
-			}
-			div
-			{
-				label { r#for: "authApiKey", "API Key:" }
-				input { name: "authApiKey", r#type: "text", value: "{apiKey}", onchange: move |e| apiKey.set(e.value.clone()) }
-			}
-			button
 			{
 				onclick: move |_| {
-					let mut steamRef = steam.write();
-					steamRef.auth.id = id.to_string();
-					steamRef.auth.key = apiKey.to_string();
+					settingsActive.set(false);
+					steamActive.set(true);
 				},
-				"Update"
+				"Steam"
+			}
+			div
+			{
+				onclick: move |_| {
+					steamActive.set(false);
+					settingsActive.set(true);
+				},
+				"Settings"
 			}
 		}
 		
-		hr {}
-		
 		div
 		{
-			h3 { "Steam" }
-			div
+			class: "content",
+			
+			section
 			{
-				avatarExists.then(|| rsx!(img { alt: "Steam Avatar", src: "/{avatar}" }))
+				class: "{steamClass}",
+				id: "steam",
+				
+				h3 { "Steam" }
+				div
+				{
+					avatarExists.then(|| rsx!(img { alt: "Steam Avatar", src: "/{avatar}" }))
+				}
+				SteamDev {}
+				GameList { refresh: *devRefresh.read() || *internalRefresh.get() }
 			}
-			SteamDev {}
-			GameList { refresh: *devRefresh.read() || *internalRefresh.get() }
+			
+			section
+			{
+				class: "{settingsClass}",
+				id: "settings",
+				
+				div
+				{
+					h3 { "Update Steam Auth Info" }
+					div
+					{
+						label { r#for: "authId", "Steam ID:" }
+						input { name: "authId", r#type: "text", value: "{id}", onchange: move |e| id.set(e.value.clone()) }
+					}
+					div
+					{
+						label { r#for: "authApiKey", "API Key:" }
+						input { name: "authApiKey", r#type: "text", value: "{apiKey}", onchange: move |e| apiKey.set(e.value.clone()) }
+					}
+					button
+					{
+						onclick: move |_| {
+							let mut steamRef = steam.write();
+							steamRef.auth.id = id.to_string();
+							steamRef.auth.key = apiKey.to_string();
+						},
+						"Update"
+					}
+				}
+			}
 		}
 	});
 }
