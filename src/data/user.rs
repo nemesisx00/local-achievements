@@ -2,7 +2,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use ::serde::{Deserialize, Serialize};
-use crate::platforms::steam::{SteamAchievement, SteamGame};
+use crate::platforms::steam::{SteamAchievement, SteamAchievementMetadata, SteamGame};
 use super::achievement::Mode;
 use super::game::{Game, SteamInfo};
 
@@ -32,17 +32,31 @@ impl User
 {
 	pub const Filename: &str = "data.json";
 	
-	pub fn processSteamAchievementMetadata(&mut self, id: usize, achievements: Vec<SteamAchievement>)
+	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<SteamAchievement>)
 	{
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam
-				{
-					Some(s) => s.id == id,
-					None => false,
-				})
+			{
+				Some(s) => s.id == id,
+				None => false,
+			})
 			.as_mut()
 		{
-			game.updateAchievementMetadata(achievements);
+			game.updateAchievementsSteam(achievements);
+		}
+	}
+	
+	pub fn processSteamAchievementMetadata(&mut self, id: usize, achievements: Vec<SteamAchievementMetadata>)
+	{
+		if let Some(game) = self.games.iter_mut()
+			.find(|g| match &g.steam
+			{
+				Some(s) => s.id == id,
+				None => false,
+			})
+			.as_mut()
+		{
+			game.updateAchievementMetadataSteam(achievements);
 		}
 	}
 	
