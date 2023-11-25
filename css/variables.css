@@ -2,6 +2,10 @@
 {
 	--backgroundColor: rgb(26, 26, 26);
 	--backgroundColorButton: rgb(52, 52, 52);
+	--backgroundGradient1: rgb(26, 26, 26);
+	--backgroundGradient2: rgb(52, 52, 52);
+	--backgroundGradient3: rgb(78, 78, 78);
+	
 	--borderColor: rgb(78, 78, 78);
 	--borderRadius: 1rem;
 	--color: #CCC;

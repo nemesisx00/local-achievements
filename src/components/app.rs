@@ -53,7 +53,7 @@ pub fn App(cx: Scope) -> Element
 	
 	return cx.render(rsx!
 	{
-		h1 { "Local Achievements" }
+		div { id: "fixedBackground" }
 		
 		nav
 		{
