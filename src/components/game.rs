@@ -57,11 +57,15 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			
 			if iconExists
 			{
-				rsx!(h3 { img { class: "icon", alt: "Game Icon", src: "/{iconPath}", }, "{game.name}", })
+				rsx!(header
+				{
+					img { class: "icon", alt: "Game Icon", src: "/{iconPath}", title: "{game.name}", },
+					h3 { "{game.name}" }
+				})
 			}
 			else
 			{
-				rsx!(h3 { "{game.name}", })
+				rsx!(header { h3 { "{game.name}", } })
 			}
 			
 			(id > 0).then(|| rsx!{
