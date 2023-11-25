@@ -8,11 +8,6 @@
 	width: 90%;
 }
 
-.content header
-{
-	position: sticky;
-}
-
 .content header h1 { text-align: center; }
 
 .content header > div
