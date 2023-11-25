@@ -97,7 +97,7 @@ impl Api
 	If any icons result in an error, the list of all games for which no icon
 	could be retrieved is returned. Otherwise, returns `NONE`.
 	*/
-	pub async fn cacheAchievementIcons(&self, appId: usize, achievements: Vec<GameAchievement>, force: bool) -> Result<()>
+	pub async fn cacheAchievementsIcons(&self, appId: usize, achievements: Vec<GameAchievement>, force: bool) -> Result<()>
 	{
 		for achievement in achievements
 		{
@@ -113,6 +113,42 @@ impl Api
 			{
 				cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
 			}
+		}
+		
+		return Ok(());
+	}
+	
+	/**
+	Retrieve and cache the icon images for an individual `achievement`.
+	
+	---
+	
+	Parameter | Description
+	---|---
+	appId | The app id to which these achievements belong.
+	achievement | The achievement for which to retrieve icon images.
+	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
+	
+	---
+	
+	#### Returns
+	
+	If any icons result in an error, the list of all games for which no icon
+	could be retrieved is returned. Otherwise, returns `NONE`.
+	*/
+	pub async fn cacheAchievementIcons(&self, appId: usize, achievement: GameAchievement, force: bool) -> Result<()>
+	{
+		let group = join!(Path_Games, appId);
+		let filename = jpg!(achievement.name);
+		if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
+		{
+			cacheImage(&self.client, achievement.icon, path, Self::Platform.into(), group.to_owned(), filename, force).await?;
+		}
+		
+		let filenameAlt = jpgAlt!(achievement.name, Icon_Locked);
+		if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
+		{
+			cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
 		}
 		
 		return Ok(());
