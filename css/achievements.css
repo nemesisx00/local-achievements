@@ -56,4 +56,9 @@
 	width: 100%;
 }
 .achievementList .achievement .platform .data .row * { flex-grow: 1; }
-.achievementList .achievement .platform .data .row .right { text-align: right; }
+
+.achievementList .achievement .platform .data .row .right
+{
+	min-width: 12.5rem;
+	text-align: right;
+}

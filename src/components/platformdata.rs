@@ -2,6 +2,8 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use std::path::Path;
+use chrono::LocalResult;
+use ::chrono::prelude::*;
 use ::dioxus::prelude::*;
 use crate::{join, jpg, jpgAlt};
 use crate::data::PlatformInfo;
@@ -31,14 +33,31 @@ pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Opti
 		Some(gp) => gp.to_string(),
 		None => String::default(),
 	};
-	let platform = Platform::nameOf(info.platform);
-	let group = join!(Path_Games, gameId);
 	
-	let filename = match true
+	let unlockTime = match info.timestamp
+	{
+		Some(ts) => {
+			match NaiveDateTime::from_timestamp_millis(ts as i64)
+			{
+				Some(ndt) => match ndt.and_local_timezone(Local)
+				{
+					LocalResult::Single(dt) => dt.format("%B %d, %Y %l:%M %p")
+						.to_string(),
+					_ => String::default(),
+				},
+				None => String::default(),
+			}
+		},
+		None => String::default(),
+	};
+	
+	let filename = match info.timestamp.is_none()
 	{
 		true => jpgAlt!(info.id, Icon_Locked),
 		false => jpg!(info.id),
 	};
+	let platform = Platform::nameOf(info.platform);
+	let group = join!(Path_Games, gameId);
 	
 	let iconPath = match getImagePath(platform.to_owned(), group.to_owned(), filename)
 	{
@@ -79,7 +98,7 @@ pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Opti
 					class: "row",
 					
 					div { class: "left", "{description}" }
-					div { class: "right", "{platform}" }
+					div { class: "right", "{unlockTime}" }
 				}
 			}
 		}
