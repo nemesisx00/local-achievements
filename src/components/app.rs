@@ -88,12 +88,17 @@ pub fn App(cx: Scope) -> Element
 				class: "{steamClass}",
 				id: "steam",
 				
-				h3 { "Steam" }
-				div
+				header
 				{
-					avatarExists.then(|| rsx!(img { alt: "Steam Avatar", src: "/{avatar}" }))
+					h1 { "Steam" }
+					div
+					{
+						avatarExists.then(|| rsx!(img { alt: "Steam Avatar", src: "/{avatar}" }))
+						
+						SteamDev {}
+					}
 				}
-				SteamDev {}
+				
 				GameList { refresh: *devRefresh.read() || *internalRefresh.get() }
 			}
 			
@@ -101,6 +106,11 @@ pub fn App(cx: Scope) -> Element
 			{
 				class: "{settingsClass}",
 				id: "settings",
+				
+				header
+				{
+					h1 { "Settings" }
+				}
 				
 				div
 				{

@@ -22,11 +22,12 @@ pub const AppVersion: &str = "0.2.0";
 pub const BackgroundColor: (u8, u8, u8, u8) = (26, 26, 26, 255);
 pub const CssFile: &str = "app.css";
 pub const MinimumWindowSize: LogicalSize<u32> = LogicalSize::new(720, 480);
+pub const DefaultWindowSize: LogicalSize<u32> = LogicalSize::new(1280, 720);
 
 fn main()
 {
 	let win = WindowBuilder::default()
-		.with_inner_size(MinimumWindowSize)
+		.with_inner_size(DefaultWindowSize)
 		.with_min_inner_size(MinimumWindowSize)
 		.with_title(format!("{} {}", AppTitle, AppVersion));
 	

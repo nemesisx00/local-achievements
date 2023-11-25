@@ -28,20 +28,16 @@ pub fn SteamDev(cx: Scope) -> Element
 	{
 		div
 		{
-			div
-			{
-				div
-				{
-					button
-					{
-						onclick: move |_| println!("Steam Info: {:?}", userData.read().steam),
-						"Print Steam Info"
-					}
-				}
-			}
+			class: "steamDev",
 			
 			div
 			{
+				button
+				{
+					onclick: move |_| println!("Steam Info: {:?}", userData.read().steam),
+					"Print Steam Info"
+				}
+				
 				button
 				{
 					onclick: move |_| {
@@ -53,10 +49,7 @@ pub fn SteamDev(cx: Scope) -> Element
 					},
 					"Save Data"
 				}
-			}
-			
-			div
-			{
+				
 				button
 				{
 					onclick: move |_| cx.spawn(
@@ -127,10 +120,7 @@ pub fn SteamDev(cx: Scope) -> Element
 					}),
 					"Get Owned Games"
 				}
-			}
-			
-			div
-			{
+				
 				button
 				{
 					onclick: move |_| cx.spawn(
@@ -146,10 +136,7 @@ pub fn SteamDev(cx: Scope) -> Element
 					}),
 					"Get Global Percentages"
 				}
-			}
-			
-			div
-			{
+				
 				button
 				{
 					onclick: move |_| cx.spawn(

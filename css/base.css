@@ -3,7 +3,12 @@ body
 	color: var(--color);
 	background-color: var(--backgroundColor);
 	height: 100vh;
+	margin: 0;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	scrollbar-width: none;
 }
+body::-webkit-scrollbar { display: none; }
 
 button
 {
@@ -28,4 +33,12 @@ img
     top: 0;
     width: 100vw;
     z-index: -1;
+}
+
+#main
+{
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
 }
