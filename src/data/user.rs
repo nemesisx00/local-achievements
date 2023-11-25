@@ -33,7 +33,7 @@ impl User
 {
 	pub const Filename: &str = "data.json";
 	
-	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<Achievement>)
+	pub fn processSteamAchievementMetadata(&mut self, id: usize, achievements: Vec<Achievement>)
 	{
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam

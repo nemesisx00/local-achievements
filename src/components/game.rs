@@ -75,7 +75,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 							async move {
 								if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
 								{
-									userData.write().processSteamAchievements(id, payload.getAchievements().to_owned());
+									userData.write().processSteamAchievementMetadata(id, payload.getAchievements().to_owned());
 									
 									if let Some(achievements) = payload.game.availableGameStats.achievements
 									{
