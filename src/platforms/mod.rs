@@ -7,6 +7,8 @@ pub mod retroachievements;
 pub mod steam;
 mod util;
 
+pub const Icon_Locked: &str = "locked";
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum Platform
 {

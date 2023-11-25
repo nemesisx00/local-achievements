@@ -11,6 +11,7 @@ use ::serde::de::DeserializeOwned;
 use crate::{error, join, jpg, jpgAlt};
 use crate::data::SteamInfo;
 use crate::io::{Path_Avatars, Path_Games, getImagePath};
+use crate::platforms::Icon_Locked;
 use crate::platforms::util::cacheImage;
 use super::data::{AuthData, GameAchievement, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
 
@@ -68,8 +69,6 @@ impl Api
 	const AvatarUrl_ReplaceMedium: &str = "_medium";
 	const AvatarUrl_ReplaceFull: &str = "_full";
 	
-	const Icon_Locked: &str = "locked";
-	
 	pub fn new(auth: AuthData) -> Self
 	{
 		return Self { auth, ..Default::default() };
@@ -109,7 +108,7 @@ impl Api
 				cacheImage(&self.client, achievement.icon, path, Self::Platform.into(), group.to_owned(), filename, force).await?;
 			}
 			
-			let filenameAlt = jpgAlt!(achievement.name, Self::Icon_Locked);
+			let filenameAlt = jpgAlt!(achievement.name, Icon_Locked);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
 			{
 				cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
