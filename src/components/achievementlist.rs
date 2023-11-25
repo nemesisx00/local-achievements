@@ -43,7 +43,7 @@ pub fn AchievementList(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			
 			for (i, achievement) in achievements.iter().enumerate()
 			{
-				Achievement { key: "{i}", achievement: achievement.clone(), refresh: doRefresh }
+				Achievement { key: "{i}", gameIds: game.getIds(), achievement: achievement.clone(), refresh: doRefresh }
 			}
 		}
 	});
