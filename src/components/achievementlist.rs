@@ -26,11 +26,19 @@ pub fn AchievementList(cx: Scope, class: Option<String>, game: Game, refresh: Op
 		{
 			if let Some(bd) = b.platforms.iter().find(|d| d.platform == ad.platform)
 			{
-				response = bd.timestamp.partial_cmp(&ad.timestamp).unwrap();
-				if response == Ordering::Equal
+				response = match bd.timestamp
 				{
-					response = ad.name.partial_cmp(&bd.name).unwrap();
-				}
+					Some(_) => match ad.timestamp
+					{
+						Some(_) => ad.name.partial_cmp(&bd.name).unwrap(),
+						None => Ordering::Greater,
+					},
+					None => match ad.timestamp
+					{
+						Some(_) => Ordering::Less,
+						None => ad.name.partial_cmp(&bd.name).unwrap(),
+					}
+				};
 			}
 		}
 		response
