@@ -103,7 +103,6 @@ impl Api
 		{
 			let group = join!(Path_Games, appId);
 			let filename = jpg!(achievement.name);
-			let filenameAlt = jpgAlt!(achievement.name, Self::Icon_Locked);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
 			{
 				if force || !Path::new(&path).exists()
@@ -116,6 +115,7 @@ impl Api
 				}
 			}
 			
+			let filenameAlt = jpgAlt!(achievement.name, Self::Icon_Locked);
 			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
 			{
 				if force || !Path::new(&path).exists()
