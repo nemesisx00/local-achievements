@@ -22,7 +22,7 @@ pub fn App(cx: Scope) -> Element
 	
 	let id = use_state(cx, || steam.read().auth.id.clone());
 	let apiKey = use_state(cx, || steam.read().auth.key.clone());
-	let steamRefresh = use_state(cx, || false);
+	let internalRefresh = use_state(cx, || false);
 	
 	let avatar = match getImagePath(SteamApi::Platform.into(), Path_Avatars.into(), format!("{}_full.jpg", userData.read().steam.id))
 	{
@@ -106,7 +106,7 @@ pub fn App(cx: Scope) -> Element
 				{
 					onclick: move |_| cx.spawn(
 					{
-						to_owned![steam, userData, steamRefresh];
+						to_owned![steam, userData, internalRefresh];
 						async move {
 							if let Ok(payload) = steam.read().getPlayerSummaries().await
 							{
@@ -129,7 +129,7 @@ pub fn App(cx: Scope) -> Element
 										{
 											Ok(_) => {
 												println!("Avatars cached");
-												steamRefresh.set(!steamRefresh.get());
+												internalRefresh.set(!internalRefresh.get());
 											},
 											Err(e) => println!("Error caching avatars: {:?}", e),
 										}
@@ -148,7 +148,7 @@ pub fn App(cx: Scope) -> Element
 				{
 					onclick: move |_| cx.spawn(
 					{
-						to_owned![steam, userData, steamRefresh];
+						to_owned![steam, userData, internalRefresh];
 						async move {
 							if let Ok(payload) = steam.read().getOwnedGames().await
 							{
@@ -166,7 +166,7 @@ pub fn App(cx: Scope) -> Element
 									}
 								}
 								
-								steamRefresh.set(!steamRefresh.get());
+								internalRefresh.set(!internalRefresh.get());
 							}
 						}
 					}),
@@ -211,7 +211,7 @@ pub fn App(cx: Scope) -> Element
 				}
 			}
 			
-			GameList { refresh: steamRefresh.get().to_owned() }
+			GameList { refresh: internalRefresh.get().to_owned() }
 		}
 	});
 }
