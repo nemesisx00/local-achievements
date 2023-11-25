@@ -65,46 +65,52 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			}
 			
 			(id > 0).then(|| rsx!{
-				button
+				div
 				{
-					onclick: move |_| cx.spawn(
+					button
 					{
-						to_owned![id, steam, internalRefresh, userData];
-						async move {
-							if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
-							{
-								userData.write().processSteamAchievements(id, payload.getAchievements().to_owned());
-								
-								if let Some(achievements) = payload.game.availableGameStats.achievements
+						onclick: move |_| cx.spawn(
+						{
+							to_owned![id, steam, internalRefresh, userData];
+							async move {
+								if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
 								{
-									match steam.read().cacheAchievementIcons(id, achievements.to_owned(), false).await
+									userData.write().processSteamAchievements(id, payload.getAchievements().to_owned());
+									
+									if let Some(achievements) = payload.game.availableGameStats.achievements
 									{
-										Ok(_) => {
-											println!("Achievement icons cached");
-											internalRefresh.set(!internalRefresh.get());
-										},
-										Err(e) => println!("Error caching achievement icons: {:?}", e),
+										match steam.read().cacheAchievementIcons(id, achievements.to_owned(), false).await
+										{
+											Ok(_) => {
+												println!("Achievement icons cached");
+												internalRefresh.set(!internalRefresh.get());
+											},
+											Err(e) => println!("Error caching achievement icons: {:?}", e),
+										}
 									}
 								}
 							}
-						}
-					}),
-					"Get Steam Achievements Schema"
+						}),
+						"Get Steam Achievements Schema"
+					}
 				}
 				
-				button
+				div
 				{
-					onclick: move |_| cx.spawn(
+					button
 					{
-						to_owned![steam, id];
-						async move {
-							if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
-							{
-								println!("{:?}", payload);
+						onclick: move |_| cx.spawn(
+						{
+							to_owned![steam, id];
+							async move {
+								if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
+								{
+									println!("{:?}", payload);
+								}
 							}
-						}
-					}),
-					"Get Steam Achievements"
+						}),
+						"Get Steam Achievements"
+					}
 				}
 			})
 			
