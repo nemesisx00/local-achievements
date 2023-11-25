@@ -1,8 +1,11 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
+use std::path::Path;
 use ::dioxus::prelude::*;
+use crate::{join, jpg};
 use crate::data::PlatformInfo;
+use crate::io::{Path_Games, getImagePath};
 use crate::platforms::Platform;
 
 /**
@@ -18,7 +21,7 @@ platform | (Optional) Restrict the displayed information to this platform.
 refresh | (Optional) Force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn PlatformData(cx: Scope, info: PlatformInfo, refresh: Option<bool>) -> Element
+pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Option<bool>) -> Element
 {
 	let name = info.name.to_owned();
 	let description = info.description.to_owned();
@@ -29,8 +32,16 @@ pub fn PlatformData(cx: Scope, info: PlatformInfo, refresh: Option<bool>) -> Ele
 		None => String::default(),
 	};
 	let platform = Platform::nameOf(info.platform);
+	let group = join!(Path_Games, gameId);
+	
+	let iconPath = match getImagePath(platform.to_owned(), group.to_owned(), jpg!(info.id))
+	{
+		Some(path) => path,
+		None => String::default(),
+	};
 	
 	let doRefresh = refresh.is_some_and(|switch| switch == true);
+	let iconExists = !iconPath.is_empty() && Path::new(&iconPath).exists();
 	
 	return cx.render(rsx!
 	{
@@ -44,7 +55,7 @@ pub fn PlatformData(cx: Scope, info: PlatformInfo, refresh: Option<bool>) -> Ele
 			{
 				class: "icon",
 				
-				img { alt: "Icon" }
+				iconExists.then(|| rsx!(img { alt: "Icon", src: "/{iconPath}" }))
 			}
 			div
 			{
