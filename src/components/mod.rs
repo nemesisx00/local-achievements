@@ -7,5 +7,6 @@ mod app;
 mod game;
 mod gamelist;
 mod platformdata;
+mod steamdev;
 
 pub use app::App;
