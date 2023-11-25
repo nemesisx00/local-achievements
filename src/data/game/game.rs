@@ -62,6 +62,23 @@ impl Game
 		return instance;
 	}
 	
+	pub fn getIds(&self) -> HashMap<Platform, String>
+	{
+		let mut ids = HashMap::new();
+		
+		if let Some(retro) = &self.retroAchievements
+		{
+			ids.insert(Platform::RetroAchievements, retro.id.to_owned());
+		}
+		
+		if let Some(steam) = &self.steam
+		{
+			ids.insert(Platform::Steam, steam.id.to_string());
+		}
+		
+		return ids;
+	}
+	
 	/**
 	Add a game to this game's list of duplicates.
 	
@@ -212,8 +229,6 @@ mod tests
 				description: String::default(),
 				globalPercentage: None,
 				id: String::default(),
-				icon: None,
-				iconLocked: None,
 				mode: mode,
 				name: name.to_string(),
 				platform: platform,
