@@ -71,7 +71,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 					{
 						onclick: move |_| cx.spawn(
 						{
-							to_owned![id, steam, internalRefresh, userData];
+							to_owned![id, internalRefresh, steam, userData];
 							async move {
 								if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
 								{
@@ -100,11 +100,13 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 					{
 						onclick: move |_| cx.spawn(
 						{
-							to_owned![steam, id];
+							to_owned![id, internalRefresh, steam, userData];
 							async move {
 								if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
 								{
 									println!("{:?}", payload);
+									userData.write().processSteamAchievements(id, payload.playerstats.achievements);
+									internalRefresh.set(!internalRefresh.get());
 								}
 							}
 						}),
