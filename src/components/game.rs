@@ -28,6 +28,8 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	let userData = use_atom_ref(cx, &UserData);
 	let steam = use_atom_ref(cx, &Steam);
 	
+	let internalRefresh = use_state(cx, || false);
+	
 	let id = match &game.steam
 	{
 		Some(info) => info.id,
@@ -67,11 +69,23 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 				{
 					onclick: move |_| cx.spawn(
 					{
-						to_owned![steam, userData, id];
+						to_owned![id, steam, internalRefresh, userData];
 						async move {
 							if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
 							{
 								userData.write().processSteamAchievements(id, payload.getAchievements().to_owned());
+								
+								if let Some(achievements) = payload.game.availableGameStats.achievements
+								{
+									match steam.read().cacheAchievementIcons(id, achievements.to_owned(), false).await
+									{
+										Ok(_) => {
+											println!("Achievement icons cached");
+											internalRefresh.set(!internalRefresh.get());
+										},
+										Err(e) => println!("Error caching achievement icons: {:?}", e),
+									}
+								}
 							}
 						}
 					}),
@@ -95,7 +109,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			})
 			
 			hasAchievements.then(|| rsx!{
-				AchievementList { game: game.clone(), refresh: doRefresh }
+				AchievementList { game: game.clone(), refresh: *internalRefresh.get() }
 			})
 		}
 	});
