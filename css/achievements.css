@@ -4,17 +4,19 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-evenly;
+	transform: scaleY(1);
+	transform-origin: top left;
+	transition: transform .5s ease-in-out;
 	width: 100%;
+	position: relative;
 }
 
 .achievementList.hidden
 {
-	position: absolute;
-	left: -100vw;
-	bottom: -100vh;
-	height: 0;
-	opacity: 0;
-	visibility: hidden;
+	border: 0;
+	overflow: hidden;
+	transform: scaleY(0);
+	transition: transform .5s ease-in-out;
 }
 
 .achievementList .achievement
@@ -25,7 +27,16 @@
 	flex-direction: column;
 	padding: 1rem;
 	margin: .25rem 0;
+	transition: translate .5s ease-in-out;
+	translate: 0;
 	width: 100%;
+}
+
+.achievementList.hidden .achievement
+{
+	overflow: hidden;
+	transition: translate .5s ease-in-out;
+	translate: 0 -100%;
 }
 
 .achievementList .achievement .platform
