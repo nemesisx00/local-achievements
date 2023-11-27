@@ -2,11 +2,9 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 mod achievement;
-mod achievementlist;
-mod app;
 mod game;
-mod gamelist;
-mod platformdata;
-mod steamdev;
+mod user;
 
-pub use app::App;
+pub use achievement::{Achievement, Mode, PlatformInfo};
+pub use game::{Game, SteamInfo};
+pub use user::User;

@@ -1,0 +1,51 @@
+.navbar
+{
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	margin: 1rem 0;
+	user-select: none;
+}
+
+.navbar > *
+{
+	--dimensionValue: 3rem;
+	
+	animation-name: "backgroundPulse";
+	animation-direction: alternate;
+	animation-duration: 2.5s;
+	animation-timing-function: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+	animation-iteration-count: infinite;
+	background: radial-gradient(var(--backgroundGradient2) 0%, var(--backgroundGradient1) 100%);
+	background: radial-gradient(var(--backgroundGradient3) 0%, var(--backgroundGradient1) 75%);
+	border: .1rem solid var(--borderColor);
+	border-radius: var(--borderRadius);
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 1.5rem;
+	height: var(--dimensionValue);
+	line-height: var(--dimensionValue);
+	margin: 0 .5rem;
+	text-align: center;
+	transition: scale .1s ease;
+	width: calc(var(--dimensionValue) + 4rem);
+}
+
+.navbar > *:hover
+{
+	scale: calc(110%);
+	transition: scale .1s ease;
+}
+
+.navbar > *:active
+{
+	scale: calc(95%);
+	transition: scale .1s ease;
+}
+
+.navbar .steam
+{
+	color: var(--steamOrange);
+	border-color: var(--steamOrangeDark);
+}

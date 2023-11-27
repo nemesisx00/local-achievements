@@ -1,6 +1,8 @@
 .vs
 .vscode
 debug/
+dist/
 target/
 **/*.rs.bk
 *.pdb
+static/app.css

@@ -1,0 +1,79 @@
+.achievementList
+{
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	transform: scaleY(1);
+	transform-origin: top left;
+	transition: transform .5s ease-in-out;
+	width: 100%;
+	position: relative;
+}
+
+.achievementList.hidden
+{
+	border: 0;
+	overflow: hidden;
+	transform: scaleY(0);
+	transition: transform .5s ease-in-out;
+}
+
+.achievementList .achievement
+{
+	border: 1px solid var(--borderColor);
+	border-radius: var(--borderRadius);
+	display: flex;
+	flex-direction: column;
+	padding: 1rem;
+	margin: .25rem 0;
+	transition: translate .5s ease-in-out;
+	translate: 0;
+	width: 100%;
+}
+
+.achievementList.hidden .achievement
+{
+	overflow: hidden;
+	transition: translate .5s ease-in-out;
+	translate: 0 -100%;
+}
+
+.achievementList .achievement .platform
+{
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	flex-grow: 1;
+}
+
+.achievementList .achievement .platform .icon
+{
+	flex-shrink: 1;
+	margin-right: 1rem;
+	min-width: 10%;
+}
+
+.achievementList .achievement .platform .data
+{
+	align-items: flex-start;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	flex-grow: 1;
+}
+
+.achievementList .achievement .platform .data .row
+{
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+}
+.achievementList .achievement .platform .data .row * { flex-grow: 1; }
+
+.achievementList .achievement .platform .data .row .right
+{
+	min-width: 12.5rem;
+	text-align: right;
+}
