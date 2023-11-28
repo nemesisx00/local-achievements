@@ -256,19 +256,19 @@ impl Api
 	gameid | AppID of the game you want the news of.
 	format | Output format. json (default), xml or vdf.
 	*/
-	pub async fn getGlobalPercentages(&self, gameId: usize) -> Result<GetGlobalPercentagesPayload>
+	pub async fn getGlobalPercentages(&self, appId: usize) -> Result<GetGlobalPercentagesPayload>
 	{
 		if self.auth.validate()
 		{
 			let mut parameters = self.generateParameterMap();
 			parameters.remove(Self::Parameter_Key);
 			parameters.remove(Self::Parameter_SteamId);
-			parameters.insert(Self::Parameter_GameId.into(), gameId.to_string());
+			parameters.insert(Self::Parameter_GameId.into(), appId.to_string());
 			
 			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetGlobalAchievementPercentagesForApp)
 			{
 				let response = self.get::<GetGlobalPercentagesPayload>(url, parameters).await
-					.context(format!("Error retrieving list of global percentages from Steam Web API for Game ID {}", gameId))?;
+					.context(format!("Error retrieving list of global percentages from Steam Web API for Game ID {}", appId))?;
 				
 				return Ok(response);
 			}
