@@ -2,8 +2,6 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
 use ::dioxus::prelude::*;
-use ::fermi::use_atom_ref;
-use crate::state::UserData;
 use super::game::Game;
 
 /**
@@ -16,15 +14,9 @@ Property | Description
 refresh | An optional boolean property used to force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
+pub fn GameList(cx: Scope, games: Vec<crate::data::Game>) -> Element
 {
-	let userData = use_atom_ref(cx, &UserData);
 	let searchTerm = use_state(cx, || String::default());
-	
-	let mut games = userData.read().games.clone();
-	games.sort_by(|a, b| a.partial_cmp(b).unwrap());
-	
-	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
 	return cx.render(rsx!
 	{
@@ -32,7 +24,6 @@ pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
 		{
 			class: "gameList",
 			id: "steamGameList",
-			"refresh": doRefresh,
 			
 			div
 			{
@@ -53,7 +44,7 @@ pub fn GameList(cx: Scope, refresh: Option<bool>) -> Element
 				.filter(|g| g.name.to_lowercase().contains(&searchTerm.get().to_owned().to_lowercase()))
 				.enumerate()
 			{
-				Game { key: "{i}", game: game.clone(), refresh: doRefresh }
+				Game { key: "{i}", game: game.clone() }
 			}
 		}
 	});

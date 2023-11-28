@@ -3,10 +3,11 @@
 
 use std::path::Path;
 use ::dioxus::prelude::*;
-use ::fermi::use_atom_ref;
+use crate::{receiver, transmit, userData};
+use crate::background::{ApiCommand, CommandResponse, Internal};
+use crate::hooks::useOnce;
 use crate::io::{Path_Avatars, getImagePath};
-use crate::platforms::steam::SteamApi;
-use crate::state::{UserData, RetroAchievements, Steam};
+use crate::platforms::steam::{SteamApi, SteamAuth};
 use super::gamelist::GameList;
 use super::steamdev::SteamDev;
 
@@ -15,23 +16,35 @@ The root component of the application.
 */
 pub fn App(cx: Scope) -> Element
 {
-	fermi::use_init_atom_root(cx);
-	
-	let userData = use_atom_ref(cx, &UserData);
-	let _retroA = use_atom_ref(cx, &RetroAchievements);
-	let steam = use_atom_ref(cx, &Steam);
-	
-	let id = use_state(cx, || steam.read().auth.id.clone());
-	let apiKey = use_state(cx, || steam.read().auth.key.clone());
 	let internalRefresh = use_state(cx, || false);
-	
+	let steamAuth = use_state(cx, || SteamAuth::default());
 	let steamActive = use_state(cx, || true);
 	let settingsActive = use_state(cx, || false);
 	
-	use_shared_state_provider(cx, || false);
-	let devRefresh = use_shared_state::<bool>(cx).unwrap();
+	useOnce(cx, || {
+		to_owned![internalRefresh, steamAuth];
+		cx.spawn(async move {
+			startListeningToReceiver(&internalRefresh, &steamAuth).await;
+		});
+	});
 	
-	let avatar = match getImagePath(SteamApi::Platform.into(), Path_Avatars.into(), format!("{}_full.jpg", userData.read().steam.id))
+	//Fetch the SteamAuth from the Dispatcher
+	useOnce(cx, || transmit(ApiCommand::Metadata(Internal::GetSteamAuth)));
+	
+	let childRefresh = *internalRefresh.get();
+	if childRefresh
+	{
+		internalRefresh.set(false);
+		cx.needs_update();
+	}
+	
+	let steamId = match userData().lock()
+	{
+		Ok(user) => user.steam.id.to_owned(),
+		Err(_) => String::default(),
+	};
+	
+	let avatar = match getImagePath(SteamApi::Platform.into(), Path_Avatars.into(), format!("{}_full.jpg", steamId))
 	{
 		Some(path) => path,
 		None => String::new(),
@@ -50,6 +63,13 @@ pub fn App(cx: Scope) -> Element
 		true => "active",
 		false => "inactive",
 	};
+	
+	let mut games = match userData().lock()
+	{
+		Ok(user) => user.games.clone(),
+		Err(_) => vec![],
+	};
+	games.sort_by(|a, b| a.partial_cmp(b).unwrap());
 	
 	return cx.render(rsx!
 	{
@@ -99,7 +119,7 @@ pub fn App(cx: Scope) -> Element
 					}
 				}
 				
-				GameList { refresh: *devRefresh.read() || *internalRefresh.get() }
+				GameList { games: games.to_owned() }
 			}
 			
 			section
@@ -118,24 +138,52 @@ pub fn App(cx: Scope) -> Element
 					div
 					{
 						label { r#for: "authId", "Steam ID:" }
-						input { name: "authId", r#type: "text", value: "{id}", onchange: move |e| id.set(e.value.clone()) }
+						input
+						{
+							name: "authId",
+							r#type: "text",
+							value: "{steamAuth.id}",
+							onchange: move |e| transmit(ApiCommand::Metadata(Internal::UpdateSteamId(e.value.clone()))),
+						}
 					}
 					div
 					{
 						label { r#for: "authApiKey", "API Key:" }
-						input { name: "authApiKey", r#type: "text", value: "{apiKey}", onchange: move |e| apiKey.set(e.value.clone()) }
-					}
-					button
-					{
-						onclick: move |_| {
-							let mut steamRef = steam.write();
-							steamRef.auth.id = id.to_string();
-							steamRef.auth.key = apiKey.to_string();
-						},
-						"Update"
+						input
+						{
+							name: "authApiKey",
+							r#type: "text",
+							value: "{steamAuth.key}",
+							onchange: move |e| transmit(ApiCommand::Metadata(Internal::UpdateSteamApiKey(e.value.clone()))),
+						}
 					}
 				}
 			}
 		}
 	});
+}
+
+/**
+Handle any communication originating from the dispatcher.
+*/
+async fn startListeningToReceiver(internalRefresh: &UseState<bool>, steamAuth: &UseState<SteamAuth>)
+{
+	if let Ok(mut channel) = receiver().lock()
+	{
+		if let Some(rx) = channel.as_mut()
+		{
+			loop
+			{
+				if let Some(response) = rx.recv().await
+				{
+					println!("Response received on the frontend: {:?}", response);
+					match response
+					{
+						CommandResponse::Refresh => internalRefresh.set(true),
+						CommandResponse::SteamAuth(auth) => steamAuth.set(auth.to_owned()),
+					}
+				}
+			}
+		}
+	}
 }
