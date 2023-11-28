@@ -5,16 +5,11 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, ErrorKind};
 use std::path::Path;
 use ::anyhow::{Context, Result};
-use ::fermi::AtomRef;
 use crate::error;
 use crate::data::User;
 use crate::io::{getConfigDir, getDataDir};
-use crate::platforms::retroachievements::{RetroAchievementsApi, RetroAchievementsAuth};
-use crate::platforms::steam::{SteamApi, SteamAuth};
-
-pub static RetroAchievements: AtomRef<RetroAchievementsApi> = AtomRef(|_| match readAuth_RetroAchievements() { Ok(auth) => RetroAchievementsApi::new(auth), Err(_) => RetroAchievementsApi::default() });
-pub static Steam: AtomRef<SteamApi> = AtomRef(|_| match readAuth_Steam() { Ok(auth) => SteamApi::new(auth), Err(_) => SteamApi::default() });
-pub static UserData: AtomRef<User> = AtomRef(|_| match loadUserData() { Ok(user) => user, Err(_) => User::default() });
+use crate::platforms::retroachievements::RetroAchievementsAuth;
+use crate::platforms::steam::SteamAuth;
 
 /**
 
