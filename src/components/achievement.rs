@@ -19,10 +19,8 @@ platform | (Optional) Restrict the displayed information to this platform.
 refresh | (Optional) Force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn Achievement(cx: Scope, gameIds: HashMap<Platform, String>, achievement: Achievement, platform: Option<Platform>, refresh: Option<bool>) -> Element
+pub fn Achievement(cx: Scope, gameIds: HashMap<Platform, String>, achievement: Achievement, platform: Option<Platform>) -> Element
 {
-	let doRefresh = refresh.is_some_and(|switch| switch == true);
-	
 	let mut data = vec![];
 	
 	match platform
@@ -30,14 +28,14 @@ pub fn Achievement(cx: Scope, gameIds: HashMap<Platform, String>, achievement: A
 		Some(pl) => {
 			match achievement.platforms.iter().find(|p| pl == &p.platform)
 			{
-				Some(info) => data.push(rsx!(PlatformData { gameId: gameIds[pl].to_owned(), info: info.to_owned(), refresh: doRefresh })),
+				Some(info) => data.push(rsx!(PlatformData { gameId: gameIds[pl].to_owned(), info: info.to_owned() })),
 				None => data.push(rsx!(div { "No info found" }))
 			}
 		},
 		None => {
 			for info in &achievement.platforms
 			{
-				data.push(rsx!(PlatformData { key: "{info.id.to_owned()}", gameId: gameIds[&info.platform].to_owned(), info: info.to_owned(), refresh: doRefresh }))
+				data.push(rsx!(PlatformData { key: "{info.id.to_owned()}", gameId: gameIds[&info.platform].to_owned(), info: info.to_owned() }))
 			}
 		}
 	}
@@ -47,7 +45,6 @@ pub fn Achievement(cx: Scope, gameIds: HashMap<Platform, String>, achievement: A
 		div
 		{
 			class: "achievement",
-			"refresh": doRefresh,
 			
 			for node in data
 			{

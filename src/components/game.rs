@@ -3,12 +3,11 @@
 
 use std::path::Path;
 use ::dioxus::prelude::*;
-use ::fermi::use_atom_ref;
-use crate::join;
+use crate::{join, transmitMultiple};
+use crate::background::{ApiCommand, SteamEndpoint};
 use crate::data::Game;
 use crate::io::{Path_Games, getImagePath};
 use crate::platforms::steam::SteamApi;
-use crate::state::{Steam, UserData};
 use super::achievementlist::AchievementList;
 
 /**
@@ -23,12 +22,8 @@ first | Is this the first game in the list?
 refresh | An optional boolean property used to force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
+pub fn Game(cx: Scope, game: Game) -> Element
 {
-	let userData = use_atom_ref(cx, &UserData);
-	let steam = use_atom_ref(cx, &Steam);
-	
-	let internalRefresh = use_state(cx, || false);
 	let showAchievements = use_state(cx, || false);
 	
 	let id = match &game.steam
@@ -44,7 +39,6 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 	};
 	
 	let iconExists = !iconPath.is_empty() && Path::new(&iconPath).exists();
-	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	
 	let hasAchievements = !game.achievements.is_empty();
 	let isHidden = match *showAchievements.get()
@@ -58,27 +52,11 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 		
 		if id > 0 && game.achievements.is_empty()
 		{
-			cx.spawn(
-			{
-				to_owned![id, internalRefresh, steam, userData];
-				async move {
-					if let Ok(payload) = steam.read().getSchemaForGame(id, SteamApi::Language_English.into()).await
-					{
-						if let Some(achievements) = payload.game.availableGameStats.achievements
-						{
-							userData.write().processSteamAchievementMetadata(id, achievements.to_owned());
-							let _ = steam.read().cacheAchievementsIcons(id, achievements, false).await;
-							internalRefresh.set(!internalRefresh.get());
-						}
-					}
-					
-					if let Ok(payload) = steam.read().getPlayerAchievements(id, SteamApi::Language_English.into()).await
-					{
-						userData.write().processSteamAchievements(id, payload.playerstats.achievements);
-						internalRefresh.set(!internalRefresh.get());
-					}
-				}
-			})
+			let commands = vec![
+				ApiCommand::Steam(SteamEndpoint::SchemaForGame(id, SteamApi::Language_English.into())),
+				ApiCommand::Steam(SteamEndpoint::PlayerAchievements(id, SteamApi::Language_English.into())),
+			];
+			transmitMultiple(commands);
 		}
 	};
 	
@@ -88,7 +66,6 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 		{
 			class: "game",
 			"appid": "{id}",
-			"refresh": doRefresh,
 			
 			if iconExists
 			{
@@ -111,7 +88,7 @@ pub fn Game(cx: Scope, game: Game, refresh: Option<bool>) -> Element
 			}
 			
 			hasAchievements.then(|| rsx!{
-				AchievementList { class: isHidden, game: game.clone(), refresh: *internalRefresh.get() }
+				AchievementList { class: isHidden, game: game.clone() }
 			})
 		}
 	});

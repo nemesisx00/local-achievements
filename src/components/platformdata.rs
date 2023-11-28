@@ -23,7 +23,7 @@ platform | (Optional) Restrict the displayed information to this platform.
 refresh | (Optional) Force Dioxus to redraw the component.
 */
 #[inline_props]
-pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Option<bool>) -> Element
+pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo) -> Element
 {
 	let name = info.name.to_owned();
 	let description = info.description.to_owned();
@@ -65,7 +65,6 @@ pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Opti
 		None => String::default(),
 	};
 	
-	let doRefresh = refresh.is_some_and(|switch| switch == true);
 	let iconExists = !iconPath.is_empty() && Path::new(&iconPath).exists();
 	
 	return cx.render(rsx!
@@ -74,7 +73,6 @@ pub fn PlatformData(cx: Scope, gameId: String, info: PlatformInfo, refresh: Opti
 		{
 			class: "platform",
 			id: "{id}",
-			"refresh": doRefresh,
 			
 			div
 			{
