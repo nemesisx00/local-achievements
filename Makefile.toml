@@ -1,0 +1,44 @@
+[tasks.both]
+dependencies = [
+	"buildDebug",
+	"buildRelease",
+]
+
+[tasks.buildDebug]
+dependencies = [
+	"debug",
+	"copyDebug",
+]
+
+[tasks.buildRelease]
+dependencies = [
+	"release",
+	"copyRelease",
+]
+
+[tasks.clean]
+cwd = "rust/"
+command = "cargo"
+args = [ "clean" ]
+
+[tasks.debug]
+cwd = "rust/"
+command = "cargo"
+args = [ "build" ]
+
+[tasks.copyDebug]
+script_runner = "@shell"
+script = '''
+cp rust/target/debug/la_lib.dll godot/lib/debug/
+'''
+
+[tasks.release]
+cwd = "rust/"
+command = "cargo"
+args = [ "build", "--release" ]
+
+[tasks.copyRelease]
+script_runner = "@shell"
+script = '''
+cp rust/target/release/la_lib.dll godot/lib/release/
+'''
