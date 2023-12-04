@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://btkxvmnvpm2qa"]
 
-[node name="Game" type="Game"]
+[node name="Game" type="GameNode"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
