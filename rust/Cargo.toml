@@ -19,3 +19,7 @@ serde_json = "~1"
 
 [lib]
 crate-type = ["cdylib"]
+
+[lints.rust]
+non_snake_case = "allow"
+non_upper_case_globals = "allow"
