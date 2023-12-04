@@ -9,15 +9,18 @@ macro_rules! achievementIcon {
 #[macro_export]
 macro_rules! dateFormat {
 	($timestamp:expr) => {
-		match NaiveDateTime::from_timestamp_millis($timestamp as i64)
 		{
-			Some(ndt) => match ndt.and_local_timezone(Local)
+			use ::chrono::{Local, LocalResult, NaiveDateTime};
+			match NaiveDateTime::from_timestamp_millis($timestamp as i64)
 			{
-				LocalResult::Single(dt) => dt.format("%B %d, %Y %l:%M %p")
-					.to_string(),
-				_ => String::default(),
-			},
-			None => String::default(),
+				Some(ndt) => match ndt.and_local_timezone(Local)
+				{
+					LocalResult::Single(dt) => dt.format("%B %d, %Y %l:%M %p")
+						.to_string(),
+					_ => String::default(),
+				},
+				None => String::default(),
+			}
 		}
 	};
 }
