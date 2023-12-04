@@ -2,6 +2,6 @@ mod game;
 mod retroachievements;
 mod steam;
 
-pub use game::{Game, GamePlatform};
-pub use retroachievements::RetroMode;
-pub use steam::{SteamAchievement, SteamInfo};
+pub use game::Game;
+pub use retroachievements::{RetroMode, RetroPlatform};
+pub use steam::{SteamAchievement, SteamInfo, SteamPlatform};

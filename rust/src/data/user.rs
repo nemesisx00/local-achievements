@@ -1,6 +1,6 @@
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::steam::{SteamAchievementData, SteamAchievementMetadata, SteamGame};
-use super::game::{Game, SteamAchievement, SteamInfo, GamePlatform, RetroMode};
+use super::game::{Game, SteamPlatform, RetroMode};
 
 /**
 A single user, containing platform-specific profile information and its combined
@@ -100,7 +100,7 @@ impl User
 			// Game does not exist
 			else
 			{
-				let mut steam = GamePlatform::<SteamInfo, SteamAchievement>::default();
+				let mut steam = SteamPlatform::default();
 				steam.info.update(info);
 				
 				let mut game = Game::default();

@@ -1,5 +1,5 @@
 mod game;
 mod user;
 
-pub use game::{Game, SteamInfo, SteamAchievement};
+pub use game::{Game, SteamInfo, SteamAchievement, SteamPlatform};
 pub use user::User;

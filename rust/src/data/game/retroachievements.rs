@@ -2,6 +2,68 @@ use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 
 /**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct RetroPlatform
+{
+	/// Information specific to the Platform.
+	pub info: RetroAchievementsInfo,
+	/// The list of achievements associated with this game.
+	pub achievements: Vec<RetroAchievement>,
+}
+
+impl RetroPlatform
+{
+	pub fn isGlobalPercentageMissing(&self) -> bool
+	{
+		return self.achievements.iter()
+			.any(|a| a.globalPercentage.is_none());
+	}
+	
+	/**
+	Retrieve either the total accumulated points or the maximum possible points
+	awarded for this game's achievements on RetroAchievements.org.
+	
+	Parameter | Type | Description
+	---|---|---
+	mode | Mode | The mode which determines the amount of points per achievement.
+	maximumPossible | Boolean | Whether (TRUE) or not (FALSE) to take unlock status into consideration when summing the points.
+	*/
+	pub fn points(&self, mode: RetroMode, maximumPossible: bool) -> usize
+	{
+		let mut points = 0;
+		for achievement in &self.achievements
+		{
+			if maximumPossible == true || achievement.mode.is_some_and(|m| m == mode)
+			{
+				if let Some(map) = &achievement.points
+				{
+					if let Some(value) = map.get(&mode)
+					{
+						points += *value;
+					}
+				}
+			}
+		}
+		
+		return points;
+	}
+	
+	pub fn updateGlobalPercentages(&mut self, percentages: HashMap<String, f64>)
+	{
+		for (id, percentage) in percentages
+		{
+			if let Some(achievement) = self.achievements.iter_mut()
+				.find(|a| a.id == id)
+			{
+				achievement.globalPercentage = Some(percentage);
+			}
+		}
+	}
+}
+
+/**
 The mode representing the conditions under which an achievment was unlocked.
 
 *Only used by: RetroAchievements*

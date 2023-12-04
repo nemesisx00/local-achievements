@@ -1,5 +1,65 @@
+use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::steam::{SteamGame, SteamAchievementMetadata, SteamAchievementData};
+
+/**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct SteamPlatform
+{
+	/// Information specific to the Platform.
+	pub info: SteamInfo,
+	/// The list of achievements associated with this game.
+	pub achievements: Vec<SteamAchievement>,
+}
+
+impl SteamPlatform
+{
+	pub fn isGlobalPercentageMissing(&self) -> bool
+	{
+		return self.achievements.iter()
+			.any(|a| a.globalPercentage.is_none());
+	}
+	
+	pub fn updateAchievements(&mut self, achievements: Vec<SteamAchievementData>)
+	{
+		for achievement in achievements
+		{
+			match self.achievements.iter_mut()
+				.find(|a| a.id == achievement.apiname)
+			{
+				Some(chievo) => chievo.update(achievement),
+				None => self.achievements.push(SteamAchievement::from(achievement)),
+			}
+		}
+	}
+	
+	pub fn updateAchievementMetadata(&mut self, achievements: Vec<SteamAchievementMetadata>)
+	{
+		for metadata in achievements
+		{
+			match self.achievements.iter_mut()
+				.find(|a| a.id == metadata.name)
+			{
+				Some(chievo) => chievo.updateMetadata(metadata),
+				None => self.achievements.push(SteamAchievement::from(metadata)),
+			}
+		}
+	}
+	
+	pub fn updateGlobalPercentages(&mut self, percentages: HashMap<String, f64>)
+	{
+		for (id, percentage) in percentages
+		{
+			if let Some(achievement) = self.achievements.iter_mut()
+				.find(|a| a.id == id)
+			{
+				achievement.globalPercentage = Some(percentage);
+			}
+		}
+	}
+}
 
 /**
 
