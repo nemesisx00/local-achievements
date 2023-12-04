@@ -1,19 +1,20 @@
 use ::chrono::{Local, LocalResult, NaiveDateTime};
 use ::godot::bind::{GodotClass, godot_api};
+use godot::engine::{TabContainer, MarginContainer};
 use ::godot::engine::{IVBoxContainer, Label, NodeExt, PackedScene, PackedSceneExt, VBoxContainer, load};
-use godot::log::godot_print;
 use ::godot::obj::Base;
 use ::godot::obj::Gd;
-use crate::achievementIcon;
-use crate::data::{Game, SteamAchievement};
+use crate::{achievementIcon, dateFormat};
+use crate::data::{Game, RetroAchievement, SteamAchievement};
 use crate::io::loadUserData;
 use crate::platforms::Platform;
 use super::achievement::Achievement;
 
 const AchievementScene: &'static str = "res://nodes/Achievement.tscn";
 const GameScene: &'static str = "res://nodes/Game.tscn";
+const TabScene: &'static str = "res://nodes/PlatformTab.tscn";
 
-const PathAchievementsList: &'static str = "%AchievementsList";
+const Tabs: &'static str = "%Tabs";
 
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
@@ -26,7 +27,8 @@ pub struct GameNode
 	appId: u32,
 	
 	game: Game,
-	scene: Gd<PackedScene>,
+	sceneAchievement: Gd<PackedScene>,
+	sceneTab: Gd<PackedScene>,
 }
 
 impl GameNode
@@ -52,36 +54,68 @@ impl GameNode
 	
 	pub fn regenerateNodes(&mut self)
 	{
-		let mut listNode = self.base.get_node(PathAchievementsList.into())
-			.expect(format!("Failed to find VBoxContainer with path '{}'", PathAchievementsList).as_str())
-			.cast::<VBoxContainer>();
+		let mut tabs = self.base.get_node(Tabs.into())
+			.expect(format!("Failed to find the TabContainer with path '{}'", Tabs).as_str())
+			.cast::<TabContainer>();
 		
-		if listNode.get_child_count() > 0
+		if tabs.get_child_count() > 0
 		{
-			for i in (0..listNode.get_child_count()).rev()
+			for i in (0..tabs.get_child_count()).rev()
 			{
-				if let Some(c) = listNode.get_child(i).as_mut()
+				if let Some(c) = tabs.get_child(i).as_mut()
 				{
 					c.queue_free();
 				}
 			}
 		}
 		
-		if self.scene.can_instantiate()
+		if self.sceneAchievement.can_instantiate()
 		{
+			if let Some(retro) = &self.game.retroAchievements
+			{
+				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				tab.set_name(Platform::nameOf(Platform::Steam).into());
+				
+				if let Some(middle) = tab.get_child(0)
+				{
+					if let Some(node) = middle.get_child(0)
+					{
+						let mut listNode = node.cast::<VBoxContainer>();
+						for achievement in retro.achievements.clone().iter()
+						{
+							self.generateAchievementNode_Retro(achievement, &mut listNode);
+						}
+					}
+				}
+				
+				tabs.add_child(tab.clone().upcast());
+			}
+			
 			if let Some(steam) = &self.game.steam
 			{
-				for achievement in steam.achievements.clone().iter()
+				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				tab.set_name(Platform::nameOf(Platform::Steam).into());
+				
+				if let Some(middle) = tab.get_child(0)
 				{
-					self.generateAchievementNode(achievement, &mut listNode);
+					if let Some(node) = middle.get_child(0)
+					{
+						let mut listNode = node.cast::<VBoxContainer>();
+						for achievement in steam.achievements.clone().iter()
+						{
+							self.generateAchievementNode_Steam(achievement, &mut listNode);
+						}
+					}
 				}
+				
+				tabs.add_child(tab.clone().upcast());
 			}
 		}
 	}
 	
-	fn generateAchievementNode(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>)
+	fn generateAchievementNode_Retro(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>)
 	{
-		let mut node = self.scene.instantiate_as::<Achievement>();
+		let mut node = self.sceneAchievement.instantiate_as::<Achievement>();
 		let globalPercentage = match achievement.globalPercentage
 		{
 			Some(gp) => gp,
@@ -90,18 +124,34 @@ impl GameNode
 		
 		let unlockTime = match achievement.timestamp
 		{
-			Some(ts) => {
-				match NaiveDateTime::from_timestamp_millis(ts as i64)
-				{
-					Some(ndt) => match ndt.and_local_timezone(Local)
-					{
-						LocalResult::Single(dt) => dt.format("%B %d, %Y %l:%M %p")
-							.to_string(),
-						_ => String::default(),
-					},
-					None => String::default(),
-				}
-			},
+			Some(ts) => dateFormat!(ts),
+			None => String::default(),
+		};
+		
+		node.bind_mut()
+			.updateData(
+				achievement.description.to_owned().into(),
+				achievementIcon!(Platform::nameOf(Platform::Steam).to_lowercase(), self.appId, achievement.id).into(),
+				achievement.name.to_owned().into(),
+				globalPercentage,
+				unlockTime.into()
+			);
+		
+		listNode.add_child(node.clone().upcast());
+	}
+	
+	fn generateAchievementNode_Steam(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>)
+	{
+		let mut node = self.sceneAchievement.instantiate_as::<Achievement>();
+		let globalPercentage = match achievement.globalPercentage
+		{
+			Some(gp) => gp,
+			None => -1.0,
+		};
+		
+		let unlockTime = match achievement.timestamp
+		{
+			Some(ts) => dateFormat!(ts),
 			None => String::default(),
 		};
 		
@@ -128,13 +178,16 @@ impl IVBoxContainer for GameNode
 			base,
 			game: Game::default(),
 			appId: 0,
-			scene: PackedScene::new(),
+			sceneAchievement: PackedScene::new(),
+			sceneTab: PackedScene::new(),
 		};
 	}
 	
 	fn ready(&mut self)
 	{
-		self.scene = load::<PackedScene>(AchievementScene);
+		self.sceneAchievement = load::<PackedScene>(AchievementScene);
+		self.sceneTab = load::<PackedScene>(TabScene);
+		
 		self.refreshAchievements();
 	}
 }
