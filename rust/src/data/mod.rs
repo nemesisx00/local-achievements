@@ -1,7 +1,5 @@
-mod achievement;
 mod game;
 mod user;
 
-pub use achievement::{Achievement, Mode, PlatformInfo};
-pub use game::{Game, SteamInfo};
+pub use game::{Game, SteamInfo, SteamAchievement};
 pub use user::User;

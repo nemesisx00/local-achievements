@@ -1,6 +1,5 @@
 use ::serde::{Deserialize, Serialize};
-use crate::data::{Achievement, PlatformInfo};
-use crate::platforms::Platform;
+use crate::data::SteamAchievement;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameAchievement
@@ -40,23 +39,14 @@ pub struct GetSchemaForGamePayload
 
 impl GetSchemaForGamePayload
 {
-	pub fn getAchievements(&self) -> Vec<Achievement>
+	pub fn getAchievements(&self) -> Vec<SteamAchievement>
 	{
 		let mut achievements = vec![];
 		if let Some(a) = &self.game.availableGameStats.achievements
 		{
 			for ga in a
 			{
-				let description = match ga.description.to_owned()
-				{
-					Some(d) => d,
-					None => String::default(),
-				};
-				
-				let pi = PlatformInfo::new(ga.name.to_owned(), ga.displayName.to_owned(), description, Platform::Steam);
-				let mut achievement = Achievement::default();
-				achievement.platforms.push(pi);
-				
+				let achievement = SteamAchievement::from(ga.to_owned());
 				achievements.push(achievement);
 			}
 		}

@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::Platform;
-use crate::platforms::steam::{SteamAchievement, SteamAchievementMetadata, SteamGame};
-use super::super::achievement::{Achievement, Mode};
-use super::retroachievements::RetroAchievementsInfo;
-use super::steam::SteamInfo;
+use crate::platforms::steam::{SteamAchievementData, SteamAchievementMetadata};
+use super::retroachievements::{RetroAchievement, RetroAchievementsInfo, RetroMode};
+use super::steam::{SteamInfo, SteamAchievement};
 
 /**
 A single game, containing all of its achievements.
@@ -12,9 +11,6 @@ A single game, containing all of its achievements.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Game
 {
-	/// The list of achievements associated with this game.
-	pub achievements: Vec<Achievement>,
-	
 	/**
 	Alternate or duplicate versions of this game which have their own distinct
 	lists of achievements.
@@ -34,10 +30,10 @@ pub struct Game
 	pub name: String,
 	
 	/// Information specific to RetroAchievements.org
-	pub retroAchievements: Option<RetroAchievementsInfo>,
+	pub retroAchievements: Option<GamePlatform<RetroAchievementsInfo, RetroAchievement>>,
 	
 	/// Information specific to Steam
-	pub steam: Option<SteamInfo>,
+	pub steam: Option<GamePlatform<SteamInfo, SteamAchievement>>,
 }
 
 // Simple ordering based solely on the game's name.
@@ -52,25 +48,18 @@ impl PartialOrd for Game
 
 impl Game
 {
-	pub fn new(info: SteamGame) -> Self
-	{
-		let mut instance = Self::default();
-		instance.setSteamInfo(info);
-		return instance;
-	}
-	
 	pub fn getIds(&self) -> HashMap<Platform, String>
 	{
 		let mut ids = HashMap::new();
 		
 		if let Some(retro) = &self.retroAchievements
 		{
-			ids.insert(Platform::RetroAchievements, retro.id.to_owned());
+			ids.insert(Platform::RetroAchievements, retro.info.id.to_owned());
 		}
 		
 		if let Some(steam) = &self.steam
 		{
-			ids.insert(Platform::Steam, steam.id.to_string());
+			ids.insert(Platform::Steam, steam.info.id.to_string());
 		}
 		
 		return ids;
@@ -119,15 +108,26 @@ impl Game
 			}
 		}
 	}
-	
-	/**
-	Check if any of this game's achievements are missing a global percentage
-	value for a given platform.
-	*/
-	pub fn isGlobalPercentageMissing(&self, platform: Platform) -> bool
+}
+
+/**
+
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GamePlatform<I, A>
+{
+	/// Information specific to the Platform.
+	pub info: I,
+	/// The list of achievements associated with this game.
+	pub achievements: Vec<A>,
+}
+
+impl GamePlatform<RetroAchievementsInfo, RetroAchievement>
+{
+	pub fn isGlobalPercentageMissing(&self) -> bool
 	{
 		return self.achievements.iter()
-			.any(|a| !a.hasGlobalPercentage(platform));
+			.any(|a| a.globalPercentage.is_none());
 	}
 	
 	/**
@@ -139,21 +139,18 @@ impl Game
 	maximumPossible | Boolean | Whether (TRUE) or not (FALSE) to take unlock status into consideration when summing the points.
 	mode | Mode | The mode which determines the amount of points per achievement.
 	*/
-	pub fn retroPoints(&self, mode: Mode, maximumPossible: bool) -> usize
+	pub fn points(&self, mode: RetroMode, maximumPossible: bool) -> usize
 	{
 		let mut points = 0;
 		for achievement in &self.achievements
 		{
-			if let Some(info) = achievement.platforms.iter().find(|a| a.platform == Platform::RetroAchievements)
+			if maximumPossible == true || achievement.mode.is_some_and(|m| m == mode)
 			{
-				if maximumPossible == true || info.mode.is_some_and(|m| m == mode)
+				if let Some(map) = &achievement.points
 				{
-					if let Some(map) = &info.points
+					if let Some(value) = map.get(&mode)
 					{
-						if let Some(value) = map.get(&mode)
-						{
-							points += *value;
-						}
+						points += *value;
 					}
 				}
 			}
@@ -162,58 +159,61 @@ impl Game
 		return points;
 	}
 	
-	/**
-	Create or update this game's SteamInfo based on the information returned
-	from the Steam Web API.
-	*/
-	pub fn setSteamInfo(&mut self, info: SteamGame)
-	{
-		self.name = info.name.to_owned();
-		match self.steam.as_mut()
-		{
-			Some(steam) => steam.update(info),
-			None => self.steam = Some(SteamInfo::new(info)),
-		}
-	}
-	
-	pub fn updateGlobalPercentages(&mut self, platform: Platform, percentages: HashMap<String, f64>)
+	pub fn updateGlobalPercentages(&mut self, percentages: HashMap<String, f64>)
 	{
 		for (id, percentage) in percentages
 		{
 			if let Some(achievement) = self.achievements.iter_mut()
-				.find(|a| match a.platforms.iter().find(|pi| pi.platform == platform)
-				{
-					Some(pi) => pi.id == id,
-					None => false,
-				})
+				.find(|a| a.id == id)
 			{
-				achievement.updateGlobalPercentage(platform, percentage);
+				achievement.globalPercentage = Some(percentage);
 			}
 		}
 	}
+}
+
+impl GamePlatform<SteamInfo, SteamAchievement>
+{
+	pub fn isGlobalPercentageMissing(&self) -> bool
+	{
+		return self.achievements.iter()
+			.any(|a| a.globalPercentage.is_none());
+	}
 	
-	pub fn updateAchievementsSteam(&mut self, achievements: Vec<SteamAchievement>)
+	pub fn updateAchievements(&mut self, achievements: Vec<SteamAchievementData>)
 	{
 		for achievement in achievements
 		{
 			match self.achievements.iter_mut()
-				.find(|a| a.platforms.iter().find(|p| p.id == achievement.apiname).is_some())
+				.find(|a| a.id == achievement.apiname)
 			{
-				Some(chievo) => chievo.updateSteam(achievement),
-				None => self.achievements.push(Achievement::from(achievement)),
+				Some(chievo) => chievo.update(achievement),
+				None => self.achievements.push(SteamAchievement::from(achievement)),
 			}
 		}
 	}
 	
-	pub fn updateAchievementMetadataSteam(&mut self, achievements: Vec<SteamAchievementMetadata>)
+	pub fn updateAchievementMetadata(&mut self, achievements: Vec<SteamAchievementMetadata>)
 	{
 		for metadata in achievements
 		{
 			match self.achievements.iter_mut()
-				.find(|a| a.platforms.iter().find(|p| p.id == metadata.name).is_some())
+				.find(|a| a.id == metadata.name)
 			{
-				Some(chievo) => chievo.updateSteamMetadata(metadata),
-				None => self.achievements.push(Achievement::from(metadata)),
+				Some(chievo) => chievo.updateMetadata(metadata),
+				None => self.achievements.push(SteamAchievement::from(metadata)),
+			}
+		}
+	}
+	
+	pub fn updateGlobalPercentages(&mut self, percentages: HashMap<String, f64>)
+	{
+		for (id, percentage) in percentages
+		{
+			if let Some(achievement) = self.achievements.iter_mut()
+				.find(|a| a.id == id)
+			{
+				achievement.globalPercentage = Some(percentage);
 			}
 		}
 	}
@@ -224,30 +224,27 @@ mod tests
 {
     use super::*;
 	use std::collections::HashMap;
-	use crate::data::PlatformInfo;
-	use crate::data::achievement::Mode;
 	
-	fn setupAchievement(name: &str, platform: Platform, hcPoints: usize, scPoints: usize, mode: Option<Mode>) -> Achievement
+	fn setupRetroAchievement(name: &str, hcPoints: usize, scPoints: usize, mode: Option<RetroMode>) -> RetroAchievement
 	{
 		let mut points = HashMap::new();
-		points.insert(Mode::Hardcore, hcPoints);
-		points.insert(Mode::Softcore, scPoints);
+		points.insert(RetroMode::Hardcore, hcPoints);
+		points.insert(RetroMode::Softcore, scPoints);
 		
-		let achievement = Achievement::new(PlatformInfo
+		let achievement = RetroAchievement
+		{
+			description: String::default(),
+			globalPercentage: None,
+			id: String::default(),
+			mode: mode,
+			name: name.to_string(),
+			points: Some(points),
+			timestamp: match mode
 			{
-				description: String::default(),
-				globalPercentage: None,
-				id: String::default(),
-				mode: mode,
-				name: name.to_string(),
-				platform: platform,
-				points: Some(points),
-				timestamp: match mode
-				{
-					Some(_) => Some(1),
-					None => None,
-				}
-			});
+				Some(_) => Some(1),
+				None => None,
+			}
+		};
 		
 		return achievement;
 	}
@@ -255,36 +252,36 @@ mod tests
     #[test]
     fn RetroPoints()
 	{
-		let mut instance = Game::default();
-		instance.achievements.push(setupAchievement("A1", Platform::RetroAchievements, 10, 5, Some(Mode::Softcore)));
-		instance.achievements.push(setupAchievement("A2", Platform::RetroAchievements, 20, 10, Some(Mode::Hardcore)));
-		instance.achievements.push(setupAchievement("A3", Platform::RetroAchievements, 15, 25, None));
+		let mut instance = GamePlatform::<RetroAchievementsInfo, RetroAchievement>::default();
+		instance.achievements.push(setupRetroAchievement("A1", 10, 5, Some(RetroMode::Softcore)));
+		instance.achievements.push(setupRetroAchievement("A2", 20, 10, Some(RetroMode::Hardcore)));
+		instance.achievements.push(setupRetroAchievement("A3", 15, 25, None));
 		
 		let hcExpected = 20;
-		let hcResult = instance.retroPoints(Mode::Hardcore, false);
+		let hcResult = instance.points(RetroMode::Hardcore, false);
 		assert_eq!(hcExpected, hcResult);
 		
 		let hcTotalExpected = 45;
-		let hcTotalResult = instance.retroPoints(Mode::Hardcore, true);
+		let hcTotalResult = instance.points(RetroMode::Hardcore, true);
 		assert_eq!(hcTotalExpected, hcTotalResult);
 		
 		let scExpected = 5;
-		let scResult = instance.retroPoints(Mode::Softcore, false);
+		let scResult = instance.points(RetroMode::Softcore, false);
 		assert_eq!(scExpected, scResult);
 		
 		let scTotalExpected = 40;
-		let scTotalResult = instance.retroPoints(Mode::Softcore, true);
+		let scTotalResult = instance.points(RetroMode::Softcore, true);
 		assert_eq!(scTotalExpected, scTotalResult);
 	}
 	
 	#[test]
 	fn GlobalPercentage()
 	{
-		let mut instance = Game::default();
-		instance.achievements.push(setupAchievement("A1", Platform::Steam, 0, 0, None));
+		let mut instance = GamePlatform::<RetroAchievementsInfo, RetroAchievement>::default();
+		instance.achievements.push(setupRetroAchievement("A1", 0, 0, None));
 		
-		assert!(instance.isGlobalPercentageMissing(Platform::Steam));
-		instance.achievements[0].platforms.iter_mut().for_each(|d| d.globalPercentage = Some(25.0));
-		assert!(!instance.isGlobalPercentageMissing(Platform::Steam));
+		assert!(instance.isGlobalPercentageMissing());
+		instance.achievements.iter_mut().for_each(|a| a.globalPercentage = Some(25.0));
+		assert!(!instance.isGlobalPercentageMissing());
 	}
 }

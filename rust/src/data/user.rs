@@ -1,7 +1,6 @@
 use ::serde::{Deserialize, Serialize};
-use crate::platforms::steam::{SteamAchievement, SteamAchievementMetadata, SteamGame};
-use super::achievement::Mode;
-use super::game::{Game, SteamInfo};
+use crate::platforms::steam::{SteamAchievementData, SteamAchievementMetadata, SteamGame};
+use super::game::{Game, SteamAchievement, SteamInfo, GamePlatform, RetroMode};
 
 /**
 A single user, containing platform-specific profile information and its combined
@@ -29,17 +28,20 @@ impl User
 {
 	pub const Filename: &'static str = "data.json";
 	
-	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<SteamAchievement>)
+	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<SteamAchievementData>)
 	{
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam
 			{
-				Some(s) => s.id == id,
+				Some(s) => s.info.id == id,
 				None => false,
 			})
 			.as_mut()
 		{
-			game.updateAchievementsSteam(achievements);
+			if let Some(steam) = game.steam.as_mut()
+			{
+				steam.updateAchievements(achievements);
+			}
 		}
 	}
 	
@@ -48,12 +50,15 @@ impl User
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam
 			{
-				Some(s) => s.id == id,
+				Some(s) => s.info.id == id,
 				None => false,
 			})
 			.as_mut()
 		{
-			game.updateAchievementMetadataSteam(achievements);
+			if let Some(steam) = game.steam.as_mut()
+			{
+				steam.updateAchievementMetadata(achievements);
+			}
 		}
 	}
 	
@@ -62,41 +67,48 @@ impl User
 		for info in games
 		{
 			// Game already exists, just update metadata
-			if let Some(game) = self.games.iter_mut().find(|g| g.steam.as_ref().is_some_and(|si| si.id == info.appid))
+			if let Some(game) = self.games.iter_mut().find(|g|
+				g.steam.as_ref().is_some_and(|si|
+					si.info.id == info.appid))
 			{
-				game.setSteamInfo(info);
+				if let Some(steam) = game.steam.as_mut()
+				{
+					steam.info.update(info)
+				}
 			}
 			// Game already exists as a duplicate, just update metadata
-			else if let Some(game) = self.games.iter_mut().find(|g| g.duplicates.as_ref().is_some_and(|list| list.iter().any(|dupe| dupe.steam.as_ref().is_some_and(|si| si.id == info.appid))))
+			else if let Some(game) = self.games.iter_mut()
+				.find(|g|
+					g.duplicates.as_ref().is_some_and(|list|
+						list.iter().any(|dupe|
+							dupe.steam.as_ref().is_some_and(|si|
+								si.info.id == info.appid))))
 			{
 				if let Some(list) = game.duplicates.as_mut()
 				{
-					if let Some(dupe) = list.iter_mut().find(|d| d.steam.as_ref().is_some_and(|si| si.id == info.appid))
+					if let Some(dupe) = list.iter_mut().find(|d|
+						d.steam.as_ref().is_some_and(|si|
+							si.info.id == info.appid))
 					{
-						dupe.setSteamInfo(info);
+						if let Some(steam) = dupe.steam.as_mut()
+						{
+							steam.info.update(info);
+						}
 					}
 				}
 			}
 			// Game does not exist
 			else
 			{
-				let game = Game::new(info);
+				let mut steam = GamePlatform::<SteamInfo, SteamAchievement>::default();
+				steam.info.update(info);
+				
+				let mut game = Game::default();
+				game.steam = Some(steam);
+				
 				self.games.push(game);
 			}
 		}
-	}
-	
-	pub fn getAllSteamInfo(&self) -> Vec<SteamInfo>
-	{
-		let mut list = vec![];
-		for game in self.games.iter()
-		{
-			if let Some(info) = &game.steam
-			{
-				list.push(info.clone());
-			}
-		}
-		return list;
 	}
 }
 
@@ -122,7 +134,7 @@ impl Default for RetroAchievementsProfile
 		{
 			username: String::new(),
 			hardcore: RetroAchievementsRank::default(),
-			softcore: RetroAchievementsRank::new(Mode::Softcore),
+			softcore: RetroAchievementsRank::new(RetroMode::Softcore),
 		};
 	}
 }
@@ -134,7 +146,7 @@ impl Default for RetroAchievementsProfile
 pub struct RetroAchievementsRank
 {
 	/// The mode corresponding to this rank and point amount.
-	pub mode: Mode,
+	pub mode: RetroMode,
 	
 	/// The total number of points earned.
 	pub points: usize,
@@ -152,7 +164,7 @@ impl Default for RetroAchievementsRank
 	{
 		return Self
 		{
-			mode: Mode::Hardcore,
+			mode: RetroMode::Hardcore,
 			points: 0,
 			rank: 0,
 			total: 0,
@@ -165,7 +177,7 @@ impl RetroAchievementsRank
 	/**
 	Create a new instance of RetroAchievementsRank with the given mode.
 	*/
-	pub fn new(mode: Mode) -> Self
+	pub fn new(mode: RetroMode) -> Self
 	{
 		return Self
 		{
