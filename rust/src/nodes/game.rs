@@ -2,7 +2,6 @@ use ::godot::bind::{GodotClass, godot_api};
 use ::godot::engine::{IVBoxContainer, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
 use ::godot::obj::Base;
 use ::godot::obj::Gd;
-use crate::{achievementIcon, dateFormat};
 use crate::data::{Game, RetroAchievement, SteamAchievement};
 use crate::io::loadUserData;
 use crate::platforms::Platform;
@@ -65,7 +64,7 @@ impl GameNode
 		self.generateSteamList(&mut tabs);
 	}
 	
-	fn generateAchievementNode_Retro(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>)
+	fn generateRetroAchievementNode(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>)
 	{
 		let mut node = self.sceneRetroAchievement.instantiate_as::<RetroAchievementNode>();
 		listNode.add_child(node.clone().upcast());
@@ -76,31 +75,15 @@ impl GameNode
 		ra.updateData();
 	}
 	
-	fn generateAchievementNode_Steam(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>)
+	fn generateSteamAchievementNode(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>)
 	{
 		let mut node = self.sceneSteamAchievement.instantiate_as::<SteamAchievementNode>();
-		let globalPercentage = match achievement.globalPercentage
-		{
-			Some(gp) => gp,
-			None => -1.0,
-		};
-		
-		let unlockTime = match achievement.timestamp
-		{
-			Some(ts) => dateFormat!(ts),
-			None => String::default(),
-		};
-		
-		node.bind_mut()
-			.updateData(
-				achievement.description.to_owned().into(),
-				achievementIcon!(Platform::nameOf(Platform::Steam).to_lowercase(), self.appId, achievement.id).into(),
-				achievement.name.to_owned().into(),
-				globalPercentage,
-				unlockTime.into()
-			);
-		
 		listNode.add_child(node.clone().upcast());
+		
+		let mut sa = node.bind_mut();
+		sa.appId = self.appId;
+		sa.achievement = achievement.to_owned();
+		sa.updateData();
 	}
 	
 	fn generateRetroList(&mut self, tabs: &mut Gd<TabContainer>)
@@ -119,7 +102,7 @@ impl GameNode
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in retro.achievements.clone().iter()
 						{
-							self.generateAchievementNode_Retro(achievement, &mut listNode);
+							self.generateRetroAchievementNode(achievement, &mut listNode);
 						}
 					}
 				}
@@ -145,7 +128,7 @@ impl GameNode
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in steam.achievements.clone().iter()
 						{
-							self.generateAchievementNode_Steam(achievement, &mut listNode);
+							self.generateSteamAchievementNode(achievement, &mut listNode);
 						}
 					}
 				}
