@@ -3,7 +3,7 @@
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_n1ql0"]
 size = Vector2(64, 64)
 
-[node name="Achievement" type="Achievement"]
+[node name="RetroAchievement" type="RetroAchievementNode"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -47,21 +47,43 @@ theme_override_font_sizes/font_size = 12
 text = "Description"
 autowrap_mode = 3
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="VBoxContainer"]
+[node name="HBoxContainer5" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 8
 
-[node name="GlobalPercentage" type="Label" parent="VBoxContainer/HBoxContainer3"]
+[node name="SoftcorePoints" type="Label" parent="VBoxContainer/HBoxContainer5"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 2
+tooltip_text = "Softcore Points"
+mouse_filter = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="VSeparator" type="VSeparator" parent="VBoxContainer/HBoxContainer5"]
+layout_mode = 2
+
+[node name="HardcorePoints" type="Label" parent="VBoxContainer/HBoxContainer5"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Hardcore Points"
+mouse_filter = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="VSeparator2" type="VSeparator" parent="VBoxContainer/HBoxContainer5"]
+layout_mode = 2
+
+[node name="GlobalPercentage" type="Label" parent="VBoxContainer/HBoxContainer5"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Global Unlock Percentage"
+mouse_filter = 1
 theme_override_font_sizes/font_size = 10
 text = "Global Percentage"
 
-[node name="UnlockTime" type="Label" parent="VBoxContainer/HBoxContainer3"]
+[node name="UnlockTime" type="Label" parent="VBoxContainer/HBoxContainer5"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_horizontal = 10
 size_flags_vertical = 8
 theme_override_font_sizes/font_size = 10
 text = "Unlock Time"
