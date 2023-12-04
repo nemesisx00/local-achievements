@@ -8,7 +8,7 @@ use crate::error;
 use crate::platforms::retroachievements::RetroAchievementsAuth;
 use crate::platforms::steam::SteamAuth;
 
-const Application: &str = "local-achievements";
+const Application: &str = "Local Achievements";
 const Organization: &str = "";
 const Qualifier: &str = "";
 
