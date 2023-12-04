@@ -6,6 +6,7 @@ use crate::{achievementIcon, dateFormat};
 use crate::data::{Game, RetroAchievement, SteamAchievement};
 use crate::io::loadUserData;
 use crate::platforms::Platform;
+use super::freeChildren;
 use super::retroachievement::RetroAchievementNode;
 use super::steamachievement::SteamAchievementNode;
 
@@ -59,59 +60,9 @@ impl GameNode
 			.expect(format!("Failed to find the TabContainer with path '{}'", Tabs).as_str())
 			.cast::<TabContainer>();
 		
-		if tabs.get_child_count() > 0
-		{
-			for i in (0..tabs.get_child_count()).rev()
-			{
-				if let Some(c) = tabs.get_child(i).as_mut()
-				{
-					c.queue_free();
-				}
-			}
-		}
-		
-		if self.sceneSteamAchievement.can_instantiate()
-		{
-			if let Some(retro) = &self.game.retroAchievements
-			{
-				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
-				tab.set_name(Platform::nameOf(Platform::RetroAchievements).into());
-				
-				if let Some(middle) = tab.get_child(0)
-				{
-					if let Some(node) = middle.get_child(0)
-					{
-						let mut listNode = node.cast::<VBoxContainer>();
-						for achievement in retro.achievements.clone().iter()
-						{
-							self.generateAchievementNode_Retro(achievement, &mut listNode);
-						}
-					}
-				}
-				
-				tabs.add_child(tab.clone().upcast());
-			}
-			
-			if let Some(steam) = &self.game.steam
-			{
-				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
-				tab.set_name(Platform::nameOf(Platform::Steam).into());
-				
-				if let Some(middle) = tab.get_child(0)
-				{
-					if let Some(node) = middle.get_child(0)
-					{
-						let mut listNode = node.cast::<VBoxContainer>();
-						for achievement in steam.achievements.clone().iter()
-						{
-							self.generateAchievementNode_Steam(achievement, &mut listNode);
-						}
-					}
-				}
-				
-				tabs.add_child(tab.clone().upcast());
-			}
-		}
+		freeChildren(&mut tabs.clone().upcast());
+		self.generateRetroList(&mut tabs);
+		self.generateSteamList(&mut tabs);
 	}
 	
 	fn generateAchievementNode_Retro(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>)
@@ -150,6 +101,58 @@ impl GameNode
 			);
 		
 		listNode.add_child(node.clone().upcast());
+	}
+	
+	fn generateRetroList(&mut self, tabs: &mut Gd<TabContainer>)
+	{
+		if self.sceneRetroAchievement.can_instantiate()
+		{
+			if let Some(retro) = &self.game.retroAchievements
+			{
+				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				tab.set_name(Platform::nameOf(Platform::RetroAchievements).into());
+				
+				if let Some(middle) = tab.get_child(0)
+				{
+					if let Some(node) = middle.get_child(0)
+					{
+						let mut listNode = node.cast::<VBoxContainer>();
+						for achievement in retro.achievements.clone().iter()
+						{
+							self.generateAchievementNode_Retro(achievement, &mut listNode);
+						}
+					}
+				}
+				
+				tabs.add_child(tab.clone().upcast());
+			}
+		}
+	}
+	
+	fn generateSteamList(&mut self, tabs: &mut Gd<TabContainer>)
+	{
+		if self.sceneSteamAchievement.can_instantiate()
+		{
+			if let Some(steam) = &self.game.steam
+			{
+				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				tab.set_name(Platform::nameOf(Platform::Steam).into());
+				
+				if let Some(middle) = tab.get_child(0)
+				{
+					if let Some(node) = middle.get_child(0)
+					{
+						let mut listNode = node.cast::<VBoxContainer>();
+						for achievement in steam.achievements.clone().iter()
+						{
+							self.generateAchievementNode_Steam(achievement, &mut listNode);
+						}
+					}
+				}
+				
+				tabs.add_child(tab.clone().upcast());
+			}
+		}
 	}
 }
 
