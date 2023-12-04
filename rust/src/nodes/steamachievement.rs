@@ -11,7 +11,7 @@ const PathUnlockTime: &'static str = "%UnlockTime";
 
 #[derive(GodotClass)]
 #[class(base=HBoxContainer)]
-pub struct Achievement
+pub struct SteamAchievementNode
 {
 	#[base]
 	base: Base<HBoxContainer>,
@@ -32,7 +32,7 @@ pub struct Achievement
 	pub unlockTime: GString,
 }
 
-impl Achievement
+impl SteamAchievementNode
 {
 	pub fn updateData(&mut self, description: GString, iconPath: GString, label: GString, globalPercentage: f64, unlockTime: GString)
 	{
@@ -75,7 +75,7 @@ impl Achievement
 }
 
 #[godot_api]
-impl IHBoxContainer for Achievement
+impl IHBoxContainer for SteamAchievementNode
 {
 	fn init(base: Base<HBoxContainer>) -> Self
 	{
