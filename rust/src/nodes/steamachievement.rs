@@ -2,6 +2,9 @@ use ::godot::bind::{GodotClass, godot_api};
 use ::godot::builtin::GString;
 use ::godot::engine::{NodeExt, Label, HBoxContainer, IHBoxContainer, Image, ImageTexture, ProjectSettings, TextureRect};
 use ::godot::obj::Base;
+use crate::{achievementIcon, dateFormat};
+use crate::data::SteamAchievement;
+use crate::platforms::Platform;
 
 const PathDescription: &'static str = "%Description";
 const PathGlobalPercentage: &'static str = "%GlobalPercentage";
@@ -16,31 +19,44 @@ pub struct SteamAchievementNode
 	#[base]
 	base: Base<HBoxContainer>,
 	
-	#[export]
-	pub description: GString,
+	pub appId: u32,
+	pub achievement: SteamAchievement,
 	
 	#[export]
-	pub iconPath: GString,
+	description: GString,
 	
 	#[export]
-	pub label: GString,
+	iconPath: GString,
 	
 	#[export]
-	pub globalPercentage: f64,
+	label: GString,
 	
 	#[export]
-	pub unlockTime: GString,
+	globalPercentage: GString,
+	
+	#[export]
+	unlockTime: GString,
 }
 
 impl SteamAchievementNode
 {
-	pub fn updateData(&mut self, description: GString, iconPath: GString, label: GString, globalPercentage: f64, unlockTime: GString)
+	pub fn updateData(&mut self)
 	{
-		self.description = description;
-		self.iconPath = iconPath;
-		self.label = label;
-		self.globalPercentage = globalPercentage;
-		self.unlockTime = unlockTime;
+		self.globalPercentage = match self.achievement.globalPercentage
+		{
+			Some(gp) => format!("{}%", gp).into(),
+			None => GString::default(),
+		};
+		
+		self.unlockTime = match self.achievement.timestamp
+		{
+			Some(ts) => dateFormat!(ts).into(),
+			None => GString::default(),
+		};
+		
+		self.description = self.achievement.description.to_owned().into();
+		self.iconPath = achievementIcon!(Platform::nameOf(Platform::Steam).to_lowercase(), self.appId, self.achievement.id).into();
+		self.label = self.achievement.name.to_owned().into();
 		
 		self.refresh();
 	}
@@ -62,7 +78,7 @@ impl SteamAchievementNode
 	{
 		self.setLabelText(PathDescription, self.description.to_owned());
 		self.setLabelText(PathLabel, self.label.to_owned());
-		self.setLabelText(PathGlobalPercentage, format!("{}%", self.globalPercentage).into());
+		self.setLabelText(PathGlobalPercentage, self.globalPercentage.to_owned());
 		self.setLabelText(PathUnlockTime, self.unlockTime.to_owned());
 		self.loadIcon(self.iconPath.to_owned());
 	}
@@ -82,16 +98,18 @@ impl IHBoxContainer for SteamAchievementNode
 		return Self
 		{
 			base,
+			appId: 0,
+			achievement: SteamAchievement::default(),
 			description: GString::default(),
 			iconPath: GString::default(),
 			label: GString::default(),
-			globalPercentage: -1.0,
+			globalPercentage: GString::default(),
 			unlockTime: GString::default(),
 		};
 	}
 	
 	fn ready(&mut self)
 	{
-		self.refresh();
+		self.updateData();
 	}
 }
