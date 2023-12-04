@@ -143,6 +143,5 @@ impl IHBoxContainer for RetroAchievementNode
 	fn ready(&mut self)
 	{
 		self.updateData();
-		self.refresh();
 	}
 }
