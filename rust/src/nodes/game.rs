@@ -40,7 +40,6 @@ impl GameNode
 				if let Some(game) = user.games.iter()
 					.find(|g| g.steam.clone().is_some_and(|s| s.info.id == self.appId as usize))
 				{
-					godot_print!("Game found? {}", game.name);
 					self.base.get_node_as::<Label>("%Title")
 						.set_text(game.name.to_owned().into());
 					
