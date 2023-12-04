@@ -1,4 +1,27 @@
 
+#[macro_export]
+macro_rules! achievementIcon {
+	($platform:expr, $appId:expr, $achievementId:expr) => {
+		format!("user://cache/{}/games/{}/{}.jpg", $platform, $appId, $achievementId)
+	};
+}
+
+#[macro_export]
+macro_rules! dateFormat {
+	($timestamp:expr) => {
+		match NaiveDateTime::from_timestamp_millis($timestamp as i64)
+		{
+			Some(ndt) => match ndt.and_local_timezone(Local)
+			{
+				LocalResult::Single(dt) => dt.format("%B %d, %Y %l:%M %p")
+					.to_string(),
+				_ => String::default(),
+			},
+			None => String::default(),
+		}
+	};
+}
+
 /**
 Generate an anyhow::Error from a std::io::Error, given a std::io::ErrorKind.
 */
@@ -51,13 +74,6 @@ macro_rules! jpg {
 macro_rules! jpgAlt {
 	($name:expr, $alt:expr) => {
 		format!("{}_{}.jpg", $name, $alt)
-	};
-}
-
-#[macro_export]
-macro_rules! achievementIcon {
-	($platform:expr, $appId:expr, $achievementId:expr) => {
-		format!("user://cache/{}/games/{}/{}.jpg", $platform, $appId, $achievementId)
 	};
 }
 
