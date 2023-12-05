@@ -80,6 +80,32 @@ macro_rules! jpgAlt {
 	};
 }
 
+#[macro_export]
+macro_rules! readVariant {
+	($variant:expr, $type:ty) => {
+		{
+			match $variant
+			{
+				Some(v) => <$type>::from_variant(&v),
+				None => <$type>::default(),
+			}
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! readVariantOption {
+	($variant:expr, $type:ty) => {
+		{
+			match $variant
+			{
+				Some(v) => Some(<$type>::from_variant(&v)),
+				None => None,
+			}
+		}
+	};
+}
+
 #[cfg(test)]
 mod tests
 {
