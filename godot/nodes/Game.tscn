@@ -1,4 +1,15 @@
-[gd_scene format=3 uid="uid://btkxvmnvpm2qa"]
+[gd_scene load_steps=5 format=3 uid="uid://btkxvmnvpm2qa"]
+
+[ext_resource type="StyleBox" uid="uid://bcqskaom177cx" path="res://resources/GamePanelStyle.tres" id="1_a44is"]
+[ext_resource type="Script" path="res://scripts/GameTitle.cs" id="1_n2orx"]
+[ext_resource type="StyleBox" uid="uid://commdkqiacxkf" path="res://resources/GameTabPanelStyle.tres" id="3_h5ssr"]
+
+[sub_resource type="Theme" id="Theme_pilvo"]
+MarginContainer/constants/margin_bottom = 15
+MarginContainer/constants/margin_left = 15
+MarginContainer/constants/margin_right = 15
+MarginContainer/constants/margin_top = 15
+VBoxContainer/constants/separation = 5
 
 [node name="Game" type="GameNode"]
 anchors_preset = 15
@@ -6,17 +17,37 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_vertical = 3
+theme = SubResource("Theme_pilvo")
 
-[node name="Title" type="Label" parent="."]
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("1_a44is")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 30
 text = "Game Title"
 horizontal_alignment = 1
 vertical_alignment = 1
+script = ExtResource("1_n2orx")
 
-[node name="Tabs" type="TabContainer" parent="."]
+[node name="Tabs" type="TabContainer" parent="MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("3_h5ssr")
 tab_alignment = 1
