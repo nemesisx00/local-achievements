@@ -1,5 +1,5 @@
 use ::godot::bind::{GodotClass, godot_api};
-use ::godot::engine::{IVBoxContainer, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
+use ::godot::engine::{IMarginContainer, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
 use ::godot::obj::Base;
 use ::godot::obj::Gd;
 use crate::data::{Game, RetroAchievement, SteamAchievement};
@@ -15,21 +15,19 @@ const GameScene: &'static str = "res://nodes/Game.tscn";
 const TabScene: &'static str = "res://nodes/PlatformTab.tscn";
 
 const Tabs: &'static str = "%Tabs";
+const Title: &'static str = "%Title";
 
-#[derive(GodotClass)]
-#[class(base=VBoxContainer)]
+#[derive(Debug, GodotClass)]
+#[class(base=MarginContainer)]
 pub struct GameNode
 {
 	#[base]
-	base: Base<VBoxContainer>,
+	base: Base<MarginContainer>,
 	
 	#[export]
 	appId: u32,
 	
 	game: Game,
-	sceneRetroAchievement: Gd<PackedScene>,
-	sceneSteamAchievement: Gd<PackedScene>,
-	sceneTab: Gd<PackedScene>,
 }
 
 impl GameNode
@@ -43,7 +41,7 @@ impl GameNode
 				if let Some(game) = user.games.iter()
 					.find(|g| g.steam.clone().is_some_and(|s| s.info.id == self.appId as usize))
 				{
-					self.base.get_node_as::<Label>("%Title")
+					self.base.get_node_as::<Label>(Title)
 						.set_text(game.name.to_owned().into());
 					
 					self.game = game.clone();
@@ -55,18 +53,23 @@ impl GameNode
 	
 	pub fn regenerateNodes(&mut self)
 	{
-		let mut tabs = self.base.get_node(Tabs.into())
-			.expect(format!("Failed to find the TabContainer with path '{}'", Tabs).as_str())
-			.cast::<TabContainer>();
-		
-		freeChildren(&mut tabs.clone().upcast());
-		self.generateRetroList(&mut tabs);
-		self.generateSteamList(&mut tabs);
+		if let Some(node) = self.base.get_node(Tabs.into()).as_mut()
+		{
+			let tabs = node.clone().cast::<TabContainer>();
+			freeChildren(&mut tabs.clone().upcast());
+			
+			let tabScene = load::<PackedScene>(TabScene);
+			if tabScene.can_instantiate()
+			{
+				self.generateRetroList(&mut tabs.clone(), tabScene.clone());
+				self.generateSteamList(&mut tabs.clone(), tabScene.clone());
+			}
+		}
 	}
 	
-	fn generateRetroAchievementNode(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>)
+	fn generateRetroAchievementNode(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
 	{
-		let mut node = self.sceneRetroAchievement.instantiate_as::<RetroAchievementNode>();
+		let mut node = nodeScene.instantiate_as::<RetroAchievementNode>();
 		listNode.add_child(node.clone().upcast());
 		
 		let mut ra = node.bind_mut();
@@ -75,9 +78,9 @@ impl GameNode
 		ra.updateData();
 	}
 	
-	fn generateSteamAchievementNode(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>)
+	fn generateSteamAchievementNode(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
 	{
-		let mut node = self.sceneSteamAchievement.instantiate_as::<SteamAchievementNode>();
+		let mut node = nodeScene.instantiate_as::<SteamAchievementNode>();
 		listNode.add_child(node.clone().upcast());
 		
 		let mut sa = node.bind_mut();
@@ -86,13 +89,14 @@ impl GameNode
 		sa.updateData();
 	}
 	
-	fn generateRetroList(&mut self, tabs: &mut Gd<TabContainer>)
+	fn generateRetroList(&mut self, tabs: &mut Gd<TabContainer>, tabScene: Gd<PackedScene>)
 	{
-		if self.sceneRetroAchievement.can_instantiate()
+		let nodeScene = load::<PackedScene>(RetroAchievementScene);
+		if nodeScene.can_instantiate()
 		{
 			if let Some(retro) = &self.game.retroAchievements
 			{
-				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				let mut tab = tabScene.instantiate_as::<MarginContainer>();
 				tab.set_name(Platform::nameOf(Platform::RetroAchievements).into());
 				
 				if let Some(middle) = tab.get_child(0)
@@ -102,7 +106,7 @@ impl GameNode
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in retro.achievements.clone().iter()
 						{
-							self.generateRetroAchievementNode(achievement, &mut listNode);
+							self.generateRetroAchievementNode(achievement, &mut listNode, nodeScene.clone());
 						}
 					}
 				}
@@ -112,13 +116,14 @@ impl GameNode
 		}
 	}
 	
-	fn generateSteamList(&mut self, tabs: &mut Gd<TabContainer>)
+	fn generateSteamList(&mut self, tabs: &mut Gd<TabContainer>, tabScene: Gd<PackedScene>)
 	{
-		if self.sceneSteamAchievement.can_instantiate()
+		let nodeScene = load::<PackedScene>(SteamAchievementScene);
+		if nodeScene.can_instantiate()
 		{
 			if let Some(steam) = &self.game.steam
 			{
-				let mut tab = self.sceneTab.instantiate_as::<MarginContainer>();
+				let mut tab = tabScene.instantiate_as::<MarginContainer>();
 				tab.set_name(Platform::nameOf(Platform::Steam).into());
 				
 				if let Some(middle) = tab.get_child(0)
@@ -128,7 +133,7 @@ impl GameNode
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in steam.achievements.clone().iter()
 						{
-							self.generateSteamAchievementNode(achievement, &mut listNode);
+							self.generateSteamAchievementNode(achievement, &mut listNode, nodeScene.clone());
 						}
 					}
 				}
@@ -140,27 +145,20 @@ impl GameNode
 }
 
 #[godot_api]
-impl IVBoxContainer for GameNode
+impl IMarginContainer for GameNode
 {
-	fn init(base: Base<VBoxContainer>) -> Self
+	fn init(base: Base<MarginContainer>) -> Self
 	{
 		return Self
 		{
 			base,
 			game: Game::default(),
 			appId: 0,
-			sceneRetroAchievement: PackedScene::new(),
-			sceneSteamAchievement: PackedScene::new(),
-			sceneTab: PackedScene::new(),
 		};
 	}
 	
 	fn ready(&mut self)
 	{
-		self.sceneRetroAchievement = load::<PackedScene>(RetroAchievementScene);
-		self.sceneSteamAchievement = load::<PackedScene>(SteamAchievementScene);
-		self.sceneTab = load::<PackedScene>(TabScene);
-		
 		self.refreshAchievements();
 	}
 }
