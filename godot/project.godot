@@ -38,6 +38,7 @@ naming/scene_name_casing=1
 folder_colors={
 "res://lib/": "purple",
 "res://nodes/": "green",
+"res://resources/": "orange",
 "res://scripts/": "blue"
 }
 
