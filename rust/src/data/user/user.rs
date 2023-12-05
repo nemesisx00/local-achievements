@@ -1,6 +1,11 @@
+use ::godot::bind::property::{Property, PropertyHintInfo};
+use ::godot::builtin::{Array, Dictionary, Variant};
+use ::godot::builtin::meta::{ConvertError, FromGodot, GodotConvert, ToGodot};
 use ::serde::{Deserialize, Serialize};
+use crate::readVariant;
+use crate::data::game::{Game, SteamPlatform};
 use crate::platforms::steam::{SteamAchievementData, SteamAchievementMetadata, SteamGame};
-use super::game::{Game, SteamPlatform, RetroMode};
+use super::{retro::RetroAchievementsProfile, steam::SteamProfile};
 
 /**
 A single user, containing platform-specific profile information and its combined
@@ -24,11 +29,79 @@ pub struct User
 
 unsafe impl Send for User {}
 
+impl Property for User
+{
+	type Intermediate = User;
+	
+	fn get_property(&self) -> Self::Intermediate
+	{
+		return self.clone();
+	}
+	
+	fn property_hint() -> PropertyHintInfo
+	{
+		return PropertyHintInfo::with_hint_none("User");
+	}
+	
+	fn set_property(&mut self, value: Self::Intermediate)
+	{
+		self.games = value.games;
+		self.retroAchievements = value.retroAchievements;
+		self.steam = value.steam;
+	}
+}
+
+impl FromGodot for User
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for User
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for User
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
+}
+
 impl User
 {
 	pub const Filename: &'static str = "data.json";
 	
-	pub fn processSteamAchievements(&mut self, id: usize, achievements: Vec<SteamAchievementData>)
+	pub fn processSteamAchievements(&mut self, id: i64, achievements: Vec<SteamAchievementData>)
 	{
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam
@@ -45,7 +118,7 @@ impl User
 		}
 	}
 	
-	pub fn processSteamAchievementMetadata(&mut self, id: usize, achievements: Vec<SteamAchievementMetadata>)
+	pub fn processSteamAchievementMetadata(&mut self, id: i64, achievements: Vec<SteamAchievementMetadata>)
 	{
 		if let Some(game) = self.games.iter_mut()
 			.find(|g| match &g.steam
@@ -110,105 +183,45 @@ impl User
 			}
 		}
 	}
-}
-
-/**
-Profile information for a RetroAchievements user.
-*/
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct RetroAchievementsProfile
-{
-	/// The user's username
-	pub username: String,
 	
-	pub hardcore: RetroAchievementsRank,
-	
-	pub softcore: RetroAchievementsRank,
-}
-
-impl Default for RetroAchievementsProfile
-{
-	fn default() -> Self
+	fn buildDict(&self) -> Dictionary
 	{
-		return Self
+		let mut arr = Array::new();
+		for game in &self.games
 		{
-			username: String::new(),
-			hardcore: RetroAchievementsRank::default(),
-			softcore: RetroAchievementsRank::new(RetroMode::Softcore),
-		};
-	}
-}
-
-/**
-
-*/
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct RetroAchievementsRank
-{
-	/// The mode corresponding to this rank and point amount.
-	pub mode: RetroMode,
-	
-	/// The total number of points earned.
-	pub points: usize,
-	
-	/// The current rank on RetroAchievements.org.
-	pub rank: usize,
-	
-	/// The total users, used to create a relation for the rank.
-	pub total: usize,
-}
-
-impl Default for RetroAchievementsRank
-{
-	fn default() -> Self
-	{
-		return Self
-		{
-			mode: RetroMode::Hardcore,
-			points: 0,
-			rank: 0,
-			total: 0,
+			arr.push(game.to_godot());
 		}
+		
+		let mut dict = Dictionary::new();
+		dict.insert("retroAchievements", self.retroAchievements.to_godot());
+		dict.insert("steam", self.steam.to_godot());
+		
+		return dict;
 	}
-}
-
-impl RetroAchievementsRank
-{
-	/**
-	Create a new instance of RetroAchievementsRank with the given mode.
-	*/
-	pub fn new(mode: RetroMode) -> Self
+	
+	fn fromDict(dict: Dictionary) -> Self
 	{
+		let mut games = vec![];
+		let arr = readVariant!(dict.get("games"), Array::<Variant>);
+		for g in arr.iter_shared()
+		{
+			games.push(Game::from_variant(&g));
+		}
+		
+		let retroAchievements = readVariant!(dict.get("retroAchievements"), RetroAchievementsProfile);
+		let steam = readVariant!(dict.get("steam"), SteamProfile);
+		
 		return Self
 		{
-			mode,
-			..Default::default()
+			games,
+			retroAchievements,
+			steam,
 		};
 	}
-}
-
-/**
-Profile information for a Steam user.
-*/
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct SteamProfile
-{
-	/// The path to the user's avatar
-	pub avatar: Option<String>,
 	
-	/// The user's 64-bit Steam ID
-	pub id: String,
-	
-	/// The user's current publicly visible display name.
-	pub name: String,
-}
-
-impl SteamProfile
-{
-	pub fn update(&mut self, id: String, name: String, avatar: Option<String>)
+	fn fromVariant(variant: &Variant) -> Self
 	{
-		self.id = id;
-		self.name = name;
-		self.avatar = avatar;
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
 	}
 }

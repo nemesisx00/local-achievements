@@ -1,5 +1,8 @@
 use std::collections::HashMap;
+use ::godot::builtin::{Array, Dictionary, Variant};
+use ::godot::builtin::meta::{ConvertError, FromGodot, GodotConvert, ToGodot};
 use ::serde::{Deserialize, Serialize};
+use crate::{readVariant, readVariantOption};
 
 /**
 
@@ -11,6 +14,52 @@ pub struct RetroPlatform
 	pub info: RetroAchievementsInfo,
 	/// The list of achievements associated with this game.
 	pub achievements: Vec<RetroAchievement>,
+}
+
+impl FromGodot for RetroPlatform
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for RetroPlatform
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for RetroPlatform
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl RetroPlatform
@@ -30,19 +79,16 @@ impl RetroPlatform
 	mode | Mode | The mode which determines the amount of points per achievement.
 	maximumPossible | Boolean | Whether (TRUE) or not (FALSE) to take unlock status into consideration when summing the points.
 	*/
-	pub fn points(&self, mode: RetroMode, maximumPossible: bool) -> usize
+	pub fn points(&self, mode: RetroMode, maximumPossible: bool) -> i64
 	{
 		let mut points = 0;
 		for achievement in &self.achievements
 		{
-			if maximumPossible == true || achievement.mode.is_some_and(|m| m == mode)
+			if maximumPossible == true || achievement.mode == mode
 			{
-				if let Some(map) = &achievement.points
+				if let Some(value) = achievement.points.get(&mode)
 				{
-					if let Some(value) = map.get(&mode)
-					{
-						points += *value;
-					}
+					points += *value;
 				}
 			}
 		}
@@ -61,6 +107,44 @@ impl RetroPlatform
 			}
 		}
 	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut arr = Array::new();
+		for a in &self.achievements
+		{
+			arr.push(a.to_godot());
+		}
+		
+		let mut dict = Dictionary::new();
+		dict.insert("info", self.info.to_godot());
+		dict.insert("achievements", arr);
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let info = readVariant!(dict.get("info"), RetroAchievementsInfo);
+		
+		let mut achievements = vec![];
+		let arr = readVariant!(dict.get("achievements"), Array::<Variant>);
+		for a in arr.iter_shared()
+		{
+			achievements.push(RetroAchievement::from_variant(&a));
+		}
+		
+		return Self
+		{
+			info,
+			achievements,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 /**
@@ -75,6 +159,73 @@ pub enum RetroMode
 	Softcore,
 }
 
+impl Default for RetroMode
+{
+	fn default() -> Self
+	{
+		return Self::Softcore;
+	}
+}
+
+impl FromGodot for RetroMode
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::from(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		let value = i64::from_variant(variant);
+		return Self::from(value);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for RetroMode
+{
+	type Via = i64;
+}
+
+impl ToGodot for RetroMode
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self as i64;
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return *self as i64;
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return (*self as i64).to_variant();
+	}
+}
+
+impl From<i64> for RetroMode
+{
+	fn from(value: i64) -> Self
+	{
+		return match value
+		{
+			0 => RetroMode::Hardcore,
+			_ => RetroMode::Softcore,
+		};
+	}
+}
+
 /**
 
 */
@@ -82,6 +233,78 @@ pub enum RetroMode
 pub struct RetroAchievementsInfo
 {
 	pub id: String,
+}
+
+impl FromGodot for RetroAchievementsInfo
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for RetroAchievementsInfo
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for RetroAchievementsInfo
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
+}
+
+impl RetroAchievementsInfo
+{
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut dict = Dictionary::new();
+		dict.insert("id", self.id.to_godot());
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let id = readVariant!(dict.get("id"), String);
+		
+		return Self
+		{
+			id,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 /**
@@ -100,16 +323,62 @@ pub struct RetroAchievement
 	pub id: String,
 	
 	/// The mode under which this achievement was unlocked.
-	pub mode: Option<RetroMode>,
+	pub mode: RetroMode,
 	
 	/// The human-readable name of this achievement.
 	pub name: String,
 	
 	/// The points awarded when this achievement is unlocked.
-	pub points: Option<HashMap<RetroMode, usize>>,
+	pub points: HashMap<RetroMode, i64>,
 	
 	/// The timestamp at which the achievement was unlocked.
-	pub timestamp: Option<usize>,
+	pub timestamp: Option<i64>,
+}
+
+impl FromGodot for RetroAchievement
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for RetroAchievement
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for RetroAchievement
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl RetroAchievement
@@ -122,12 +391,9 @@ impl RetroAchievement
 		return Self
 		{
 			description,
-			globalPercentage: None,
 			id,
-			mode: None,
 			name,
-			points: None,
-			timestamp: None,
+			..Default::default()
 		}
 	}
 	
@@ -138,6 +404,60 @@ impl RetroAchievement
 	{
 		return self.timestamp.is_some();
 	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut points = Dictionary::new();
+		points.insert("Softcore", self.points[&RetroMode::Softcore]);
+		points.insert("Hardcore", self.points[&RetroMode::Hardcore]);
+		
+		let mut dict = Dictionary::new();
+		dict.insert("description", self.description.to_godot());
+		dict.insert("globalPercentage", match self.globalPercentage { Some(f) => f, None => 0.0 });
+		dict.insert("id", self.id.to_godot());
+		dict.insert("mode", self.mode);
+		dict.insert("name", self.name.to_godot());
+		dict.insert("points", points);
+		dict.insert("timestamp", match self.timestamp { Some(f) => f, None => 0 });
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let mut points = HashMap::default();
+		let p = readVariant!(dict.get("points"), Dictionary);
+		for (k, v) in p.iter_shared()
+		{
+			let key = RetroMode::from_variant(&k);
+			let value = i64::from_variant(&v);
+			
+			points.insert(key, value);
+		}
+		
+		let description = readVariant!(dict.get("description"), String);
+		let globalPercentage = readVariantOption!(dict.get("globalPercentage"), f64);
+		let id = readVariant!(dict.get("id"), String);
+		let mode = readVariant!(dict.get("mode"), RetroMode);
+		let name = readVariant!(dict.get("name"), String);
+		let timestamp = readVariantOption!(dict.get("timestamp"), i64);
+		
+		return Self
+		{
+			description,
+			globalPercentage,
+			id,
+			mode,
+			name,
+			points,
+			timestamp,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 #[cfg(test)]
@@ -146,7 +466,7 @@ mod tests
     use super::*;
 	use std::collections::HashMap;
 	
-	fn setupAchievement(name: &str, hcPoints: usize, scPoints: usize, mode: Option<RetroMode>) -> RetroAchievement
+	fn setupAchievement(name: &str, hcPoints: i64, scPoints: i64, mode: RetroMode) -> RetroAchievement
 	{
 		let mut points = HashMap::new();
 		points.insert(RetroMode::Hardcore, hcPoints);
@@ -157,13 +477,13 @@ mod tests
 			description: String::default(),
 			globalPercentage: None,
 			id: String::default(),
-			mode: mode,
+			mode,
 			name: name.to_string(),
-			points: Some(points),
+			points,
 			timestamp: match mode
 			{
-				Some(_) => Some(1),
-				None => None,
+				RetroMode::Hardcore => Some(1),
+				RetroMode::Softcore => None,
 			}
 		};
 		

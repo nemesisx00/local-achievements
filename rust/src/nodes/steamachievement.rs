@@ -19,7 +19,7 @@ pub struct SteamAchievementNode
 	#[base]
 	base: Base<HBoxContainer>,
 	
-	pub appId: u32,
+	pub appId: i64,
 	pub achievement: SteamAchievement,
 	
 	#[export]

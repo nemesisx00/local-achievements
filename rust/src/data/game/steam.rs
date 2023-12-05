@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use ::godot::builtin::{Array, Dictionary, Variant};
+use ::godot::builtin::meta::{ConvertError, FromGodot, GodotConvert, ToGodot};
 use ::serde::{Deserialize, Serialize};
 use crate::platforms::steam::{SteamGame, SteamAchievementMetadata, SteamAchievementData};
+use crate::{readVariant, readVariantOption};
 
 /**
 
@@ -12,6 +15,52 @@ pub struct SteamPlatform
 	pub info: SteamInfo,
 	/// The list of achievements associated with this game.
 	pub achievements: Vec<SteamAchievement>,
+}
+
+impl FromGodot for SteamPlatform
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for SteamPlatform
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for SteamPlatform
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl SteamPlatform
@@ -59,6 +108,45 @@ impl SteamPlatform
 			}
 		}
 	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut arr = Array::new();
+		for a in &self.achievements
+		{
+			arr.push(a.to_godot());
+		}
+		
+		let mut dict = Dictionary::new();
+		dict.insert("info", self.info.to_godot());
+		dict.insert("achievements", arr);
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let mut achievements = vec![];
+		let arr = readVariant!(dict.get("achievements"), Array::<Variant>);
+		for v in arr.iter_shared()
+		{
+			let a = SteamAchievement::from_variant(&v);
+			achievements.push(a);
+		}
+		
+		let info = readVariant!(dict.get("info"), SteamInfo);
+		
+		return Self
+		{
+			info,
+			achievements,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 /**
@@ -67,10 +155,56 @@ impl SteamPlatform
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SteamInfo
 {
-	pub id: usize,
+	pub id: i64,
 	pub iconHash: String,
-	pub lastPlayed: usize,
+	pub lastPlayed: i64,
 	pub playtime: SteamPlaytime,
+}
+
+impl FromGodot for SteamInfo
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for SteamInfo
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for SteamInfo
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl SteamInfo
@@ -89,6 +223,38 @@ impl SteamInfo
 		self.lastPlayed = info.rtime_last_played;
 		self.playtime.update(info);
 	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut dict = Dictionary::new();
+		dict.insert("id", self.id);
+		dict.insert("iconHash", self.iconHash.to_godot());
+		dict.insert("lastPlayed", self.lastPlayed);
+		dict.insert("playtime", self.playtime);
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let id = readVariant!(dict.get("id"), i64);
+		let iconHash = readVariant!(dict.get("iconHash"), String);
+		let lastPlayed = readVariant!(dict.get("lastPlayed"), i64);
+		let playtime = readVariant!(dict.get("playtime"), SteamPlaytime);
+		
+		return Self
+		{
+			id,
+			iconHash,
+			lastPlayed,
+			playtime,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 /**
@@ -97,11 +263,57 @@ impl SteamInfo
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SteamPlaytime
 {
-	pub linux: usize,
-	pub mac: usize,
-	pub offline: usize,
-	pub total: usize,
-	pub windows: usize,
+	pub linux: i64,
+	pub mac: i64,
+	pub offline: i64,
+	pub total: i64,
+	pub windows: i64,
+}
+
+impl FromGodot for SteamPlaytime
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for SteamPlaytime
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for SteamPlaytime
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl SteamPlaytime
@@ -113,6 +325,41 @@ impl SteamPlaytime
 		self.offline = info.playtime_disconnected;
 		self.total = info.playtime_forever;
 		self.windows = info.playtime_windows_forever;
+	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut dict = Dictionary::new();
+		dict.insert("linux", self.linux);
+		dict.insert("mac", self.mac);
+		dict.insert("offline", self.offline);
+		dict.insert("total", self.total);
+		dict.insert("windows", self.windows);
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let linux = readVariant!(dict.get("linux"), i64);
+		let mac = readVariant!(dict.get("mac"), i64);
+		let offline = readVariant!(dict.get("offline"), i64);
+		let total = readVariant!(dict.get("total"), i64);
+		let windows = readVariant!(dict.get("windows"), i64);
+		
+		return Self
+		{
+			linux,
+			mac,
+			offline,
+			total,
+			windows,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
 	}
 }
 
@@ -135,7 +382,53 @@ pub struct SteamAchievement
 	pub name: String,
 	
 	/// The timestamp at which the achievement was unlocked.
-	pub timestamp: Option<usize>,
+	pub timestamp: Option<i64>,
+}
+
+impl FromGodot for SteamAchievement
+{
+	fn from_godot(via: Self::Via) -> Self
+	{
+		return Self::fromDict(via);
+	}
+	
+	fn from_variant(variant: &Variant) -> Self
+	{
+		return Self::fromVariant(variant);
+	}
+	
+	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_godot(via));
+	}
+	
+	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
+	{
+		return Ok(Self::from_variant(variant));
+	}
+}
+
+impl GodotConvert for SteamAchievement
+{
+	type Via = Dictionary;
+}
+
+impl ToGodot for SteamAchievement
+{
+	fn into_godot(self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_godot(&self) -> Self::Via
+	{
+		return self.buildDict();
+	}
+	
+	fn to_variant(&self) -> Variant
+	{
+		return self.buildDict().to_variant();
+	}
 }
 
 impl SteamAchievement
@@ -181,6 +474,41 @@ impl SteamAchievement
 	{
 		return self.timestamp.is_some();
 	}
+	
+	fn buildDict(&self) -> Dictionary
+	{
+		let mut dict = Dictionary::new();
+		dict.insert("description", self.description.to_godot());
+		dict.insert("globalPercentage", match self.globalPercentage { Some(f) => f, None => 0.0 });
+		dict.insert("id", self.id.to_godot());
+		dict.insert("name", self.name.to_godot());
+		dict.insert("timestamp", match self.timestamp { Some(f) => f, None => 0 });
+		return dict;
+	}
+	
+	fn fromDict(dict: Dictionary) -> Self
+	{
+		let description = readVariant!(dict.get("description"), String);
+		let globalPercentage = readVariantOption!(dict.get("globalPercentage"), f64);
+		let id = readVariant!(dict.get("id"), String);
+		let name = readVariant!(dict.get("name"), String);
+		let timestamp = readVariantOption!(dict.get("timestamp"), i64);
+		
+		return Self
+		{
+			description,
+			globalPercentage,
+			id,
+			name,
+			timestamp,
+		};
+	}
+	
+	fn fromVariant(variant: &Variant) -> Self
+	{
+		let dict = Dictionary::from_variant(variant);
+		return Self::fromDict(dict);
+	}
 }
 
 impl From<SteamAchievementData> for SteamAchievement
@@ -214,13 +542,12 @@ impl From<SteamAchievementMetadata> for SteamAchievement
 	}
 }
 
-
 #[cfg(test)]
 mod tests
 {
     use super::*;
 	
-	fn setupAchievement(name: &str, unlockTime: Option<usize>) -> SteamAchievement
+	fn setupAchievement(name: &str, unlockTime: Option<i64>) -> SteamAchievement
 	{
 		let achievement = SteamAchievement
 		{
