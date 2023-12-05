@@ -1,9 +1,9 @@
 use ::godot::bind::{GodotClass, godot_api};
+use godot::builtin::GString;
 use ::godot::engine::{IMarginContainer, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
 use ::godot::obj::Base;
 use ::godot::obj::Gd;
 use crate::data::{Game, RetroAchievement, SteamAchievement};
-use crate::io::loadUserData;
 use crate::platforms::Platform;
 use super::freeChildren;
 use super::retroachievement::RetroAchievementNode;
@@ -11,44 +11,34 @@ use super::steamachievement::SteamAchievementNode;
 
 const RetroAchievementScene: &'static str = "res://nodes/RetroAchievement.tscn";
 const SteamAchievementScene: &'static str = "res://nodes/SteamAchievement.tscn";
-const GameScene: &'static str = "res://nodes/Game.tscn";
 const TabScene: &'static str = "res://nodes/PlatformTab.tscn";
 
 const Tabs: &'static str = "%Tabs";
 const Title: &'static str = "%Title";
 
-#[derive(Debug, GodotClass)]
+#[derive(GodotClass)]
 #[class(base=MarginContainer)]
 pub struct GameNode
 {
 	#[base]
 	base: Base<MarginContainer>,
 	
-	#[export]
-	appId: u32,
-	
 	game: Game,
 }
 
 impl GameNode
 {
+	pub fn setGame(&mut self, game: Game)
+	{
+		self.game = game.clone();
+	}
+	
 	pub fn refreshAchievements(&mut self)
 	{
-		if self.appId > 0
-		{
-			if let Ok(user) = loadUserData()
-			{
-				if let Some(game) = user.games.iter()
-					.find(|g| g.steam.clone().is_some_and(|s| s.info.id == self.appId as usize))
-				{
-					self.base.get_node_as::<Label>(Title)
-						.set_text(game.name.to_owned().into());
-					
-					self.game = game.clone();
-					self.regenerateNodes();
-				}
-			}
-		}
+		self.base.get_node_as::<Label>(Title)
+			.set_text(self.game.name.to_owned().into());
+		
+		self.regenerateNodes();
 	}
 	
 	pub fn regenerateNodes(&mut self)
@@ -67,24 +57,24 @@ impl GameNode
 		}
 	}
 	
-	fn generateRetroAchievementNode(&mut self, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
+	fn generateRetroAchievementNode(&mut self, appId: &GString, achievement: &RetroAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
 	{
 		let mut node = nodeScene.instantiate_as::<RetroAchievementNode>();
 		listNode.add_child(node.clone().upcast());
 		
 		let mut ra = node.bind_mut();
-		ra.appId = self.appId;
+		ra.appId = appId.to_owned();
 		ra.achievement = achievement.to_owned();
 		ra.updateData();
 	}
 	
-	fn generateSteamAchievementNode(&mut self, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
+	fn generateSteamAchievementNode(&mut self, appId: i64, achievement: &SteamAchievement, listNode: &mut Gd<VBoxContainer>, nodeScene: Gd<PackedScene>)
 	{
 		let mut node = nodeScene.instantiate_as::<SteamAchievementNode>();
 		listNode.add_child(node.clone().upcast());
 		
 		let mut sa = node.bind_mut();
-		sa.appId = self.appId;
+		sa.appId = appId;
 		sa.achievement = achievement.to_owned();
 		sa.updateData();
 	}
@@ -103,10 +93,11 @@ impl GameNode
 				{
 					if let Some(node) = middle.get_child(0)
 					{
+						let appId = retro.info.id.to_owned().into();
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in retro.achievements.clone().iter()
 						{
-							self.generateRetroAchievementNode(achievement, &mut listNode, nodeScene.clone());
+							self.generateRetroAchievementNode(&appId, achievement, &mut listNode, nodeScene.clone());
 						}
 					}
 				}
@@ -130,10 +121,11 @@ impl GameNode
 				{
 					if let Some(node) = middle.get_child(0)
 					{
+						let appId = steam.info.id;
 						let mut listNode = node.cast::<VBoxContainer>();
 						for achievement in steam.achievements.clone().iter()
 						{
-							self.generateSteamAchievementNode(achievement, &mut listNode, nodeScene.clone());
+							self.generateSteamAchievementNode(appId, achievement, &mut listNode, nodeScene.clone());
 						}
 					}
 				}
@@ -153,7 +145,6 @@ impl IMarginContainer for GameNode
 		{
 			base,
 			game: Game::default(),
-			appId: 0,
 		};
 	}
 	

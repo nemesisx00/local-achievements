@@ -21,7 +21,7 @@ pub struct RetroAchievementNode
 	#[base]
 	base: Base<HBoxContainer>,
 	
-	pub appId: u32,
+	pub appId: GString,
 	pub achievement: RetroAchievement,
 	
 	#[export]
@@ -62,23 +62,17 @@ impl RetroAchievementNode
 			None => GString::default(),
 		};
 		
-		self.pointsHardcore = match &self.achievement.points
+		self.pointsHardcore = match &self.achievement.points.iter()
+			.find(|(k, _)| RetroMode::Hardcore == **k)
 		{
-			Some(map) => match map.iter().find(|(k, _)| RetroMode::Hardcore == **k)
-			{
-				Some((_, pts)) => pts.to_string().into(),
-				None => GString::default(),
-			},
+			Some((_, pts)) => pts.to_string().into(),
 			None => GString::default(),
 		};
 		
-		self.pointsSoftcore = match &self.achievement.points
+		self.pointsSoftcore = match &self.achievement.points.iter()
+			.find(|(k, _)| RetroMode::Softcore == **k)
 		{
-			Some(map) => match map.iter().find(|(k, _)| RetroMode::Softcore == **k)
-			{
-				Some((_, pts)) => pts.to_string().into(),
-				None => GString::default(),
-			},
+			Some((_, pts)) => pts.to_string().into(),
 			None => GString::default(),
 		};
 		
@@ -128,7 +122,7 @@ impl IHBoxContainer for RetroAchievementNode
 		return Self
 		{
 			base,
-			appId: 0,
+			appId: GString::default(),
 			achievement: RetroAchievement::default(),
 			description: GString::default(),
 			iconPath: GString::default(),

@@ -1,6 +1,8 @@
+mod app;
+mod appdata;
+mod game;
 mod retroachievement;
 mod steamachievement;
-mod game;
 
 use ::godot::engine::Node;
 use ::godot::obj::Gd;
