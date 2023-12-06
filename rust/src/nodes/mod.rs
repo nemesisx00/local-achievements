@@ -1,8 +1,8 @@
 mod app;
 mod appdata;
-mod game;
 mod retroachievement;
 mod steamachievement;
+mod game;
 
 use ::godot::engine::Node;
 use ::godot::obj::Gd;
@@ -22,6 +22,9 @@ pub fn freeChildren(node: &mut Gd<Node>)
 		{
 			if let Some(c) = node.get_child(i).as_mut()
 			{
+				//Change the node name just to avoid collisions if nodes are re-added before this one is freed.
+				//Kind of a hack, but whatever.
+				c.set_name("GoingToFree".into());
 				c.queue_free();
 			}
 		}
