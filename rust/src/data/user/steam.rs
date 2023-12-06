@@ -33,12 +33,12 @@ impl FromGodot for SteamProfile
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 

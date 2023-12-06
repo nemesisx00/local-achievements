@@ -31,7 +31,7 @@ pub struct Game
 	pub name: String,
 	
 	/// Information specific to RetroAchievements.org
-	pub retroAchievements: Option<RetroPlatform>,
+	pub retro: Option<RetroPlatform>,
 	
 	/// Information specific to Steam
 	pub steam: Option<SteamPlatform>,
@@ -61,12 +61,12 @@ impl FromGodot for Game
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -99,7 +99,7 @@ impl Game
 	{
 		let mut ids = HashMap::new();
 		
-		if let Some(retro) = &self.retroAchievements
+		if let Some(retro) = &self.retro
 		{
 			ids.insert(Platform::RetroAchievements, retro.info.id.to_owned());
 		}
@@ -168,7 +168,7 @@ impl Game
 		}
 		
 		let mut retro = Dictionary::new();
-		if let Some(platform) = &self.retroAchievements
+		if let Some(platform) = &self.retro
 		{
 			retro = platform.to_godot();
 		}
@@ -182,7 +182,7 @@ impl Game
 		let mut dict = Dictionary::new();
 		dict.insert("duplicates", arr);
 		dict.insert("name", self.name.to_godot());
-		dict.insert("retroAchievements", retro);
+		dict.insert("retro", retro);
 		dict.insert("steam", steam);
 		return dict;
 	}
@@ -190,22 +190,40 @@ impl Game
 	fn fromDict(dict: Dictionary) -> Self
 	{
 		let mut duplicates = vec![];
-		let arr = readVariant!(dict.get("games"), Array::<Variant>);
-		for v in arr.iter_shared()
+		let arr = readVariant!(dict.get("duplicates"), Array::<Dictionary>);
+		for d in arr.iter_shared()
 		{
-			let dupe = Game::from_variant(&v);
+			let dupe = Game::from_godot(d);
 			duplicates.push(dupe);
 		}
 		
 		let name = readVariant!(dict.get("name"), String);
-		let retroAchievements = readVariantOption!(dict.get("retroAchievements"), RetroPlatform);
-		let steam = readVariantOption!(dict.get("steam"), SteamPlatform);
+		
+		let retro = match readVariantOption!(dict.get("retro"), RetroPlatform)
+		{
+			Some(r) => match r.info.id.is_empty()
+			{
+				true => None,
+				false => Some(r),
+			},
+			None => None,
+		};
+		
+		let steam = match readVariantOption!(dict.get("steam"), SteamPlatform)
+		{
+			Some(s) => match s.info.id > 0
+			{
+				true => Some(s),
+				false => None,
+			},
+			None => None,
+		};
 		
 		return Self
 		{
 			duplicates: match duplicates.len() > 0 { true => Some(duplicates), false => None },
 			name,
-			retroAchievements,
+			retro,
 			steam,
 		};
 	}

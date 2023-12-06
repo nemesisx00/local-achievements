@@ -31,12 +31,12 @@ impl FromGodot for SteamPlatform
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -126,10 +126,10 @@ impl SteamPlatform
 	fn fromDict(dict: Dictionary) -> Self
 	{
 		let mut achievements = vec![];
-		let arr = readVariant!(dict.get("achievements"), Array::<Variant>);
-		for v in arr.iter_shared()
+		let arr = readVariant!(dict.get("achievements"), Array::<Dictionary>);
+		for d in arr.iter_shared()
 		{
-			let a = SteamAchievement::from_variant(&v);
+			let a = SteamAchievement::from_godot(d);
 			achievements.push(a);
 		}
 		
@@ -175,12 +175,12 @@ impl FromGodot for SteamInfo
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -284,12 +284,12 @@ impl FromGodot for SteamPlaytime
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -399,12 +399,12 @@ impl FromGodot for SteamAchievement
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 

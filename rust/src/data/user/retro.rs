@@ -2,6 +2,7 @@ use ::godot::builtin::{Dictionary, Variant};
 use ::godot::builtin::meta::{ConvertError, FromGodot, GodotConvert, ToGodot};
 use ::serde::{Deserialize, Serialize};
 use crate::data::game::RetroMode;
+use crate::readVariant;
 
 /**
 Profile information for a RetroAchievements user.
@@ -44,12 +45,12 @@ impl FromGodot for RetroAchievementsProfile
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -89,23 +90,9 @@ impl RetroAchievementsProfile
 	
 	fn fromDict(dict: Dictionary) -> Self
 	{
-		let username = match dict.get("username")
-		{
-			Some(v) => String::from_variant(&v),
-			None => String::default(),
-		};
-		
-		let hardcore = match dict.get("hardcore")
-		{
-			Some(v) => RetroAchievementsRank::from_variant(&v),
-			None => RetroAchievementsRank::default(),
-		};
-		
-		let softcore = match dict.get("softcore")
-		{
-			Some(v) => RetroAchievementsRank::from_variant(&v),
-			None => RetroAchievementsRank::default(),
-		};
+		let username = readVariant!(dict.get("username"), String);
+		let hardcore = readVariant!(dict.get("hardcore"), RetroAchievementsRank);
+		let softcore = readVariant!(dict.get("softcore"), RetroAchievementsRank);
 		
 		return Self
 		{
@@ -169,12 +156,12 @@ impl FromGodot for RetroAchievementsRank
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -227,29 +214,10 @@ impl RetroAchievementsRank
 	
 	fn fromDict(dict: Dictionary) -> Self
 	{
-		let mode = match dict.get("mode")
-		{
-			Some(v) => RetroMode::from_variant(&v),
-			None => RetroMode::Softcore,
-		};
-		
-		let points = match dict.get("points")
-		{
-			Some(v) => i64::from_variant(&v),
-			None => 0,
-		};
-		
-		let rank = match dict.get("rank")
-		{
-			Some(v) => i64::from_variant(&v),
-			None => 0,
-		};
-		
-		let total = match dict.get("total")
-		{
-			Some(v) => i64::from_variant(&v),
-			None => 0,
-		};
+		let mode = readVariant!(dict.get("mode"), RetroMode);
+		let points = readVariant!(dict.get("points"), i64);
+		let rank = readVariant!(dict.get("rank"), i64);
+		let total = readVariant!(dict.get("total"), i64);
 		
 		return Self
 		{

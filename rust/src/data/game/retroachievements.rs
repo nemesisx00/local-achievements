@@ -30,12 +30,12 @@ impl FromGodot for RetroPlatform
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -127,10 +127,10 @@ impl RetroPlatform
 		let info = readVariant!(dict.get("info"), RetroAchievementsInfo);
 		
 		let mut achievements = vec![];
-		let arr = readVariant!(dict.get("achievements"), Array::<Variant>);
-		for a in arr.iter_shared()
+		let arr = readVariant!(dict.get("achievements"), Array::<Dictionary>);
+		for d in arr.iter_shared()
 		{
-			achievements.push(RetroAchievement::from_variant(&a));
+			achievements.push(RetroAchievement::from_godot(d));
 		}
 		
 		return Self
@@ -182,12 +182,13 @@ impl FromGodot for RetroMode
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::from(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		let value = i64::try_from_variant(variant)?;
+		return Ok(Self::from(value));
 	}
 }
 
@@ -249,12 +250,12 @@ impl FromGodot for RetroAchievementsInfo
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -349,12 +350,12 @@ impl FromGodot for RetroAchievement
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 

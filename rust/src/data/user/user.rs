@@ -21,7 +21,7 @@ pub struct User
 	pub games: Vec<Game>,
 	
 	/// This user's RetroAchievements profile information.
-	pub retroAchievements: RetroAchievementsProfile,
+	pub retro: RetroAchievementsProfile,
 	
 	/// This user's Steam profile information.
 	pub steam: SteamProfile,
@@ -46,7 +46,7 @@ impl Property for User
 	fn set_property(&mut self, value: Self::Intermediate)
 	{
 		self.games = value.games;
-		self.retroAchievements = value.retroAchievements;
+		self.retro = value.retro;
 		self.steam = value.steam;
 	}
 }
@@ -65,12 +65,12 @@ impl FromGodot for User
 	
 	fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_godot(via));
+		return Ok(Self::fromDict(via));
 	}
 	
 	fn try_from_variant(variant: &Variant) -> Result<Self, ConvertError>
 	{
-		return Ok(Self::from_variant(variant));
+		return Ok(Self::fromVariant(variant));
 	}
 }
 
@@ -193,7 +193,8 @@ impl User
 		}
 		
 		let mut dict = Dictionary::new();
-		dict.insert("retroAchievements", self.retroAchievements.to_godot());
+		dict.insert("games", arr);
+		dict.insert("retro", self.retro.to_godot());
 		dict.insert("steam", self.steam.to_godot());
 		
 		return dict;
@@ -202,19 +203,19 @@ impl User
 	fn fromDict(dict: Dictionary) -> Self
 	{
 		let mut games = vec![];
-		let arr = readVariant!(dict.get("games"), Array::<Variant>);
-		for g in arr.iter_shared()
+		let gameDicts = readVariant!(dict.get("games"), Array::<Dictionary>);
+		for g in gameDicts.iter_shared()
 		{
-			games.push(Game::from_variant(&g));
+			games.push(Game::from_godot(g));
 		}
 		
-		let retroAchievements = readVariant!(dict.get("retroAchievements"), RetroAchievementsProfile);
+		let retro = readVariant!(dict.get("retro"), RetroAchievementsProfile);
 		let steam = readVariant!(dict.get("steam"), SteamProfile);
 		
 		return Self
 		{
 			games,
-			retroAchievements,
+			retro,
 			steam,
 		};
 	}
