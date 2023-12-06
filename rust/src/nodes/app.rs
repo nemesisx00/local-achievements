@@ -1,8 +1,10 @@
 use ::godot::bind::{GodotClass, godot_api};
-use godot::engine::global::Side;
+use ::godot::builtin::Variant;
+use ::godot::builtin::meta::FromGodot;
 use ::godot::engine::{IMarginContainer, MarginContainer, NodeExt, PackedScene, PackedSceneExt, VBoxContainer, load};
-use ::godot::obj::Base;
-use super::appdata::AppData;
+use ::godot::engine::global::Side;
+use ::godot::obj::{Base, WithBaseField};
+use crate::data::User;
 use super::game::GameNode;
 
 const AppDataPath: &'static str = "%AppData";
@@ -18,28 +20,32 @@ pub struct App
 	base: Base<MarginContainer>,
 }
 
+#[godot_api]
 impl App
 {
-	fn generateGameNodes(&mut self)
+	fn generateGameNodes(&self, user: User)
 	{
 		let scene = load::<PackedScene>(GameScene);
 		if scene.can_instantiate()
 		{
-			let list = self.base.get_node_as::<AppData>(AppDataPath)
-				.bind()
-				.user.games.clone();
-			
 			let mut games = self.base.get_node_as::<VBoxContainer>(GamesPath);
-			for game in list
+			for game in user.games
 			{
 				let mut node = scene.instantiate_as::<GameNode>();
-				games.add_child(node.clone().upcast());
 				
 				let mut gameNode = node.bind_mut();
 				gameNode.setGame(game);
-				gameNode.refreshAchievements();
+				
+				games.add_child(gameNode.to_gd().upcast());
 			}
 		}
+	}
+	
+	#[func]
+	pub fn handleDataLoaded(&mut self, user: Variant)
+	{
+		let user = User::from_variant(&user);
+		self.generateGameNodes(user);
 	}
 }
 
@@ -60,7 +66,5 @@ impl IMarginContainer for App
 		self.base.set_offset(Side::SIDE_TOP, MarginSize);
 		self.base.set_offset(Side::SIDE_RIGHT, MarginSize);
 		self.base.set_offset(Side::SIDE_BOTTOM, MarginSize);
-		
-		self.generateGameNodes();
 	}
 }
