@@ -1,7 +1,8 @@
 use ::godot::bind::{GodotClass, godot_api};
+use ::godot::builtin::meta::ToGodot;
 use ::godot::engine::{INode, Node};
-use ::godot::obj::Base;
 use ::godot::log::godot_print;
+use ::godot::obj::{Base, WithBaseField};
 use crate::data::{User, Game};
 use crate::io::{loadUserData, saveUserData};
 
@@ -22,7 +23,7 @@ impl AppData
 	pub const SignalDataLoaded: &'static str = "DataLoaded";
 	
 	#[signal]
-	pub fn DataLoaded();
+	pub fn DataLoaded(user: User);
 	
 	/**
 	Retrieve a `crate::data::Game` from the games list by matching the given
@@ -49,6 +50,8 @@ impl AppData
 		};
 		
 		self.user = user;
+		
+		self.to_gd().emit_signal(Self::SignalDataLoaded.into(), &[self.user.to_variant()]);
 	}
 	
 	pub fn saveData(&mut self)
