@@ -13,7 +13,7 @@ config_version=5
 config/name="Local Achievements"
 run/main_scene="res://App.tscn"
 config/use_custom_user_dir=true
-config/features=PackedStringArray("4.2", "C#", "Mobile")
+config/features=PackedStringArray("4.2", "Mobile")
 boot_splash/bg_color=Color(0.101961, 0.101961, 0.101961, 1)
 config/icon="res://icon.svg"
 

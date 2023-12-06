@@ -1,8 +1,7 @@
 use ::godot::bind::{GodotClass, godot_api};
-use godot::builtin::GString;
-use ::godot::engine::{IMarginContainer, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
-use ::godot::obj::Base;
-use ::godot::obj::Gd;
+use ::godot::builtin::{GString, Vector2};
+use ::godot::engine::{IMarginContainer, InputEvent, Label, MarginContainer, NodeExt, PackedScene, PackedSceneExt, TabContainer, VBoxContainer, load};
+use ::godot::obj::{Base, Gd, WithBaseField};
 use crate::data::{Game, RetroAchievement, SteamAchievement};
 use crate::platforms::Platform;
 use super::freeChildren;
@@ -13,6 +12,7 @@ const RetroAchievementScene: &'static str = "res://nodes/RetroAchievement.tscn";
 const SteamAchievementScene: &'static str = "res://nodes/SteamAchievement.tscn";
 const TabScene: &'static str = "res://nodes/PlatformTab.tscn";
 
+const OuterContainer: &'static str = "MarginContainer";
 const Tabs: &'static str = "%Tabs";
 const Title: &'static str = "%Title";
 
@@ -26,6 +26,7 @@ pub struct GameNode
 	game: Game,
 }
 
+#[godot_api]
 impl GameNode
 {
 	pub fn setGame(&mut self, game: Game)
@@ -43,17 +44,15 @@ impl GameNode
 	
 	pub fn regenerateNodes(&mut self)
 	{
-		if let Some(node) = self.base.get_node(Tabs.into()).as_mut()
+		let tabs = self.to_gd().get_node_as::<TabContainer>(Tabs);
+		let clone = tabs.clone();
+		freeChildren(&mut tabs.upcast());
+		
+		let tabScene = load::<PackedScene>(TabScene);
+		if tabScene.can_instantiate()
 		{
-			let tabs = node.clone().cast::<TabContainer>();
-			freeChildren(&mut tabs.clone().upcast());
-			
-			let tabScene = load::<PackedScene>(TabScene);
-			if tabScene.can_instantiate()
-			{
-				self.generateRetroList(&mut tabs.clone(), tabScene.clone());
-				self.generateSteamList(&mut tabs.clone(), tabScene.clone());
-			}
+			self.generateRetroList(&mut clone.clone(), tabScene.clone());
+			self.generateSteamList(&mut clone.clone(), tabScene.clone());
 		}
 	}
 	
@@ -84,7 +83,7 @@ impl GameNode
 		let nodeScene = load::<PackedScene>(RetroAchievementScene);
 		if nodeScene.can_instantiate()
 		{
-			if let Some(retro) = &self.game.retroAchievements
+			if let Some(retro) = &self.game.retro
 			{
 				let mut tab = tabScene.instantiate_as::<MarginContainer>();
 				tab.set_name(Platform::nameOf(Platform::RetroAchievements).into());
@@ -134,6 +133,27 @@ impl GameNode
 			}
 		}
 	}
+	
+	#[func]
+	fn toggleList(&self, evt: Gd<InputEvent>)
+	{
+		if evt.is_class("InputEventMouseButton".into()) && evt.is_pressed()
+		{
+			let mut tabs = self.to_gd().get_node_as::<TabContainer>(Tabs);
+			let mut outerContainer = self.to_gd().get_node_as::<MarginContainer>(OuterContainer);
+			
+			if tabs.is_visible()
+			{
+				tabs.hide();
+				outerContainer.set_custom_minimum_size(Vector2::ZERO);
+			}
+			else
+			{
+				tabs.show();
+				outerContainer.set_custom_minimum_size(Vector2::new(0.0, 648.0));
+			}
+		}
+	}
 }
 
 #[godot_api]
@@ -151,5 +171,9 @@ impl IMarginContainer for GameNode
 	fn ready(&mut self)
 	{
 		self.refreshAchievements();
+		
+		self.to_gd()
+			.get_node_as::<Label>(Title)
+			.connect("gui_input".into(), self.to_gd().callable("toggleList"));
 	}
 }

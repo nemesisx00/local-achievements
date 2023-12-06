@@ -1,7 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://btkxvmnvpm2qa"]
+[gd_scene load_steps=4 format=3 uid="uid://btkxvmnvpm2qa"]
 
 [ext_resource type="StyleBox" uid="uid://bcqskaom177cx" path="res://resources/GamePanelStyle.tres" id="1_a44is"]
-[ext_resource type="Script" path="res://scripts/GameTitle.cs" id="1_n2orx"]
 [ext_resource type="StyleBox" uid="uid://commdkqiacxkf" path="res://resources/GameTabPanelStyle.tres" id="3_h5ssr"]
 
 [sub_resource type="Theme" id="Theme_pilvo"]
@@ -42,7 +41,6 @@ theme_override_font_sizes/font_size = 30
 text = "Game Title"
 horizontal_alignment = 1
 vertical_alignment = 1
-script = ExtResource("1_n2orx")
 
 [node name="Tabs" type="TabContainer" parent="MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
