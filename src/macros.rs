@@ -1,6 +1,3 @@
-#![allow(non_snake_case, non_upper_case_globals)]
-#![cfg_attr(debug_assertions, allow(dead_code))]
-
 /**
 Generate an anyhow::Error from a std::io::Error, given a std::io::ErrorKind.
 */
@@ -53,6 +50,23 @@ macro_rules! jpg {
 macro_rules! jpgAlt {
 	($name:expr, $alt:expr) => {
 		format!("{}_{}.jpg", $name, $alt)
+	};
+}
+
+/**
+Quickly turn a string or string slice into a PNG filename.
+*/
+#[macro_export]
+macro_rules! png {
+	($name:expr) => {
+		format!("{}.png", $name)
+	};
+}
+
+#[macro_export]
+macro_rules! pngAlt {
+	($name:expr, $alt:expr) => {
+		format!("{}_{}.png", $name, $alt)
 	};
 }
 
@@ -114,6 +128,31 @@ mod tests
 		let expected = "image_other.jpg".to_string();
 		let result1 = jpgAlt!(name, alt);
 		let result2 = jpgAlt!(name.to_string(), alt.to_string());
+		
+		assert_eq!(expected, result1);
+		assert_eq!(expected, result2);
+	}
+	
+	#[test]
+	fn png()
+	{
+		let name = "image";
+		let expected = "image.png".to_string();
+		let result1 = png!(name);
+		let result2 = png!(name.to_string());
+		
+		assert_eq!(expected, result1);
+		assert_eq!(expected, result2);
+	}
+	
+	#[test]
+	fn pngAlt()
+	{
+		let name = "image";
+		let alt = "other";
+		let expected = "image_other.png".to_string();
+		let result1 = pngAlt!(name, alt);
+		let result2 = pngAlt!(name.to_string(), alt.to_string());
 		
 		assert_eq!(expected, result1);
 		assert_eq!(expected, result2);

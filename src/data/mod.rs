@@ -1,10 +1,16 @@
-#![allow(non_snake_case, non_upper_case_globals)]
-#![cfg_attr(debug_assertions, allow(dead_code))]
+mod retroachievements;
+mod steam;
 
-mod achievement;
-mod game;
-mod user;
+pub use retroachievements::{
+	makeRelative,
+	achievement::Achievement as RetroAchievementsAchievement,
+	game::Game as RetroAchievementsGame,
+	mode::AchievementMode as RetroAchievementsMode,
+	user::User as RetroAchievementsUser,
+};
 
-pub use achievement::{Achievement, Mode, PlatformInfo};
-pub use game::{Game, SteamInfo};
-pub use user::User;
+pub use steam::{
+	achievement::Achievement as SteamAchievement,
+	game::Game as SteamGame,
+	user::User as SteamUser,
+};

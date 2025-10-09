@@ -1,9 +1,6 @@
-#![allow(non_snake_case, non_upper_case_globals)]
-#![cfg_attr(debug_assertions, allow(dead_code))]
+use serde::{Deserialize, Serialize};
 
-use ::serde::{Deserialize, Serialize};
-use crate::data::{Achievement, PlatformInfo};
-use crate::platforms::Platform;
+use crate::data::SteamAchievement;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameAchievement
@@ -15,6 +12,26 @@ pub struct GameAchievement
 	pub description: Option<String>,
 	pub icon: String,
 	pub icongray: String,
+}
+
+impl From<SteamAchievement> for GameAchievement
+{
+	fn from(value: SteamAchievement) -> Self
+	{
+		return Self
+		{
+			name: value.id,
+			displayName: value.name,
+			description: match value.description.is_empty()
+			{
+				true => None,
+				false => Some(value.description),
+			},
+			icon: value.iconUrl,
+			icongray: value.iconLockedUrl,
+			..Default::default()
+		};
+	}
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -32,46 +49,19 @@ pub struct GameSchema
 	pub gameVersion: String,
 }
 
-/**
-The expected response data returned by the GetSchemaForGame endpoint.
-*/
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct GetSchemaForGamePayload
-{
-	pub game: GameSchema,
-}
-
-impl GetSchemaForGamePayload
-{
-	pub fn getAchievements(&self) -> Vec<Achievement>
-	{
-		let mut achievements = vec![];
-		if let Some(a) = &self.game.availableGameStats.achievements
-		{
-			for ga in a
-			{
-				let description = match ga.description.to_owned()
-				{
-					Some(d) => d,
-					None => String::default(),
-				};
-				
-				let pi = PlatformInfo::new(ga.name.to_owned(), ga.displayName.to_owned(), description, Platform::Steam);
-				let mut achievement = Achievement::default();
-				achievement.platforms.push(pi);
-				
-				achievements.push(achievement);
-			}
-		}
-		
-		return achievements;
-	}
-}
-
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameStat
 {
 	pub name: String,
 	pub defaultvalue: isize,
 	pub displayName: String,
+}
+
+/**
+The expected response data returned by the GetSchemaForGame endpoint.
+*/
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct Payload
+{
+	pub game: GameSchema,
 }
