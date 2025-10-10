@@ -138,6 +138,17 @@ impl Achievement
 		};
 	}
 	
+	pub fn unlockedPercent(&self, mode: AchievementMode, distinctPlayers: usize) -> f64
+	{
+		return (match mode
+		{
+			AchievementMode::Casual => self.awardedCasual,
+			AchievementMode::Hardcore => self.awardedHardcore,
+		} as f64
+			/ distinctPlayers as f64)
+		* 100.0;
+	}
+	
 	pub fn update(&mut self, achievement: &AchievementMetadata)
 	{
 		self.awardedCasual = achievement.NumAwarded;

@@ -7,6 +7,9 @@ pub const BorderColor: &str = "rgb(78, 78, 78)";
 pub const TextColor: &str = "rgb(204, 204, 204)";
 
 pub const RetroAchievementsDarkBackground: &str = "rgb(5, 60, 135)";
+pub const RetroAchievementsProgressColorBackground: &str = "rgb(9, 9, 11)";
+pub const RetroAchievementsProgressColorCasual: &str = "rgb(115, 115, 115)";
+pub const RetroAchievementsProgressColorHardcore: &str = "rgb(250, 186, 6)";
 
 #[allow(unused)]
 pub const SteamContrast: &str = "rgb(31, 98, 154)";

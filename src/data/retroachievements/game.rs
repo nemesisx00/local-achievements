@@ -22,6 +22,15 @@ pub struct Game
 	/// The number of achievements unlocked in Hardcore mode.
 	pub awardedHardcore: usize,
 	
+	/// The number of distinct users who have played the game.
+	pub distinctPlayers: usize,
+	
+	/// The number of distinct users who have played the game in Casual mode.
+	pub distinctPlayersCasual: usize,
+	
+	/// The number of distinct users who have played the game in Hardcore mode.
+	pub distinctPlayersHardcore: usize,
+	
 	/// The highest award, if any, that the user has been awarded for this game.
 	pub highestAward: Option<AwardKind>,
 	
@@ -119,6 +128,9 @@ impl Game
 		
 		self.awardedCasual = game.NumAwardedToUser;
 		self.awardedHardcore = game.NumAwardedToUserHardcore;
+		self.distinctPlayers = game.NumDistinctPlayers;
+		self.distinctPlayersCasual = game.NumDistinctPlayersCasual;
+		self.distinctPlayersHardcore = game.NumDistinctPlayersHardcore;
 		
 		self.highestAward = match &game.HighestAwardKind
 		{
