@@ -20,10 +20,10 @@ pub fn AchievementElement(gameId: usize, achievementId: usize) -> Element
 		},
 	};
 	
+	let unlockedCasual = achievement.unlocked(RetroAchievementsMode::Casual);
 	let unlockedHardcore = achievement.unlocked(RetroAchievementsMode::Hardcore);
-	let unlockedSoftcore = achievement.unlocked(RetroAchievementsMode::Softcore);
 	
-	let iconName = match unlockedHardcore || unlockedSoftcore
+	let iconName = match unlockedCasual || unlockedHardcore
 	{
 		true => png!(achievement.name),
 		false => pngAlt!(achievement.name, Icon_Locked),
@@ -36,7 +36,7 @@ pub fn AchievementElement(gameId: usize, achievementId: usize) -> Element
 	);
 	
 	let timestamp = match achievement.formatEarnedTimestamp(match unlockedHardcore {
-			false => RetroAchievementsMode::Softcore,
+			false => RetroAchievementsMode::Casual,
 			true => RetroAchievementsMode::Hardcore,
 		})
 	{

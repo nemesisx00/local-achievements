@@ -11,14 +11,14 @@ pub struct User
 	/// The relative path to the user's avatar on RetroAchievements.org.
 	pub avatar: Option<String>,
 	
+	/// The user's rank data for Casual mode.
+	pub casual: RankData,
+	
 	/// The list of games the player has played.
 	pub games: Vec<Game>,
 	
 	/// The user's rank data for Hardcore mode.
 	pub hardcore: RankData,
-	
-	/// The user's rank data for Softcore mode.
-	pub softcore: RankData,
 	
 	/// The user's ULID.
 	pub ulid: Option<String>,
@@ -34,9 +34,9 @@ impl Default for User
 		return Self
 		{
 			avatar: None,
+			casual: AchievementMode::Casual.into(),
 			games: vec![],
 			hardcore: RankData::default(),
-			softcore: AchievementMode::Softcore.into(),
 			ulid: None,
 			username: String::default(),
 		};
@@ -62,7 +62,7 @@ impl User
 	
 	pub fn processUserProfile(&mut self, payload: &Payload_GetUserProfile)
 	{
-		self.softcore.points = payload.TotalSoftcorePoints;
+		self.casual.points = payload.TotalSoftcorePoints;
 		self.hardcore.points = payload.TotalPoints;
 		
 		self.avatar = match payload.UserPic.is_empty()

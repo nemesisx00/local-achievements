@@ -16,11 +16,11 @@ pub struct Game
 	/// The list of achievements in the set.
 	pub achievements: Vec<Achievement>,
 	
+	/// The number of achievements unlocked in Casual mode.
+	pub awardedCasual: usize,
+	
 	/// The number of achievements unlocked in Hardcore mode.
 	pub awardedHardcore: usize,
-	
-	/// The number of achievements unlocked in Softcore mode.
-	pub awardedSoftcore: usize,
 	
 	/// The highest award, if any, that the user has been awarded for this game.
 	pub highestAward: Option<AwardKind>,
@@ -93,8 +93,8 @@ impl Game
 	
 	pub fn update(&mut self, game: &GameMetadata)
 	{
+		self.awardedCasual = game.NumAwarded;
 		self.awardedHardcore = game.NumAwardedHardcore;
-		self.awardedSoftcore = game.NumAwarded;
 		self.highestAwardedTimestamp = game.HighestAwardDate.to_owned();
 		
 		match &game.HighestAwardKind
@@ -117,8 +117,8 @@ impl Game
 			.map(|(_, a)| a.to_owned().into())
 			.collect();
 		
+		self.awardedCasual = game.NumAwardedToUser;
 		self.awardedHardcore = game.NumAwardedToUserHardcore;
-		self.awardedSoftcore = game.NumAwardedToUser;
 		
 		self.highestAward = match &game.HighestAwardKind
 		{

@@ -8,7 +8,7 @@ The mode representing conditions under which an achievement was unlocked.
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Serialize)]
 pub enum AchievementMode
 {
-	Hardcore,
 	#[default]
-	Softcore,
+	Casual,
+	Hardcore,
 }

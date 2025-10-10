@@ -12,11 +12,11 @@ use crate::platforms::retroachievements::data::AchievementMetadata;
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
 pub struct Achievement
 {
+	/// Number of users who have unlocked the achievement in Casual mode.
+	pub awardedCasual: usize,
+	
 	/// Number of users who have unlocked the achievement in Hardcore mode.
 	pub awardedHardcore: usize,
-	
-	/// Number of users who have unlocked the achievement in Softcore mode.
-	pub awardedSoftcore: usize,
 	
 	/// Description of the achievement.
 	pub description: String,
@@ -27,8 +27,8 @@ pub struct Achievement
 	/// The timestamp when the user unlocked the achievement in Hardcore mode.
 	pub earnedTimestampHardcore: Option<String>,
 	
-	/// The timestamp when the user unlocked the achievement in Softcore mode.
-	pub earnedTimestampSoftcore: Option<String>,
+	/// The timestamp when the user unlocked the achievement in Casual mode.
+	pub earnedTimestampCasual: Option<String>,
 	
 	/// Unique ID of the achievement.
 	pub id: usize,
@@ -57,8 +57,8 @@ impl PartialOrd for Achievement
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{
-		let unlocked = self.unlocked(AchievementMode::Hardcore) || self.unlocked(AchievementMode::Softcore);
-		let otherUnlocked = other.unlocked(AchievementMode::Hardcore) || other.unlocked(AchievementMode::Softcore);
+		let unlocked = self.unlocked(AchievementMode::Casual) || self.unlocked(AchievementMode::Hardcore);
+		let otherUnlocked = other.unlocked(AchievementMode::Casual) || other.unlocked(AchievementMode::Hardcore);
 		
 		return match unlocked.partial_cmp(&otherUnlocked)
 		{
@@ -96,8 +96,8 @@ impl Achievement
 	pub fn formatEarnedTimestamp(&self, mode: AchievementMode) -> Result<String>
 	{
 		if let Some(timestamp) = match mode {
+				AchievementMode::Casual => &self.earnedTimestampCasual,
 				AchievementMode::Hardcore => &self.earnedTimestampHardcore,
-				AchievementMode::Softcore => &self.earnedTimestampSoftcore,
 			}
 		{
 			let dt = self.parseTimestamp(timestamp)?;
@@ -133,19 +133,19 @@ impl Achievement
 	{
 		return match mode
 		{
+			AchievementMode::Casual => self.earnedTimestampCasual.is_some(),
 			AchievementMode::Hardcore => self.earnedTimestampHardcore.is_some(),
-			AchievementMode::Softcore => self.earnedTimestampSoftcore.is_some(),
 		};
 	}
 	
 	pub fn update(&mut self, achievement: &AchievementMetadata)
 	{
+		self.awardedCasual = achievement.NumAwarded;
 		self.awardedHardcore = achievement.NumAwardedHardcore;
-		self.awardedSoftcore = achievement.NumAwarded;
 		self.description = achievement.Description.to_owned();
 		self.displayOrder = achievement.DisplayOrder;
 		self.earnedTimestampHardcore = achievement.DateEarnedHardcore.to_owned();
-		self.earnedTimestampSoftcore = achievement.DateEarned.to_owned();
+		self.earnedTimestampCasual = achievement.DateEarned.to_owned();
 		self.icon = makeRelative(&achievement.BadgeName);
 		self.id = achievement.ID;
 		self.name = achievement.Title.to_owned();

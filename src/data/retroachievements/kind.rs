@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum AwardKind
 {
 	#[default]
-	BeatenSoftcore,
+	BeatenCasual,
 	BeatenHardcore,
 	Completed,
 	Mastered,
@@ -16,7 +16,7 @@ impl AwardKind
 	{
 		return match value.as_str()
 		{
-			"beaten-softcore" => Some(Self::BeatenSoftcore),
+			"beaten-casual" => Some(Self::BeatenCasual),
 			"beaten-hardcore" => Some(Self::BeatenHardcore),
 			"completed" => Some(Self::Completed),
 			"mastered" => Some(Self::Mastered),
