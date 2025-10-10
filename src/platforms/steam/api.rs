@@ -1,19 +1,19 @@
-#![allow(non_snake_case, non_upper_case_globals)]
-#![cfg_attr(debug_assertions, allow(dead_code))]
-
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
-use ::anyhow::{Context, Result};
-use ::path_slash::PathExt;
-use ::reqwest::Client;
-use ::serde::de::DeserializeOwned;
+use anyhow::{Context, Result};
+use path_slash::PathExt;
+use reqwest::Client;
+use serde::de::DeserializeOwned;
+use crate::constants::Icon_Locked;
+use crate::data::SteamGame;
+use crate::io::{getImagePath, Filename_GameIcon, Path_Avatars, Path_Games};
 use crate::{error, join, jpg, jpgAlt};
-use crate::data::SteamInfo;
-use crate::io::{Path_Avatars, Path_Games, getImagePath};
-use crate::platforms::Icon_Locked;
-use crate::platforms::util::cacheImage;
-use super::data::{AuthData, GameAchievement, GetSchemaForGamePayload, GetGlobalPercentagesPayload, GetOwnedGamesPayload, GetPlayerAchievementsPayload, GetPlayerSummariesPayload, GetRecentlyPlayedGamesPayload};
+use crate::platforms::steam::data::{AuthData, GameAchievement,
+	Payload_GetGlobalPercentages, Payload_GetOwnedGames,
+	Payload_GetPlayerAchievements, Payload_GetPlayerSummaries,
+	Payload_GetRecentlyPlayedGames, Payload_GetSchemaForGame};
+use crate::platforms::util::cacheImageIfNotExists;
 
 #[derive(Clone, Debug, Default)]
 pub struct Api
@@ -24,7 +24,6 @@ pub struct Api
 
 impl Api
 {
-	pub const GameIcon: &str = "game-icon.jpg";
 	pub const Platform: &str = "Steam";
 	
 	const Protocol: &str = "https://";
@@ -41,8 +40,6 @@ impl Api
 	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
 	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGame/v0002";
 	
-	pub const Language_English: &str = "english";
-	
 	const Parameter_AppId: &str = "appid";
 	const Parameter_Format: &str = "format";
 	const Parameter_GameId: &str = "gameid";
@@ -55,6 +52,7 @@ impl Api
 	
 	const Format_Json: &str = "json";
 	
+	#[allow(unused)]
 	const Value_False: &str = "0";
 	const Value_True: &str = "1";
 	
@@ -69,14 +67,13 @@ impl Api
 	const AvatarUrl_ReplaceMedium: &str = "_medium";
 	const AvatarUrl_ReplaceFull: &str = "_full";
 	
-	pub fn new(auth: AuthData) -> Self
+	pub fn withAuth(auth: AuthData) -> Self
 	{
-		return Self { auth, ..Default::default() };
-	}
-	
-	pub fn iconFileName(appId: usize) -> String
-	{
-		return format!("{}_icon.jpg", appId);
+		return Self
+		{
+			auth,
+			..Default::default()
+		};
 	}
 	
 	/**
@@ -85,7 +82,7 @@ impl Api
 	---
 	
 	Parameter | Description
-	---|---
+	:--|:--
 	appId | The app id to which these achievements belong.
 	achievements | The list of achievements for which to retrieve icon images.
 	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
@@ -97,58 +94,42 @@ impl Api
 	If any icons result in an error, the list of all games for which no icon
 	could be retrieved is returned. Otherwise, returns `NONE`.
 	*/
-	pub async fn cacheAchievementsIcons(&self, appId: usize, achievements: Vec<GameAchievement>, force: bool) -> Result<()>
+	pub async fn cacheAchievementsIcons(&self, appId: usize, achievements: &Vec<GameAchievement>, force: bool) -> Result<()>
 	{
 		for achievement in achievements
 		{
 			let group = join!(Path_Games, appId);
 			let filename = jpg!(achievement.name);
-			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
+			let filenameLocked = jpgAlt!(achievement.name, Icon_Locked);
+			let platform = Self::Platform.into();
+			
+			if let Some(path) = getImagePath(&platform, &group, &filename)
 			{
-				cacheImage(&self.client, achievement.icon, path, Self::Platform.into(), group.to_owned(), filename, force).await?;
+				cacheImageIfNotExists(
+					&self.client,
+					&achievement.icon,
+					&path,
+					&platform,
+					&group,
+					&filename,
+					force
+				)
+					.await?;
 			}
 			
-			let filenameAlt = jpgAlt!(achievement.name, Icon_Locked);
-			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
+			if let Some(path) = getImagePath(&platform, &group, &filenameLocked)
 			{
-				cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
+				cacheImageIfNotExists(
+					&self.client,
+					&achievement.icongray,
+					&path,
+					&platform,
+					&group,
+					&filenameLocked,
+					force
+				)
+					.await?;
 			}
-		}
-		
-		return Ok(());
-	}
-	
-	/**
-	Retrieve and cache the icon images for an individual `achievement`.
-	
-	---
-	
-	Parameter | Description
-	---|---
-	appId | The app id to which these achievements belong.
-	achievement | The achievement for which to retrieve icon images.
-	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
-	
-	---
-	
-	#### Returns
-	
-	If any icons result in an error, the list of all games for which no icon
-	could be retrieved is returned. Otherwise, returns `NONE`.
-	*/
-	pub async fn cacheAchievementIcons(&self, appId: usize, achievement: GameAchievement, force: bool) -> Result<()>
-	{
-		let group = join!(Path_Games, appId);
-		let filename = jpg!(achievement.name);
-		if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filename.to_owned())
-		{
-			cacheImage(&self.client, achievement.icon, path, Self::Platform.into(), group.to_owned(), filename, force).await?;
-		}
-		
-		let filenameAlt = jpgAlt!(achievement.name, Icon_Locked);
-		if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), filenameAlt.to_owned())
-		{
-			cacheImage(&self.client, achievement.icongray, path, Self::Platform.into(), group, filenameAlt, force).await?;
 		}
 		
 		return Ok(());
@@ -160,7 +141,7 @@ impl Api
 	---
 	
 	Parameter | Description
-	---|---
+	:--|:--
 	games | The list of games for which to retrieve icon images.
 	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
 	
@@ -171,19 +152,31 @@ impl Api
 	If any icons result in an error, the list of all games for which no icon
 	could be retrieved is returned. Otherwise, returns `NONE`.
 	*/
-	pub async fn cacheGameIcons(&self, games: Vec<SteamInfo>, force: bool) -> Option<Vec<SteamInfo>>
+	pub async fn cacheGameIcons(&self, games: &Vec<SteamGame>, force: bool) -> Option<Vec<SteamGame>>
 	{
 		let mut failed = vec![];
+		
+		let platform = Self::Platform.into();
+		let fileName = jpg!(Filename_GameIcon);
 		for game in games.iter()
 		{
 			let group = join!(Path_Games, game.id);
-			if let Some(path) = getImagePath(Self::Platform.into(), group.to_owned(), Self::GameIcon.into())
+			
+			if let Some(path) = getImagePath(&platform, &group, &fileName)
 			{
 				let url = Self::IconUrl_Game
 					.replace(Self::Replace_AppId, game.id.to_string().as_str())
 					.replace(Self::Replace_Hash, &game.iconHash);
 				
-				if let Err(_) = cacheImage(&self.client, url, path, Self::Platform.into(), group, Self::GameIcon.into(), force).await
+				if let Err(_) = cacheImageIfNotExists(
+						&self.client,
+						&url,
+						&path,
+						&platform,
+						&group,
+						&fileName,
+						force
+					).await
 				{
 					failed.push(game.clone());
 				}
@@ -194,7 +187,7 @@ impl Api
 		{
 			true => None,
 			false => Some(failed),
-		};
+		}
 	}
 	
 	/**
@@ -203,14 +196,14 @@ impl Api
 	---
 	
 	Parameter | Description
-	---|---
+	:--|:--
 	steamId | The 64-bit Steam ID identifying the user whose avatar images are being retrieved.
 	hash | The hash value used to build the URL for retrieving the avatar images.
 	force | If `TRUE`, retrieve all the images and overwrite the cache. Otherwise, only retrieve non-cached images.
 	*/
-	pub async fn cacheProfileAvatar(&self, steamId: String, hash: String, force: bool) -> Result<()>
+	pub async fn cacheProfileAvatar(&self, steamId: &String, hash: &String, force: bool) -> Result<()>
 	{
-		let mut nameMod = String::new();
+		let mut nameMod = String::default();
 		for i in 0..3
 		{
 			match i
@@ -225,10 +218,20 @@ impl Api
 				.replace(Self::Replace_Size, nameMod.as_str());
 			
 			let filename = format!("{}{}.jpg", steamId, nameMod);
+			let group = Path_Avatars.into();
+			let platform = Self::Platform.into();
 			
-			if let Some(path) = getImagePath(Self::Platform.into(), Path_Avatars.into(), filename.to_owned())
+			if let Some(path) = getImagePath(&platform, &group, &filename)
 			{
-				cacheImage(&self.client, url, path, Self::Platform.into(), Path_Avatars.into(), filename.to_owned(), force).await?;
+				cacheImageIfNotExists(
+					&self.client,
+					&url,
+					&path,
+					&platform,
+					&group,
+					&filename,
+					force
+				).await?;
 			}
 		}
 		
@@ -252,11 +255,11 @@ impl Api
 	## Arguments
 	
 	Name | Description
-	---|---
+	:--|:--
 	gameid | AppID of the game you want the news of.
 	format | Output format. json (default), xml or vdf.
 	*/
-	pub async fn getGlobalPercentages(&self, appId: usize) -> Result<GetGlobalPercentagesPayload>
+	pub async fn getGlobalPercentages(&self, appId: usize) -> Result<Payload_GetGlobalPercentages>
 	{
 		if self.auth.validate()
 		{
@@ -265,12 +268,16 @@ impl Api
 			parameters.remove(Self::Parameter_SteamId);
 			parameters.insert(Self::Parameter_GameId.into(), appId.to_string());
 			
-			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetGlobalAchievementPercentagesForApp)
+			if let Some(url) = self.buildUrl(
+				Self::Service_UserStats,
+				Self::Endpoint_GetGlobalAchievementPercentagesForApp
+			)
 			{
-				let response = self.get::<GetGlobalPercentagesPayload>(url, parameters).await
-					.context(format!("Error retrieving list of global percentages from Steam Web API for Game ID {}", appId))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetGlobalPercentages>(&url, &parameters).await
+					.context(format!(
+						"Error retrieving list of global percentages from Steam Web API for Game ID {}",
+						appId
+					))?);
 			}
 		}
 		
@@ -299,7 +306,7 @@ impl Api
 	## Arguments
 	
 	Name | Description
-	---|---
+	:--|:--
 	steamid | The SteamID of the account.
 	include_appinfo | Include game name and logo information in the output. The default is to return appids only.
 	include_played_free_games | By default, free games like Team Fortress 2 are excluded (as technically everyone owns them). If include_played_free_games is set, they will be returned if the player has played them at some point. This is the same behavior as the games list on the Steam Community.
@@ -319,7 +326,7 @@ impl Api
 		- img_icon_url, img_logo_url: These are the filenames of various images for the game. To construct the URL to the image, use this format: http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg. For example, the TF2 logo is returned as "07385eb55b5ba974aebbe74d3c99626bda7920b8", which maps to the URL: [1]
 		- has_community_visible_stats: Indicates there is a stats page with achievements or other game stats available for this game. The uniform URL for accessing this data is http://steamcommunity.com/profiles/{steamid}/stats/{appid}. For example, Robin's TF2 stats can be found at: http://steamcommunity.com/profiles/76561197960435530/stats/440. You may notice that clicking this link will actually redirect to a vanity URL like /id/robinwalker/stats/TF2
 	*/
-	pub async fn getOwnedGames(&self) -> Result<GetOwnedGamesPayload>
+	pub async fn getOwnedGames(&self) -> Result<Payload_GetOwnedGames>
 	{
 		if self.auth.validate()
 		{
@@ -327,12 +334,16 @@ impl Api
 			parameters.insert(Self::Parameter_IncludeAppInfo.into(), Self::Value_True.into());
 			parameters.insert(Self::Parameter_IncludePlayedFreeGames.into(), Self::Value_True.into());
 			
-			if let Some(url) = self.buildUrl(Self::Service_Player, Self::Endpoint_GetOwnedGames)
+			if let Some(url) = self.buildUrl(
+				Self::Service_Player,
+				Self::Endpoint_GetOwnedGames
+			)
 			{
-				let response = self.get::<GetOwnedGamesPayload>(url, parameters).await
-					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetOwnedGames>(&url, &parameters).await
+					.context(format!(
+						"Error retrieving list of owned games from Steam Web API for Steam ID {}",
+						self.auth.id
+					))?);
 			}
 		}
 		
@@ -355,7 +366,7 @@ impl Api
 	## Arguments
 	
 	Name | Description
-	---|---
+	:--|:--
 	steamid | 64 bit Steam ID for which to return the achievement list.
 	appid | The ID of the game you're requesting
 	l | (Optional) Language. If specified, it will return language data for the requested language.
@@ -367,27 +378,31 @@ impl Api
 	A list of achievements.
 	
 	Name | Description
-	---|---
+	:--|:--
 	apiname | The API name of the achievement
 	achieved | Whether or not the achievement has been completed.
 	unlocktime | Date when the achievement was unlocked.
 	name | **Optional** Localized achievement name
 	description | **Optional** Localized description of the achievement
 	*/
-	pub async fn getPlayerAchievements(&self, appId: usize, language: String) -> Result<GetPlayerAchievementsPayload>
+	pub async fn getPlayerAchievements(&self, appId: usize, language: &String) -> Result<Payload_GetPlayerAchievements>
 	{
 		if self.auth.validate()
 		{
 			let mut parameters = self.generateParameterMap();
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language);
+			parameters.insert(Self::Parameter_Language.into(), language.to_owned());
 			
-			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetPlayerAchievements)
+			if let Some(url) = self.buildUrl(
+				Self::Service_UserStats,
+				Self::Endpoint_GetPlayerAchievements
+			)
 			{
-				let response = self.get::<GetPlayerAchievementsPayload>(url, parameters).await
-					.context(format!("Error retrieving the list of achievements from Steam Web API for App ID: {}", appId))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetPlayerAchievements>(&url, &parameters).await
+					.context(format!(
+						"Error retrieving the list of achievements from Stema Web API for App ID {}",
+						appId
+					))?);
 			}
 		}
 		
@@ -413,7 +428,7 @@ impl Api
 	### Arguments
 	
 	Name | Description
-	---|---
+	:--|:--
 	steamids | Comma-delimited list of 64 bit Steam IDs to return profile information for. Up to 100 Steam IDs can be requested.
 	format | Output format. json (default), xml or vdf.
 	
@@ -426,7 +441,7 @@ impl Api
 	#### Public Data
 	
 	Name | Description
-	---|---
+	:--|:--
 	steamid | 64bit SteamID of the user
 	personaname | The player's persona name (display name)
 	profileurl | The full URL of the player's Steam Community profile.
@@ -442,7 +457,7 @@ impl Api
 	#### Private Data
 	
 	Name | Description
-	---|---
+	:--|:--
 	realname | The player's "Real Name", if they have set it.
 	primaryclanid | The player's primary group, as configured in their Steam Community profile.
 	timecreated | The time the player's account was created.
@@ -459,20 +474,24 @@ impl Api
 		- An updated readable list can be found at quer's steam location
 	- Getting locstatecode and loccityid, can now be done from https://steamcommunity.com/actions/QueryLocations/<loccountrycode>/<locstatecode>/
 	*/
-	pub async fn getPlayerSummaries(&self) -> Result<GetPlayerSummariesPayload>
+	pub async fn getPlayerSummaries(&self) -> Result<Payload_GetPlayerSummaries>
 	{
 		if self.auth.validate()
 		{
 			let mut parameters = self.generateParameterMap();
-			parameters.remove(Self::Parameter_SteamId.into());
-			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.clone());
+			parameters.remove(Self::Parameter_SteamId);
+			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.to_owned());
 			
-			if let Some(url) = self.buildUrl(Self::Service_User, Self::Endpoint_GetPlayerSummaries)
+			if let Some(url) = self.buildUrl(
+				Self::Service_User,
+				Self::Endpoint_GetPlayerSummaries
+			)
 			{
-				let response = self.get::<GetPlayerSummariesPayload>(url, parameters).await
-					.context(format!("Error retrieving player summary from Steam Web API for Steam ID {}", self.auth.id))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetPlayerSummaries>(&url, &parameters).await
+					.context(format!(
+						"Error retrieving player summary from Steam Web API for Steam ID {}",
+						self.auth.id
+					))?);
 			}
 		}
 		
@@ -500,7 +519,7 @@ impl Api
 	## Arguments
 	
 	Name | Description
-	---|---
+	:--|:--
 	steamid | The SteamID of the account.
 	count | Optionally limit to a certain number of games (the number of games a person has played in the last 2 weeks is typically very small)
 	format | Output format. json (default), xml or vdf.
@@ -515,16 +534,20 @@ impl Api
 		- playtime_forever - The total number of minutes played "on record", since Steam began tracking total playtime in early 2009.
 		- img_icon_url, img_logo_url - These are the filenames of various images for the game. To construct the URL to the image, use this format: `http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`. For example, the TF2 logo is returned as `07385eb55b5ba974aebbe74d3c99626bda7920b8`, which maps to the URL: `http://media.steampowered.com/steamcommunity/public/images/apps/440/07385eb55b5ba974aebbe74d3c99626bda7920b8.jpg`
 	*/
-	pub async fn getRecentlyPlayedGames(&self) -> Result<GetRecentlyPlayedGamesPayload>
+	pub async fn getRecentlyPlayedGames(&self) -> Result<Payload_GetRecentlyPlayedGames>
 	{
 		if self.auth.validate()
 		{
-			if let Some(url) = self.buildUrl(Self::Service_Player, Self::Endpoint_GetRecentlyPlayedGames)
+			if let Some(url) = self.buildUrl(
+				Self::Service_Player,
+				Self::Endpoint_GetRecentlyPlayedGames
+			)
 			{
-				let response = self.get::<GetRecentlyPlayedGamesPayload>(url, self.generateParameterMap()).await
-					.context(format!("Error retrieving recently played games from Steam Web API for Steam ID {}", self.auth.id))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetRecentlyPlayedGames>(&url, &self.generateParameterMap()).await
+					.context(format!(
+						"Error retrieving recently played games from Steam Web API for Steam ID {}",
+						self.auth.id
+					))?)
 			}
 		}
 		
@@ -544,7 +567,7 @@ impl Api
 	## Method-specific parameters
 	
 	Name | Description
-	---|----
+	:--|:--
 	appid | **uint32** appid of game
 	l | **Optional string** localized language to return (english, french, etc.)
 	
@@ -569,21 +592,25 @@ impl Api
 				-  defaultvalue (int) Default value of stat.
 				-  displayName (string) Developer provided name of string.
 	*/
-	pub async fn getSchemaForGame(&self, appId: usize, language: String) -> Result<GetSchemaForGamePayload>
+	pub async fn getSchemaForGame(&self, appId: usize, language: &String) -> Result<Payload_GetSchemaForGame>
 	{
 		if self.auth.validate()
 		{
 			let mut parameters = self.generateParameterMap();
-			parameters.remove(Self::Parameter_SteamId.into());
+			parameters.remove(Self::Parameter_SteamId);
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language);
+			parameters.insert(Self::Parameter_Language.into(), language.to_owned());
 			
-			if let Some(url) = self.buildUrl(Self::Service_UserStats, Self::Endpoint_GetSchemaForGame)
+			if let Some(url) = self.buildUrl(
+				Self::Service_UserStats,
+				Self::Endpoint_GetSchemaForGame
+			)
 			{
-				let response = self.get::<GetSchemaForGamePayload>(url, parameters).await
-					.context(format!("Error retrieving list of owned games from Steam Web API for Steam ID {}", self.auth.id))?;
-				
-				return Ok(response);
+				return Ok(self.get::<Payload_GetSchemaForGame>(&url, &parameters).await
+					.context(format!(
+						"Error retrieving game schema from Steam Web API for Game ID {}",
+						appId
+					))?);
 			}
 		}
 		
@@ -611,18 +638,17 @@ impl Api
 	*/
 	fn generateParameterMap(&self) -> HashMap<String, String>
 	{
-		let mut map = HashMap::new();
-		map.insert(Self::Parameter_Key.into(), self.auth.key.clone());
-		map.insert(Self::Parameter_SteamId.into(), self.auth.id.clone());
-		map.insert(Self::Parameter_Format.into(), Self::Format_Json.into());
-		
-		return map;
+		return HashMap::from([
+			(Self::Parameter_Key.into(), self.auth.key.to_owned()),
+			(Self::Parameter_SteamId.into(), self.auth.id.to_owned()),
+			(Self::Parameter_Format.into(), Self::Format_Json.into()),
+		]);
 	}
 	
 	/**
 	Execute an HTTP GET request.
 	*/
-	async fn get<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
+	async fn get<T>(&self, url: &String, parameters: &HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
 		let mut params = String::from("?");
@@ -633,11 +659,9 @@ impl Api
 		
 		let requestUrl = format!("{}{}", url, params);
 		let response = self.client.get(requestUrl)
-			.send()
-			.await
+			.send().await
 				.context("Error retrieving Steam API response")?
-			.json::<T>()
-			.await
+			.json::<T>().await
 				.context("Error parsing Steam API response as JSON")?;
 		
 		return Ok(response);

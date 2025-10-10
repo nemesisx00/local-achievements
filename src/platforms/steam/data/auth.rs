@@ -1,10 +1,7 @@
-#![allow(non_snake_case, non_upper_case_globals)]
-#![cfg_attr(debug_assertions, allow(dead_code))]
-
-use ::serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 /**
-The data necessary to access the Steam Web API
+The data necessary to access the Steam Web API.
 */
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct AuthData
@@ -17,7 +14,7 @@ pub struct AuthData
 
 impl AuthData
 {
-	/// The filename to be used when this struct is read from, or stored to, file.
+	/// The filename to be used when this struct is read from, or written to, the file system.
 	pub const FileName: &str = "steam-auth.json";
 	
 	/**
@@ -33,23 +30,17 @@ impl AuthData
 #[cfg(test)]
 mod tests
 {
-    use super::*;
+	use super::*;
 	
-    #[test]
-    fn AuthData_Validate()
+	#[test]
+	fn AuthData_Validate()
 	{
-		let instance = AuthData { id: "Test".to_string(), key: "abcdefghijklmnopqrstuvwxyz".to_string() };
-		assert!(instance.validate());
+		let id = "Test".to_string();
+		let key = "abcdefghijklmnopqrstuvwxyz".to_string();
 		
-		let mut idFail = instance.clone();
-		idFail.id = String::new();
-		assert!(!idFail.validate());
-		
-		let mut keyFail = instance.clone();
-		keyFail.key = String::new();
-		assert!(!keyFail.validate());
-		
-		let both = AuthData::default();
-		assert!(!both.validate());
+		assert!(AuthData { id: id.to_owned(), key: key.to_owned() }.validate());
+		assert!(!AuthData { key: key.to_owned(), ..Default::default() }.validate());
+		assert!(!AuthData { id: id.to_owned(), ..Default::default() }.validate());
+		assert!(!AuthData::default().validate());
 	}
 }
