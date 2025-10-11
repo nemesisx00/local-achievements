@@ -22,6 +22,18 @@ pub struct Api
 	pub client: Client,
 }
 
+impl From<AuthData> for Api
+{
+	fn from(value: AuthData) -> Self
+	{
+		return Self
+		{
+			auth: value,
+			..Default::default()
+		};
+	}
+}
+
 impl Api
 {
 	pub const Platform: &str = "Steam";
@@ -66,15 +78,6 @@ impl Api
 	const AvatarUrl: &str = "https://avatars.steamstatic.com/{hash}{size}.jpg";
 	const AvatarUrl_ReplaceMedium: &str = "_medium";
 	const AvatarUrl_ReplaceFull: &str = "_full";
-	
-	pub fn withAuth(auth: AuthData) -> Self
-	{
-		return Self
-		{
-			auth,
-			..Default::default()
-		};
-	}
 	
 	/**
 	Retrieve and cache the icon images for a list of `achievements`.

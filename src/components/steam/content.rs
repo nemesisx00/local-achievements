@@ -1,7 +1,9 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder, rsx, spawn, use_hook, Button, Element, GlobalSignal, Readable};
+use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
+	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
+use crate::components::steam::game::GameElement;
 use crate::components::steam::list::GameList;
-use crate::io::{loadImageToBytes, saveUserData_Steam, Path_Avatars};
-use crate::{SteamAuthData, SteamUserData};
+use crate::io::saveUserData_Steam;
+use crate::{SelectedGameId, SteamAuthData, SteamUserData};
 use crate::platforms::steam::SteamApi;
 
 #[component]
@@ -12,11 +14,13 @@ pub fn SteamContent() -> Element
 		refresh();
 	});
 	
-	let avatar = loadIcon(
-		&SteamApi::Platform.into(),
-		&Path_Avatars.into(),
-		&format!("{}_full.jpg", SteamUserData().id)
-	);
+	let selectedGame = match SelectedGameId()
+	{
+		None => None,
+		Some(gameId) => SteamUserData().games.iter()
+			.find(|g| g.id == gameId)
+			.cloned(),
+	};
 	
 	return rsx!(
 		rect
@@ -26,47 +30,19 @@ pub fn SteamContent() -> Element
 			spacing: "10",
 			width: "fill",
 			
-			rect
+			match selectedGame
 			{
-				direction: "horizontal",
-				main_align: "center",
-				spacing: "10",
-				width: "50%",
-				
-				image { image_data: dynamic_bytes(avatar), width: "64", }
-				
-				rect
-				{
-					direction: "vertical",
-					height: "100%",
-					main_align: "space-around",
-					
-					label
-					{
-						main_align: "center",
-						margin: "0 0 0 7",
-						text_align: "center",
-						
-						"{SteamUserData().name}"
-					}
-					
-					Button
-					{
-						onclick: move |_| refresh(),
-						label { "Refresh" }
-					}
-				}
+				None => rsx!(GameList {}),
+				Some(game) => rsx!(GameElement { appId: game.id }),
 			}
-			
-			GameList {}
 		}
 	);
 }
 
-fn refresh()
+pub fn refresh()
 {
 	spawn(async move {
-		let api = SteamApi::withAuth(SteamAuthData());
+		let api = SteamApi::from(SteamAuthData());
 		loadUserProfile(&api).await;
 		loadGameList(&api).await;
 		//loadRecentlyPlayedGames(&api).await;
@@ -80,7 +56,11 @@ async fn loadGameList(api: &SteamApi)
 		if !payload.response.games.is_empty()
 		{
 			SteamUserData.write().processOwnedGames(payload);
-			_ = saveUserData_Steam(&SteamUserData());
+			match saveUserData_Steam(&SteamUserData())
+			{
+				Err(e) => println!("Error saving user data (Steam): {:?}", e),
+				Ok(_) => println!("Saved user data (Steam)"),
+			}
 		}
 		
 		match api.cacheGameIcons(&SteamUserData().games, false).await
@@ -96,15 +76,6 @@ async fn loadGameList(api: &SteamApi)
 			None => println!("SteamAPI: Icon images cached for owned games!"),
 		}
 	}
-}
-
-fn loadIcon<'a>(platform: &String, group: &String, fileName: &String) -> Vec<u8>
-{
-	return match loadImageToBytes(platform, group, fileName)
-	{
-		Ok(b) => b,
-		Err(_) => vec![],
-	};
 }
 
 #[allow(unused)]

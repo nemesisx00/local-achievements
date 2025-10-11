@@ -1,18 +1,23 @@
-use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, use_signal,
-	Element, GlobalSignal, Input, Readable, VirtualScrollView, Writable};
-use crate::SteamUserData;
-use crate::components::steam::game::GameElement;
+use freya::hooks::{cow_borrowed, theme_with};
+use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
+	rsx, use_platform, use_signal, CursorIcon, Element, GlobalSignal, Input,
+	IntoDynNode, ProgressBar, ProgressBarThemeWith, Props, Readable,
+	VirtualScrollView, Writable};
+use crate::constants::{BorderColor, ButtonBackgroundColor,
+	RetroAchievementsProgressColorBackground, SteamContrast, TransparentColor};
+use crate::data::SteamGame;
+use crate::io::{loadImageToBytes, Filename_GameIcon, Path_Games};
+use crate::platforms::steam::SteamApi;
+use crate::{join, jpg, SelectedGameId, SteamUserData};
 
 #[component]
 pub fn GameList() -> Element
 {
 	let mut search = use_signal(|| String::default());
 	
-	let itemSize = 42.0;
-	
 	let mut games = SteamUserData().games.iter()
-		.cloned()
 		.filter(|g| g.name.to_lowercase().contains(&search().to_lowercase()))
+		.cloned()
 		.collect::<Vec<_>>();
 	games.sort();
 	
@@ -36,14 +41,150 @@ pub fn GameList() -> Element
 			{
 				cache_elements: true,
 				direction: "vertical",
-				item_size: itemSize,
+				item_size: 105.0,
 				length: games.len(),
 				
 				builder: move |i, _: &Option<()>| {
 					let game = &games[i];
-					return rsx!(GameElement { appId: game.id, language: "en".to_string(), });
+					return rsx!(GameListNode { game: game.to_owned() });
 				}
 			}
 		}
 	);
+}
+
+#[component]
+pub fn GameListNode(game: SteamGame) -> Element
+{
+    let platform = use_platform();
+	
+	let mut hovering = use_signal(|| false);
+	let bytes = loadIcon(&game);
+	
+	let background = match hovering()
+	{
+		false => TransparentColor,
+		true => ButtonBackgroundColor,
+	};
+	
+	let percentUnlocked = game.percentUnlocked();
+	let percentUnlockedString = format!("{:.2}", percentUnlocked);
+	
+	return rsx!(
+		rect
+		{
+			direction: "horizontal",
+			main_align: "space-around",
+			margin: "5 0",
+			width: "fill",
+			
+			rect
+			{
+				background,
+				border: "1 center {BorderColor}",
+				corner_radius: "5",
+				direction: "horizontal",
+				main_align: "space-between",
+				min_width: "540",
+				padding: "10 15",
+				spacing: "10",
+				width: "50%",
+				
+				onclick: move |_| {
+					platform.set_cursor(Default::default());
+					*SelectedGameId.write() = Some(game.id);
+				},
+				
+				onpointerenter: move |_| {
+					platform.set_cursor(CursorIcon::Pointer);
+					hovering.set(true);
+				},
+				
+				onpointerleave: move |_| {
+					platform.set_cursor(Default::default());
+					hovering.set(false);
+				},
+				
+				rect
+				{
+					direction: "horizontal",
+					spacing: "15",
+					
+					if !bytes.is_empty()
+					{
+						image
+						{
+							image_data: dynamic_bytes(bytes),
+							width: "64",
+						}
+					}
+					
+					rect
+					{
+						direction: "vertical",
+						main_align: "space-around",
+						
+						label { margin: "10 0 0 0", font_size: "18", "{game.name}" }
+					}
+				}
+				
+				if game.hasAchievements
+				{
+					rect
+					{
+						cross_align: "end",
+						direction: "vertical",
+						main_align: "space-around",
+						min_width: "150",
+						height: "100%",
+						width: "100",
+						
+						rect
+						{
+							layer: "2",
+							position: "absolute",
+							position_right: "0",
+							position_top: "10",
+							width: "100",
+							
+							ProgressBar
+							{
+								progress: percentUnlocked as f32,
+								theme: theme_with!(ProgressBarTheme {
+									background: cow_borrowed!(RetroAchievementsProgressColorBackground),
+									height: cow_borrowed!("8"),
+									progress_background: cow_borrowed!(SteamContrast),
+								}),
+							}
+						}
+						
+						paragraph
+						{
+							margin: "10 0 0 0",
+							text_align: "center",
+							width: "100",
+							
+							text { font_size: "10", "{percentUnlockedString}% " }
+						}
+					}
+				}
+			}
+		}
+	);
+}
+
+fn loadIcon<'a>(game: &SteamGame) -> Vec<u8>
+{
+	return match loadImageToBytes(
+			&SteamApi::Platform.to_lowercase(),
+			&join!(Path_Games, game.id),
+			&jpg!(Filename_GameIcon)
+		)
+	{
+		Ok(bytes) => bytes,
+		Err(e) => {
+			println!("Error loading game list node icon: {:?}", e);
+			vec![]
+		},
+	};
 }

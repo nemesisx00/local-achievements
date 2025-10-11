@@ -1,22 +1,18 @@
 use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
 	rsx, Button, Element, GlobalSignal, Readable};
-use crate::components::retroachievements::content::refresh;
-use crate::{png, RetroAchievementsUserData};
+use crate::components::steam::content::refresh;
 use crate::io::{loadImageToBytes, Path_Avatars};
-use crate::platforms::retroachievements::RetroAchievementsApi;
+use crate::SteamUserData;
+use crate::platforms::steam::SteamApi;
 
 #[component]
-pub fn RetroAchievementsUserProfile() -> Element
+pub fn SteamProfile() -> Element
 {
-	let avatar = match RetroAchievementsUserData().ulid
-	{
-		None => vec![],
-		Some(ulid) => loadIcon(
-			&RetroAchievementsApi::Platform.into(),
-			&Path_Avatars.into(),
-			&png!(ulid)
-		),
-	};
+	let avatar = loadIcon(
+		&SteamApi::Platform.into(),
+		&Path_Avatars.into(),
+		&format!("{}_full.jpg", SteamUserData().id)
+	);
 	
 	return rsx!(
 		rect
@@ -42,7 +38,7 @@ pub fn RetroAchievementsUserProfile() -> Element
 					margin: "0 0 0 7",
 					text_align: "center",
 					
-					"{RetroAchievementsUserData().username}"
+					"{SteamUserData().name}"
 				}
 				
 				Button

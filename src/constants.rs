@@ -11,6 +11,7 @@ pub const ButtonBackgroundColor: &str = "rgb(26, 26, 26)";
 pub const ButtonHoverColor: &str = "rgb(48, 48, 48)";
 pub const BorderColor: &str = "rgb(78, 78, 78)";
 pub const TextColor: &str = "rgb(204, 204, 204)";
+pub const TransparentColor: &str = "transparent";
 
 pub const RetroAchievementsDarkBackground: &str = "rgb(5, 60, 135)";
 pub const RetroAchievementsProgressColorBackground: &str = "rgb(9, 9, 11)";

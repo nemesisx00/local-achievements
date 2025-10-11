@@ -1,6 +1,8 @@
+use freya::hooks::cow_borrowed;
 use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, spawn, use_hook, use_signal, Button, Element, GlobalSignal, Input,
-	IntoDynNode, Loader, Props, Readable, Signal, VirtualScrollView, Writable};
+	rsx, spawn, theme_with, use_hook, use_signal, Button, ButtonThemeWith,
+	Element, GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal,
+	VirtualScrollView, Writable};
 use crate::components::retroachievements::achievement::AchievementElement;
 use crate::data::{RetroAchievementsAchievement, RetroAchievementsGame};
 use crate::io::{loadImageToBytes, saveUserData_RetroAchievements,
@@ -9,7 +11,7 @@ use crate::platforms::retroachievements::RetroAchievementsApi;
 use crate::{join, png, RetroAchievementsAuthData, RetroAchievementsUserData};
 
 #[component]
-pub fn GameElement(gameId: usize, selectedGameId: Signal<Option<usize>>) -> Element
+pub fn GameElement(gameId: usize) -> Element
 {
 	let mut loaded = use_signal(|| false);
 	let mut search = use_signal(|| String::default());
@@ -67,12 +69,6 @@ pub fn GameElement(gameId: usize, selectedGameId: Signal<Option<usize>>) -> Elem
 					spacing: "10",
 					width: "fill",
 					
-					Button
-					{
-						onpress: move |_| selectedGameId.set(None),
-						label { "Back" }
-					}
-					
 					if !bytes.is_empty()
 					{
 						image
@@ -85,21 +81,23 @@ pub fn GameElement(gameId: usize, selectedGameId: Signal<Option<usize>>) -> Elem
 					label
 					{
 						font_size: "24",
-						line_height: "32",
 						main_align: "center",
 						"{game.name} ({game.system.name})"
 					}
-				}
-				
-				Button
-				{
-					onpress: move |_| {
-						if gameId > 0
-						{
-							refresh(gameId, loaded);
-						}
-					},
-					label { "Refresh" }
+					
+					Button
+					{
+						theme: theme_with!(ButtonTheme {
+							margin: cow_borrowed!("5 0 0 0"),
+						}),
+						onpress: move |_| {
+							if gameId > 0
+							{
+								refresh(gameId, loaded);
+							}
+						},
+						label { "Refresh" }
+					}
 				}
 				
 				Input
@@ -107,27 +105,20 @@ pub fn GameElement(gameId: usize, selectedGameId: Signal<Option<usize>>) -> Elem
 					onchange: move |value: String| search.set(value),
 					placeholder: "Search by achievement name",
 					value: search(),
-					width: "60%",
+					width: "50%",
 				}
 			}
 			
-			if !game.achievements.is_empty()
+			VirtualScrollView
 			{
-				VirtualScrollView
-				{
-					cache_elements: true,
-					direction: "vertical",
-					item_size: 74.0,
-					length: achievementsList.len(),
-					builder: move |i, _: &Option<()>| {
-						let chievo = &achievementsList[i];
-						return rsx!(AchievementElement { gameId, achievementId: chievo.id });
-					}
+				cache_elements: true,
+				direction: "vertical",
+				item_size: 105.0,
+				length: achievementsList.len(),
+				builder: move |i, _: &Option<()>| {
+					let chievo = &achievementsList[i];
+					return rsx!(AchievementElement { gameId, achievementId: chievo.id });
 				}
-			}
-			else
-			{
-				label { main_align: "center", text_align: "center", width: "fill", "No Achievements to display" }
 			}
 		}
 	);
@@ -189,7 +180,7 @@ fn loadIcon<'a>(game: &RetroAchievementsGame) -> Vec<u8>
 	{
 		Ok(bytes) => bytes,
 		Err(e) => {
-			println!("Error: {:?}", e);
+			println!("Error loading game icon (Steam): {:?}", e);
 			vec![]
 		},
 	};

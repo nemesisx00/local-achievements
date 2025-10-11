@@ -62,6 +62,14 @@ impl From<GameInfo> for Game
 
 impl Game
 {
+	pub fn percentUnlocked(&self) -> f64
+	{
+		return (self.achievements.iter()
+				.filter(|a| a.unlocked())
+				.count() as f64 / self.achievements.len() as f64)
+			* 100.0;
+	}
+	
 	pub fn sortName(&self) -> String
 	{
 		return match self.name.starts_with(TheString)

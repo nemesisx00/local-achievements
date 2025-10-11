@@ -47,48 +47,64 @@ pub fn AchievementElement(appId: usize, id: String) -> Element
 	return rsx!(
 		rect
 		{
-			border: "1 center {BorderColor}",
-			corner_radius: "10",
 			direction: "horizontal",
-			margin: "5",
-			min_height: "64",
-			padding: "5 10",
-			spacing: "10",
+			main_align: "space-around",
+			margin: "5 0",
 			width: "fill",
 			
-			match bytes.is_empty()
+			rect
 			{
-				true => rsx!(Loader{}),
-				false => rsx!(image
+				border: "1 center {BorderColor}",
+				corner_radius: "10",
+				direction: "horizontal",
+				main_align: "space-between",
+				margin: "5",
+				min_height: "64",
+				min_width: "540",
+				padding: "5 10",
+				width: "50%",
+				
+				rect
 				{
-					image_data: dynamic_bytes(bytes),
-					width: "64",
-				})
-			}
-			
-			rect
-			{
-				direction: "vertical",
-				height: "100%",
-				main_align: "space-between",
-				spacing: "15",
-				width: "60%",
+					direction: "horizontal",
+					spacing: "10",
+					
+					match bytes.is_empty()
+					{
+						true => rsx!(Loader{}),
+						false => rsx!(image
+						{
+							image_data: dynamic_bytes(bytes),
+							width: "64",
+						})
+					}
+					
+					rect
+					{
+						direction: "vertical",
+						height: "100%",
+						main_align: "space-between",
+						min_height: "64",
+						max_height: "256",
+						spacing: "15",
+						width: "60%",
+						
+						label { "{achievement.name}" }
+						label { font_size: "10", "{achievement.description}" }
+					}
+				}
 				
-				label { "{achievement.name}" }
-				label { font_size: "10", max_height: "48", "{achievement.description}" }
-			}
-			
-			rect
-			{
-				cross_align: "end",
-				direction: "vertical",
-				main_align: "space-between",
-				min_width: "150",
-				height: "100%",
-				width: "calc(100%-60%-64-10-10)",
-				
-				label { font_size: "10", text_align: "end", "{globalPercentage}"}
-				label { font_size: "10", text_align: "end", "{timestamp}" }
+				rect
+				{
+					cross_align: "end",
+					direction: "vertical",
+					height: "100%",
+					main_align: "space-between",
+					width: "200",
+					
+					label { font_size: "10", text_align: "end", "{globalPercentage}"}
+					label { font_size: "10", text_align: "end", "{timestamp}" }
+				}
 			}
 		}
 	);

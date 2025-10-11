@@ -1,27 +1,16 @@
-use freya::prelude::{dioxus_elements, fc_to_builder, rsx, use_hook, use_signal,
-	Element, GlobalSignal, IntoDynNode, Readable, ThemeProvider};
+use freya::prelude::{dioxus_elements, fc_to_builder, rsx, use_hook, Element,
+	GlobalSignal, IntoDynNode, Readable, ThemeProvider};
 use crate::components::nav::NavBar;
 use crate::components::retroachievements::RetroAchivementsContent;
 use crate::components::settings::AppSettings;
 use crate::components::steam::SteamContent;
 use crate::io::{loadAuthData_RetroAchievements, loadAuthData_Steam, loadUserData_RetroAchievements, loadUserData_Steam};
 use crate::constants::{BackgroundColor, TextColor, Theme};
-use crate::{RetroAchievementsAuthData, RetroAchievementsUserData, SteamAuthData, SteamUserData};
-
-#[derive(Clone, Copy, Default, Debug, PartialEq, PartialOrd)]
-pub enum ActiveContent
-{
-	#[default]
-	RetroAchievements,
-	Settings,
-	Steam,
-}
+use crate::{ActiveContent, RetroAchievementsAuthData, RetroAchievementsUserData, SteamAuthData, SteamUserData};
 
 pub fn App() -> Element
 {
 	use_hook(initializeState);
-	
-	let activeContent = use_signal(|| ActiveContent::default());
 	
 	return rsx!(
 		ThemeProvider
@@ -36,9 +25,9 @@ pub fn App() -> Element
 				height: "100%",
 				padding: "15",
 				
-				NavBar { activeContent }
+				NavBar {}
 				
-				match activeContent()
+				match ActiveContent()
 				{
 					ActiveContent::RetroAchievements => rsx!(RetroAchivementsContent {}),
 					ActiveContent::Settings => rsx!(AppSettings {}),

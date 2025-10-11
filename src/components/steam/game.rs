@@ -1,13 +1,16 @@
-use dioxus::hooks::to_owned;
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder, rsx, spawn, use_signal, Accordion, AccordionSummary, Button, Element, GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal, VirtualScrollView, Writable};
+use freya::hooks::{cow_borrowed, theme_with};
+use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
+	rsx, spawn, use_hook, use_signal, Button, ButtonThemeWith, Element,
+	GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal,
+	VirtualScrollView, Writable};
 use crate::components::steam::achievement::AchievementElement;
 use crate::data::{SteamAchievement, SteamGame};
 use crate::io::{loadImageToBytes, saveUserData_Steam, Filename_GameIcon, Path_Games};
-use crate::{join, jpg, SteamAuthData, SteamUserData};
+use crate::{join, jpg, Language, SteamAuthData, SteamUserData};
 use crate::platforms::steam::SteamApi;
 
 #[component]
-pub fn GameElement(appId: usize, language: String) -> Element
+pub fn GameElement(appId: usize) -> Element
 {
 	let mut loaded = use_signal(|| false);
 	let mut search = use_signal(|| String::default());
@@ -31,10 +34,32 @@ pub fn GameElement(appId: usize, language: String) -> Element
 	
 	let bytes = loadIcon(&game);
 	
+	use_hook(|| if !loaded() && appId > 0
+	{
+		refresh(appId, loaded);
+	});
+	
 	return rsx!(
-		Accordion
+		if !loaded()
 		{
-			summary: rsx!(AccordionSummary {
+			rect
+			{
+				direction: "horizontal",
+				main_align: "center",
+				width: "fill",
+				Loader {}
+			}
+		}
+		else
+		{
+			rect
+			{
+				direction: "vertical",
+				cross_align: "center",
+				margin: "10 0 5",
+				spacing: "10",
+				width: "fill",
+				
 				rect
 				{
 					direction: "horizontal",
@@ -42,16 +67,6 @@ pub fn GameElement(appId: usize, language: String) -> Element
 					margin: "5 0 0",
 					spacing: "10",
 					width: "fill",
-					onclick: {
-						to_owned![language];
-						move |_| {
-							//TODO: When freya v0.4 releases, have this component request focus so the game list scrolls it to the top
-							if !loaded() && appId > 0
-							{
-								refresh(appId, language.to_owned(), loaded);
-							}
-						}
-					},
 					
 					if !bytes.is_empty()
 					{
@@ -65,94 +80,70 @@ pub fn GameElement(appId: usize, language: String) -> Element
 					label
 					{
 						font_size: "24",
-						line_height: "32",
 						main_align: "center",
 						"{game.name}"
 					}
-				}
-			}),
-			
-			if !loaded()
-			{
-				rect
-				{
-					direction: "horizontal",
-					main_align: "center",
-					width: "fill",
-					Loader {}
-				}
-			}
-			else
-			{
-				rect
-				{
-					direction: "vertical",
-					cross_align: "center",
-					margin: "10 0 5",
-					spacing: "10",
-					width: "fill",
 					
 					Button
 					{
-						onpress: {
-							to_owned![language];
-							move |_| {
-								if appId > 0
-								{
-									refresh(appId, language.to_owned(), loaded);
-								}
+						theme: theme_with!(ButtonTheme {
+							margin: cow_borrowed!("5 0 0 0"),
+						}),
+						onpress: move |_| {
+							if appId > 0
+							{
+								refresh(appId, loaded);
 							}
 						},
 						label { "Refresh" }
 					}
-					
-					Input
-					{
-						onchange: move |value: String| search.set(value),
-						placeholder: "Search by achievement name",
-						value: search(),
-						width: "60%",
-					}
 				}
 				
-				if game.hasAchievements
+				Input
 				{
-					VirtualScrollView
-					{
-						cache_elements: true,
-						direction: "vertical",
-						item_size: 74.0,
-						length: achievementsList.len(),
-						builder: move |i, _: &Option<()>| {
-							let chievo = &achievementsList[i];
-							return rsx!(AchievementElement { appId, id: chievo.id.to_owned() });
-						}
+					onchange: move |value: String| search.set(value),
+					placeholder: "Search by achievement name",
+					value: search(),
+					width: "50%",
+				}
+			}
+			
+			if game.hasAchievements
+			{
+				VirtualScrollView
+				{
+					cache_elements: true,
+					direction: "vertical",
+					item_size: 105.0,
+					length: achievementsList.len(),
+					builder: move |i, _: &Option<()>| {
+						let chievo = &achievementsList[i];
+						return rsx!(AchievementElement { appId, id: chievo.id.to_owned() });
 					}
 				}
-				else
-				{
-					label { main_align: "center", text_align: "center", width: "fill", "No Achievements to display" }
-				}
+			}
+			else
+			{
+				label { main_align: "center", text_align: "center", width: "fill", "No Achievements to display" }
 			}
 		}
 	);
 }
 
-fn refresh(appId: usize, language: String, loaded: Signal<bool>)
+fn refresh(appId: usize, loaded: Signal<bool>)
 {
 	let mut loaded = loaded.clone();
 	spawn(async move {
-		loadGameData(appId, &language).await;
+		let api = SteamApi::from(SteamAuthData());
+		loadGameData(&api, appId).await;
 		println!("Game data loaded for {}", appId);
 		loaded.set(true);
 	});
 }
 
-async fn loadGameData(appId: usize, language: &String)
+async fn loadGameData(api: &SteamApi, appId: usize)
 {
-	let api = SteamApi::withAuth(SteamAuthData());
-	
-	if let Ok(payload) = api.getSchemaForGame(appId, &language).await
+	if let Ok(payload) = api.getSchemaForGame(appId, &Language()).await
 	{
 		if let Some(game) = SteamUserData.write().games.iter_mut().find(|g| g.id == appId)
 		{
@@ -167,7 +158,7 @@ async fn loadGameData(appId: usize, language: &String)
 		}
 	}
 	
-	if let Ok(payload) = api.getPlayerAchievements(appId, &language).await
+	if let Ok(payload) = api.getPlayerAchievements(appId, &Language()).await
 	{
 		if let Some(game) = SteamUserData.write().games.iter_mut().find(|g| g.id == appId)
 		{
@@ -185,7 +176,11 @@ async fn loadGameData(appId: usize, language: &String)
 		}
 	}
 	
-	_ = saveUserData_Steam(&SteamUserData());
+	match saveUserData_Steam(&SteamUserData())
+	{
+		Err(e) => println!("Error saving user data (Steam): {:?}", e),
+		Ok(_) => println!("Saved user data (Steam)"),
+	}
 }
 
 fn loadIcon<'a>(game: &SteamGame) -> Vec<u8>
@@ -198,7 +193,7 @@ fn loadIcon<'a>(game: &SteamGame) -> Vec<u8>
 	{
 		Ok(bytes) => bytes,
 		Err(e) => {
-			println!("Error: {:?}", e);
+			println!("Error loading game icon (Steam): {:?}", e);
 			vec![]
 		},
 	};

@@ -1,10 +1,8 @@
-use dioxus::hooks::use_signal;
 use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
 	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
 use crate::components::retroachievements::game::GameElement;
 use crate::components::retroachievements::list::GameList;
-use crate::components::retroachievements::profile::RetroAchivementsUserProfile;
-use crate::{RetroAchievementsAuthData, RetroAchievementsUserData};
+use crate::{RetroAchievementsAuthData, RetroAchievementsUserData, SelectedGameId};
 use crate::io::{saveUserData_RetroAchievements};
 use crate::platforms::retroachievements::RetroAchievementsApi;
 
@@ -16,9 +14,7 @@ pub fn RetroAchivementsContent() -> Element
 		refresh();
 	});
 	
-	let selectedGameId = use_signal(|| None);
-	
-	let selectedGame = match selectedGameId()
+	let selectedGame = match SelectedGameId()
 	{
 		None => None,
 		Some(gameId) => RetroAchievementsUserData().games.iter()
@@ -34,18 +30,16 @@ pub fn RetroAchivementsContent() -> Element
 			spacing: "10",
 			width: "fill",
 			
-			RetroAchivementsUserProfile { refreshHandler: move |_| refresh(), }
-			
 			match selectedGame
 			{
-				None => rsx!(GameList { selectedGameId }),
-				Some(game) => rsx!(GameElement { gameId: game.id, selectedGameId }),
+				None => rsx!(GameList {}),
+				Some(game) => rsx!(GameElement { gameId: game.id }),
 			}
 		}
 	);
 }
 
-fn refresh()
+pub fn refresh()
 {
 	spawn(async move {
 		let api: RetroAchievementsApi = RetroAchievementsAuthData().into();

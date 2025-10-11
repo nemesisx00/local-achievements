@@ -1,17 +1,17 @@
 use freya::prelude::{component, cow_borrowed, dioxus_elements, dynamic_bytes,
 	fc_to_builder, rsx, theme_with, use_platform, use_signal, CursorIcon,
 	Element, GlobalSignal, Input, IntoDynNode, ProgressBar,
-	ProgressBarThemeWith, Props, Readable, Signal, VirtualScrollView, Writable};
+	ProgressBarThemeWith, Props, Readable, VirtualScrollView, Writable};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
 	RetroAchievementsProgressColorBackground, RetroAchievementsProgressColorCasual,
-	RetroAchievementsProgressColorHardcore};
+	RetroAchievementsProgressColorHardcore, TransparentColor};
 use crate::data::{RetroAchievementsGame, RetroAchievementsMode};
 use crate::io::{loadImageToBytes, Filename_GameIcon, Path_Games};
 use crate::platforms::retroachievements::RetroAchievementsApi;
-use crate::{join, png, RetroAchievementsUserData};
+use crate::{join, png, RetroAchievementsUserData, SelectedGameId};
 
 #[component]
-pub fn GameList(selectedGameId: Signal<Option<usize>>) -> Element
+pub fn GameList() -> Element
 {
 	let mut search = use_signal(|| String::default());
 	
@@ -47,7 +47,7 @@ pub fn GameList(selectedGameId: Signal<Option<usize>>) -> Element
 				
 				builder: move |i, _: &Option<()>| {
 					let game = &games[i];
-					return rsx!(GameListNode { game: game.to_owned(), selectedGameId });
+					return rsx!(GameListNode { game: game.to_owned() });
 				}
 			}
 		}
@@ -55,7 +55,7 @@ pub fn GameList(selectedGameId: Signal<Option<usize>>) -> Element
 }
 
 #[component]
-pub fn GameListNode(game: RetroAchievementsGame, selectedGameId: Signal<Option<usize>>) -> Element
+pub fn GameListNode(game: RetroAchievementsGame) -> Element
 {
     let platform = use_platform();
 	
@@ -64,7 +64,7 @@ pub fn GameListNode(game: RetroAchievementsGame, selectedGameId: Signal<Option<u
 	
 	let background = match hovering()
 	{
-		false => "transparent",
+		false => TransparentColor,
 		true => ButtonBackgroundColor,
 	};
 	
@@ -95,7 +95,7 @@ pub fn GameListNode(game: RetroAchievementsGame, selectedGameId: Signal<Option<u
 				
 				onclick: move |_| {
 					platform.set_cursor(CursorIcon::default());
-					selectedGameId.set(Some(game.id));
+					*SelectedGameId.write() = Some(game.id);
 				},
 				
 				onpointerenter: move |_| {
@@ -172,7 +172,7 @@ pub fn GameListNode(game: RetroAchievementsGame, selectedGameId: Signal<Option<u
 						{
 							progress: progressHardcore as f32,
 							theme: theme_with!(ProgressBarTheme {
-								background: cow_borrowed!("transparent"),
+								background: cow_borrowed!(TransparentColor),
 								height: cow_borrowed!("8"),
 								progress_background: cow_borrowed!(RetroAchievementsProgressColorHardcore),
 							}),

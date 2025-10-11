@@ -5,3 +5,4 @@ mod list;
 mod profile;
 
 pub use content::RetroAchivementsContent;
+pub use profile::RetroAchievementsUserProfile;
