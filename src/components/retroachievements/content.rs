@@ -22,7 +22,8 @@ pub fn RetroAchivementsContent() -> Element
 	{
 		None => None,
 		Some(gameId) => RetroAchievementsUserData().games.iter()
-			.find(|g| g.id == gameId).cloned(),
+			.find(|g| g.id == gameId)
+			.cloned(),
 	};
 	
 	return rsx!(
@@ -57,7 +58,11 @@ fn refresh()
 		}
 		println!("Finished looping loadUserGameProgress");
 		
-		_ = saveUserData_RetroAchievements(&RetroAchievementsUserData());
+		match saveUserData_RetroAchievements(&RetroAchievementsUserData())
+		{
+			Err(e) => println!("Error saving user data (RetroAchievements): {:}", e),
+			Ok(_) => println!("Saved user data (RetroAchievements)"),
+		}
 	});
 }
 
@@ -90,7 +95,6 @@ async fn loadUserCompletionProgress(api: &RetroAchievementsApi, state: UserCompl
 	{
 		Err(e) => {
 			println!("Error retrieving user game progress: {:?}", e);
-			//Should halt the loop
 			newState = UserCompletionProgressState::default();
 		},
 		
