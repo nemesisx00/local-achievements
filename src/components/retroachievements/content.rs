@@ -1,5 +1,7 @@
+use dioxus::hooks::use_signal;
 use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
-	use_hook, Element, GlobalSignal, Readable};
+	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
+use crate::components::retroachievements::game::GameElement;
 use crate::components::retroachievements::list::GameList;
 use crate::components::retroachievements::profile::RetroAchivementsUserProfile;
 use crate::{RetroAchievementsAuthData, RetroAchievementsUserData};
@@ -14,6 +16,15 @@ pub fn RetroAchivementsContent() -> Element
 		refresh();
 	});
 	
+	let selectedGameId = use_signal(|| None);
+	
+	let selectedGame = match selectedGameId()
+	{
+		None => None,
+		Some(gameId) => RetroAchievementsUserData().games.iter()
+			.find(|g| g.id == gameId).cloned(),
+	};
+	
 	return rsx!(
 		rect
 		{
@@ -24,7 +35,11 @@ pub fn RetroAchivementsContent() -> Element
 			
 			RetroAchivementsUserProfile { refreshHandler: move |_| refresh(), }
 			
-			GameList {}
+			match selectedGame
+			{
+				None => rsx!(GameList { selectedGameId }),
+				Some(game) => rsx!(GameElement { gameId: game.id, selectedGameId }),
+			}
 		}
 	);
 }

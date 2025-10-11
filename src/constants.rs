@@ -1,5 +1,11 @@
 use freya::hooks::{cow_borrowed, ButtonTheme, FontTheme, Theme, DARK_THEME};
 
+pub const AppTitle: &str = "Local Achievements";
+#[allow(unused)]
+pub const AppVersion: &str = "0.3.0";
+pub const DefaultWindowSize: (f64, f64) = (1280.0, 720.0);
+pub const MinimumWindowSize: (f64, f64) = (720.0, 480.0);
+
 pub const BackgroundColor: &str = "rgb(35, 35, 35)";
 pub const ButtonBackgroundColor: &str = "rgb(26, 26, 26)";
 pub const ButtonHoverColor: &str = "rgb(48, 48, 48)";

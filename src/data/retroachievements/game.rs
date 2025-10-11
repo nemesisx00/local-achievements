@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use crate::constants::TheString;
-use crate::data::makeRelative;
+use crate::data::{makeRelative, RetroAchievementsMode};
 use crate::data::retroachievements::achievement::Achievement;
 use crate::data::retroachievements::kind::AwardKind;
 use crate::data::retroachievements::system::System;
@@ -80,7 +80,16 @@ impl PartialOrd for Game
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{
-		return self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase());
+		return match self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase())
+		{
+			None => self.system.partial_cmp(&other.system),
+			
+			Some(o) => match o
+			{
+				Ordering::Equal => self.system.partial_cmp(&other.system),
+				_ => Some(o),
+			},
+		};
 	}
 }
 
@@ -98,6 +107,17 @@ impl Game
 			
 			false => self.name.to_owned(),
 		};
+	}
+	
+	pub fn percentUnlocked(&self, mode: RetroAchievementsMode) -> f64
+	{
+		return (match mode
+		{
+			RetroAchievementsMode::Casual => self.awardedCasual,
+			RetroAchievementsMode::Hardcore => self.awardedHardcore,
+		} as f64
+			/ self.total as f64)
+		* 100.0;
 	}
 	
 	pub fn update(&mut self, game: &GameMetadata)

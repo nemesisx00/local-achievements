@@ -1,12 +1,15 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder, rsx, spawn, use_signal, Accordion, AccordionSummary, Button, Element, GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal, VirtualScrollView, Writable};
+use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
+	rsx, spawn, use_hook, use_signal, Button, Element, GlobalSignal, Input,
+	IntoDynNode, Loader, Props, Readable, Signal, VirtualScrollView, Writable};
 use crate::components::retroachievements::achievement::AchievementElement;
 use crate::data::{RetroAchievementsAchievement, RetroAchievementsGame};
-use crate::io::{loadImageToBytes, saveUserData_RetroAchievements, Filename_GameIcon, Path_Games};
+use crate::io::{loadImageToBytes, saveUserData_RetroAchievements,
+	Filename_GameIcon, Path_Games};
 use crate::platforms::retroachievements::RetroAchievementsApi;
 use crate::{join, png, RetroAchievementsAuthData, RetroAchievementsUserData};
 
 #[component]
-pub fn GameElement(gameId: usize) -> Element
+pub fn GameElement(gameId: usize, selectedGameId: Signal<Option<usize>>) -> Element
 {
 	let mut loaded = use_signal(|| false);
 	let mut search = use_signal(|| String::default());
@@ -22,18 +25,40 @@ pub fn GameElement(gameId: usize) -> Element
 	};
 	
 	let mut achievementsList: Vec<RetroAchievementsAchievement> = game.achievements.iter()
-		.cloned()
 		.filter(|a| a.name.to_lowercase().contains(&search().to_lowercase())
 			|| a.description.to_lowercase().contains(&search().to_lowercase()))
+		.cloned()
 		.collect();
 	achievementsList.sort();
 	
 	let bytes = loadIcon(&game);
 	
+	use_hook(|| if !loaded() && gameId > 0
+	{
+		refresh(gameId, loaded);
+	});
+	
 	return rsx!(
-		Accordion
+		if !loaded()
 		{
-			summary: rsx!(AccordionSummary {
+			rect
+			{
+				direction: "horizontal",
+				main_align: "center",
+				width: "fill",
+				Loader {}
+			}
+		}
+		else
+		{
+			rect
+			{
+				direction: "vertical",
+				cross_align: "center",
+				margin: "10 0 5",
+				spacing: "10",
+				width: "fill",
+				
 				rect
 				{
 					direction: "horizontal",
@@ -41,15 +66,12 @@ pub fn GameElement(gameId: usize) -> Element
 					margin: "5 0 0",
 					spacing: "10",
 					width: "fill",
-					onclick: {
-						move |_| {
-							//TODO: When freya v0.4 releases, have this component request focus so the game list scrolls it to the top
-							if !loaded() && gameId > 0
-							{
-								refresh(gameId, loaded);
-							}
-						}
-					},
+					
+					Button
+					{
+						onpress: move |_| selectedGameId.set(None),
+						label { "Back" }
+					}
 					
 					if !bytes.is_empty()
 					{
@@ -68,68 +90,44 @@ pub fn GameElement(gameId: usize) -> Element
 						"{game.name} ({game.system.name})"
 					}
 				}
-			}),
-			
-			if !loaded()
-			{
-				rect
+				
+				Button
 				{
-					direction: "horizontal",
-					main_align: "center",
-					width: "fill",
-					Loader {}
+					onpress: move |_| {
+						if gameId > 0
+						{
+							refresh(gameId, loaded);
+						}
+					},
+					label { "Refresh" }
+				}
+				
+				Input
+				{
+					onchange: move |value: String| search.set(value),
+					placeholder: "Search by achievement name",
+					value: search(),
+					width: "60%",
+				}
+			}
+			
+			if !game.achievements.is_empty()
+			{
+				VirtualScrollView
+				{
+					cache_elements: true,
+					direction: "vertical",
+					item_size: 74.0,
+					length: achievementsList.len(),
+					builder: move |i, _: &Option<()>| {
+						let chievo = &achievementsList[i];
+						return rsx!(AchievementElement { gameId, achievementId: chievo.id });
+					}
 				}
 			}
 			else
 			{
-				rect
-				{
-					direction: "vertical",
-					cross_align: "center",
-					margin: "10 0 5",
-					spacing: "10",
-					width: "fill",
-					
-					Button
-					{
-						onpress: {
-							move |_| {
-								if gameId > 0
-								{
-									refresh(gameId, loaded);
-								}
-							}
-						},
-						label { "Refresh" }
-					}
-					
-					Input
-					{
-						onchange: move |value: String| search.set(value),
-						placeholder: "Search by achievement name",
-						value: search(),
-						width: "60%",
-					}
-				}
-				
-				if !game.achievements.is_empty()
-				{
-					VirtualScrollView
-					{
-						cache_elements: true,
-						direction: "vertical",
-						item_size: 74.0,
-						length: achievementsList.len(),
-						builder: move |i, _: &Option<()>| {
-							let chievo = &achievementsList[i];
-							return rsx!(AchievementElement { gameId, achievementId: chievo.id });
-						}
-					}
-				}
-				else
-				{
-					label { main_align: "center", text_align: "center", width: "fill", "No Achievements to display" }
-				}
+				label { main_align: "center", text_align: "center", width: "fill", "No Achievements to display" }
 			}
 		}
 	);

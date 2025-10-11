@@ -16,12 +16,7 @@ use crate::components::App;
 use crate::data::{RetroAchievementsUser, SteamUser};
 use crate::platforms::retroachievements::data::RetroAchievementsAuth;
 use crate::platforms::steam::SteamAuth;
-use crate::constants::BackgroundColor;
-
-pub const AppTitle: &str = "Local Achievements";
-pub const AppVersion: &str = "0.2.0";
-pub const DefaultWindowSize: (f64, f64) = (1280.0, 720.0);
-pub const MinimumWindowSize: (f64, f64) = (720.0, 480.0);
+use crate::constants::{AppTitle, BackgroundColor, DefaultWindowSize, MinimumWindowSize};
 
 pub static RetroAchievementsAuthData: GlobalSignal<RetroAchievementsAuth> = Signal::global(|| RetroAchievementsAuth::default());
 pub static RetroAchievementsUserData: GlobalSignal<RetroAchievementsUser> = Signal::global(|| RetroAchievementsUser::default());
