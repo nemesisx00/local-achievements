@@ -1,3 +1,4 @@
+mod local;
 mod retroachievements;
 mod settings;
 mod steam;
