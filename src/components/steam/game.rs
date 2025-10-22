@@ -1,8 +1,10 @@
+use freya::events::Code;
 use freya::hooks::{cow_borrowed, theme_with};
 use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, spawn, use_hook, use_signal, Button, ButtonThemeWith, Element,
-	GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal,
-	VirtualScrollView, Writable};
+	rsx, spawn, use_hook, use_scroll_controller, use_signal, Button,
+	ButtonThemeWith, Element, GlobalSignal, Input, IntoDynNode, Loader, Props,
+	Readable, ScrollConfig, ScrollDirection, ScrollPosition, VirtualScrollView,
+	Writable};
 use crate::components::steam::achievement::AchievementElement;
 use crate::data::{SteamAchievement, SteamGame};
 use crate::io::{loadImageToBytes, saveUserData_Steam, Filename_GameIcon, Path_Games};
@@ -12,17 +14,14 @@ use crate::platforms::steam::SteamApi;
 #[component]
 pub fn GameElement(appId: usize) -> Element
 {
-	let mut loaded = use_signal(|| false);
+	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
 	let mut search = use_signal(|| String::default());
 	
 	let game = match SteamUserData().games.iter()
 		.find(|g| g.id == appId)
 	{
 		None => SteamGame::default(),
-		Some(g) => {
-			loaded.set(g.hasAchievements && !g.achievements.is_empty());
-			g.clone()
-		},
+		Some(g) => g.clone(),
 	};
 	
 	let mut achievementsList: Vec<SteamAchievement> = game.achievements.iter()
@@ -34,13 +33,13 @@ pub fn GameElement(appId: usize) -> Element
 	
 	let bytes = loadIcon(&game);
 	
-	use_hook(|| if !loaded() && appId > 0
+	use_hook(|| if !game.loaded && appId > 0
 	{
-		refresh(appId, loaded);
+		refresh(appId);
 	});
 	
 	return rsx!(
-		if !loaded()
+		if !game.loaded
 		{
 			rect
 			{
@@ -59,6 +58,13 @@ pub fn GameElement(appId: usize) -> Element
 				margin: "10 0 5",
 				spacing: "10",
 				width: "fill",
+				
+				onglobalkeyup: move |e| match e.code
+				{
+					Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
+					Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
+					_ => {},
+				},
 				
 				rect
 				{
@@ -92,7 +98,7 @@ pub fn GameElement(appId: usize) -> Element
 						onpress: move |_| {
 							if appId > 0
 							{
-								refresh(appId, loaded);
+								refresh(appId);
 							}
 						},
 						label { "Refresh" }
@@ -116,6 +122,9 @@ pub fn GameElement(appId: usize) -> Element
 					direction: "vertical",
 					item_size: 105.0,
 					length: achievementsList.len(),
+					scroll_controller: scrollController,
+					scroll_with_arrows: true,
+					
 					builder: move |i, _: &Option<()>| {
 						let chievo = &achievementsList[i];
 						return rsx!(AchievementElement { appId, id: chievo.id.to_owned() });
@@ -130,14 +139,12 @@ pub fn GameElement(appId: usize) -> Element
 	);
 }
 
-fn refresh(appId: usize, loaded: Signal<bool>)
+fn refresh(appId: usize)
 {
-	let mut loaded = loaded.clone();
 	spawn(async move {
 		let api = SteamApi::from(SteamAuthData());
 		loadGameData(&api, appId).await;
 		println!("Game data loaded for {}", appId);
-		loaded.set(true);
 	});
 }
 
@@ -145,7 +152,8 @@ async fn loadGameData(api: &SteamApi, appId: usize)
 {
 	if let Ok(payload) = api.getSchemaForGame(appId, &Language()).await
 	{
-		if let Some(game) = SteamUserData.write().games.iter_mut().find(|g| g.id == appId)
+		if let Some(game) = SteamUserData.write().games.iter_mut()
+			.find(|g| g.id == appId)
 		{
 			game.updateAchievementsMetadata(&payload);
 			println!("Done fetching game achievements for {}", appId);
@@ -160,7 +168,8 @@ async fn loadGameData(api: &SteamApi, appId: usize)
 	
 	if let Ok(payload) = api.getPlayerAchievements(appId, &Language()).await
 	{
-		if let Some(game) = SteamUserData.write().games.iter_mut().find(|g| g.id == appId)
+		if let Some(game) = SteamUserData.write().games.iter_mut()
+			.find(|g| g.id == appId)
 		{
 			game.updateAchievementsState(&payload);
 			println!("Done fetching player achievements for {}", appId);
@@ -169,11 +178,18 @@ async fn loadGameData(api: &SteamApi, appId: usize)
 	
 	if let Ok(payload) = api.getGlobalPercentages(appId).await
 	{
-		if let Some(game) = SteamUserData.write().games.iter_mut().find(|g| g.id == appId)
+		if let Some(game) = SteamUserData.write().games.iter_mut()
+			.find(|g| g.id == appId)
 		{
 			game.updateGlobalPercentages(&payload);
 			println!("Done fetching global percentages for {}", appId);
 		}
+	}
+	
+	if let Some(game) = SteamUserData.write().games.iter_mut()
+		.find(|g| g.id == appId)
+	{
+		game.loaded = true;
 	}
 	
 	match saveUserData_Steam(&SteamUserData())

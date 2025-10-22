@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::constants::TheString;
 use crate::data::steam::achievement::Achievement;
 use crate::data::steam::playtime::Playtime;
-use crate::platforms::steam::data::{GameInfo, Payload_GetGlobalPercentages, Payload_GetPlayerAchievements, Payload_GetSchemaForGame};
+use crate::platforms::steam::data::{GameInfo, Payload_GetGlobalPercentages,
+	Payload_GetPlayerAchievements, Payload_GetSchemaForGame};
 
 /**
 A single game, containing all of its achievements.
@@ -26,6 +27,9 @@ pub struct Game
 	/// The timestamp of the last time the player played the game.
 	pub lastPlayed: usize,
 	
+	/// Flag denoting whether or not the game's data has been loaded.
+	pub loaded: bool,
+	
 	/// The human-readable title of the game.
 	pub name: String,
 	
@@ -37,15 +41,35 @@ impl PartialOrd for Game
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{
-		return match self.hasAchievements.partial_cmp(&other.hasAchievements)
+		return match self.loaded.partial_cmp(&other.loaded)
 		{
-			None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+			None => match self.hasAchievements.partial_cmp(&other.hasAchievements)
+			{
+				None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+				Some(c) => match c
+				{
+					Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+					Ordering::Greater => Some(Ordering::Less),
+					Ordering::Less => Some(Ordering::Greater),
+				},
+			},
+			
 			Some(c) => match c
 			{
-				Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+				Ordering::Equal => match self.hasAchievements.partial_cmp(&other.hasAchievements)
+				{
+					None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+					Some(c) => match c
+					{
+						Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+						Ordering::Greater => Some(Ordering::Less),
+						Ordering::Less => Some(Ordering::Greater),
+					},
+				},
+				
 				Ordering::Greater => Some(Ordering::Less),
 				Ordering::Less => Some(Ordering::Greater),
-			},
+			}
 		};
 	}
 }
@@ -124,8 +148,6 @@ impl Game
 	
 	pub fn updateAchievementsMetadata(&mut self, payload: &Payload_GetSchemaForGame)
 	{
-		self.hasAchievements = !&payload.game.availableGameStats.achievements.is_none();
-		
 		if let Some(achievementList) = &payload.game.availableGameStats.achievements
 		{
 			for metadata in achievementList
@@ -138,5 +160,8 @@ impl Game
 				}
 			}
 		}
+		
+		self.hasAchievements = !&payload.game.availableGameStats.achievements.is_none();
+		self.loaded = true;
 	}
 }

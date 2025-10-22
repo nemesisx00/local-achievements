@@ -136,21 +136,26 @@ pub fn GameListNode(game: SteamGame) -> Element
 						direction: "vertical",
 						main_align: "space-around",
 						
-						label { margin: "10 0 0 0", font_size: "18", "{game.name}" }
+						label
+						{
+							margin: "10 0 0 0",
+							font_size: "18",
+							"{game.name}"
+						}
 					}
 				}
 				
-				if game.hasAchievements
+				rect
 				{
-					rect
+					cross_align: "end",
+					direction: "vertical",
+					main_align: "space-around",
+					min_width: "150",
+					height: "100%",
+					width: "100",
+					
+					if game.hasAchievements
 					{
-						cross_align: "end",
-						direction: "vertical",
-						main_align: "space-around",
-						min_width: "150",
-						height: "100%",
-						width: "100",
-						
 						rect
 						{
 							layer: "2",
@@ -170,13 +175,33 @@ pub fn GameListNode(game: SteamGame) -> Element
 							}
 						}
 						
-						paragraph
+						label
 						{
 							margin: "10 0 0 0",
+							font_size: "10",
 							text_align: "center",
 							width: "100",
-							
-							text { font_size: "10", "{percentUnlockedString}% " }
+							"{percentUnlockedString}%"
+						}
+					}
+					else if game.loaded
+					{
+						label
+						{
+							font_size: "10",
+							text_align: "center",
+							width: "100",
+							"Achievements N/A"
+						}
+					}
+					else
+					{
+						label
+						{
+							font_size: "10",
+							text_align: "center",
+							width: "100",
+							"Click to Load"
 						}
 					}
 				}
