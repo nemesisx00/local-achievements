@@ -1,7 +1,9 @@
+use freya::events::Code;
 use freya::hooks::cow_borrowed;
 use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, spawn, theme_with, use_hook, use_signal, Button, ButtonThemeWith,
-	Element, GlobalSignal, Input, IntoDynNode, Loader, Props, Readable, Signal,
+	rsx, spawn, theme_with, use_hook, use_scroll_controller, use_signal, Button,
+	ButtonThemeWith, Element, GlobalSignal, Input, IntoDynNode, Loader, Props,
+	Readable, ScrollConfig, ScrollDirection, ScrollPosition, Signal,
 	VirtualScrollView, Writable};
 use crate::components::retroachievements::achievement::AchievementElement;
 use crate::data::{RetroAchievementsAchievement, RetroAchievementsGame};
@@ -14,6 +16,7 @@ use crate::{join, png, RetroAchievementsAuthData, RetroAchievementsUserData};
 pub fn GameElement(gameId: usize) -> Element
 {
 	let mut loaded = use_signal(|| false);
+	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
 	let mut search = use_signal(|| String::default());
 	
 	let game = match RetroAchievementsUserData().games.iter()
@@ -60,6 +63,13 @@ pub fn GameElement(gameId: usize) -> Element
 				margin: "10 0 5",
 				spacing: "10",
 				width: "fill",
+				
+				onglobalkeyup: move |e| match e.code
+				{
+					Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
+					Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
+					_ => {},
+				},
 				
 				rect
 				{
@@ -115,6 +125,9 @@ pub fn GameElement(gameId: usize) -> Element
 				direction: "vertical",
 				item_size: 105.0,
 				length: achievementsList.len(),
+				scroll_controller: scrollController,
+				scroll_with_arrows: true,
+				
 				builder: move |i, _: &Option<()>| {
 					let chievo = &achievementsList[i];
 					return rsx!(AchievementElement { gameId, achievementId: chievo.id });

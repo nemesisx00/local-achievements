@@ -1,7 +1,9 @@
+use freya::events::Code;
 use freya::prelude::{component, cow_borrowed, dioxus_elements, dynamic_bytes,
-	fc_to_builder, rsx, theme_with, use_platform, use_signal, CursorIcon,
-	Element, GlobalSignal, Input, IntoDynNode, ProgressBar,
-	ProgressBarThemeWith, Props, Readable, VirtualScrollView, Writable};
+	fc_to_builder, rsx, theme_with, use_platform, use_scroll_controller,
+	use_signal, CursorIcon, Element, GlobalSignal, Input, IntoDynNode,
+	ProgressBar, ProgressBarThemeWith, Props, Readable, ScrollConfig,
+	ScrollDirection, ScrollPosition, VirtualScrollView, Writable};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
 	RetroAchievementsProgressColorBackground, RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore, TransparentColor};
@@ -13,6 +15,7 @@ use crate::{join, png, RetroAchievementsUserData, SelectedGameId};
 #[component]
 pub fn GameList() -> Element
 {
+	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
 	let mut search = use_signal(|| String::default());
 	
 	let mut games = RetroAchievementsUserData().games.iter()
@@ -30,6 +33,13 @@ pub fn GameList() -> Element
 			spacing: "10",
 			width: "fill",
 			
+			onglobalkeyup: move |e| match e.code
+			{
+				Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
+				Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
+				_ => {},
+			},
+			
 			Input
 			{
 				placeholder: "Search by game title",
@@ -44,6 +54,8 @@ pub fn GameList() -> Element
 				direction: "vertical",
 				item_size: 105.0,
 				length: games.len(),
+				scroll_controller: scrollController,
+				scroll_with_arrows: true,
 				
 				builder: move |i, _: &Option<()>| {
 					let game = &games[i];
