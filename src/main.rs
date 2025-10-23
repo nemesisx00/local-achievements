@@ -10,6 +10,7 @@ mod macros;
 mod platforms;
 mod constants;
 
+use std::collections::VecDeque;
 use freya::launch::launch_cfg;
 use freya::prelude::{GlobalSignal, LaunchConfig, Signal, WindowConfig};
 use crate::components::{ActiveContent, App};
@@ -20,6 +21,7 @@ use crate::constants::{AppTitle, BackgroundColor, DefaultWindowSize, MinimumWind
 
 pub static ActiveContent: GlobalSignal<ActiveContent> = Signal::global(|| Default::default());
 pub static Language: GlobalSignal<String> = Signal::global(|| "en".to_string());
+pub static NotificationList: GlobalSignal<VecDeque<String>> = Signal::global(|| Default::default());
 pub static RetroAchievementsAuthData: GlobalSignal<RetroAchievementsAuth> = Signal::global(|| Default::default());
 pub static RetroAchievementsUserData: GlobalSignal<RetroAchievementsUser> = Signal::global(|| Default::default());
 pub static SelectedGameId: GlobalSignal<Option<usize>> = Signal::global(|| None);

@@ -1,6 +1,7 @@
 mod app;
 mod content;
 mod nav;
+mod notifications;
 mod retroachievements;
 mod settings;
 mod steam;

@@ -1,12 +1,13 @@
 use freya::prelude::{dioxus_elements, fc_to_builder, rsx, use_hook, Element,
 	GlobalSignal, IntoDynNode, Readable, ThemeProvider};
 use crate::components::nav::NavBar;
+use crate::components::notifications::NotificationElement;
 use crate::components::retroachievements::RetroAchivementsContent;
 use crate::components::settings::AppSettings;
 use crate::components::steam::SteamContent;
 use crate::io::{loadAuthData_RetroAchievements, loadAuthData_Steam, loadUserData_RetroAchievements, loadUserData_Steam};
 use crate::constants::{BackgroundColor, TextColor, Theme};
-use crate::{ActiveContent, RetroAchievementsAuthData, RetroAchievementsUserData, SteamAuthData, SteamUserData};
+use crate::{ActiveContent, NotificationList, RetroAchievementsAuthData, RetroAchievementsUserData, SteamAuthData, SteamUserData};
 
 pub fn App() -> Element
 {
@@ -26,6 +27,8 @@ pub fn App() -> Element
 				padding: "15",
 				
 				NavBar {}
+				
+				NotificationElement {}
 				
 				match ActiveContent()
 				{
@@ -59,4 +62,6 @@ fn initializeState()
 	{
 		*SteamUserData.write() = user;
 	}
+	
+	NotificationList.write().push_back("Data loaded".into());
 }

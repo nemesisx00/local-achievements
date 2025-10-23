@@ -8,7 +8,7 @@ use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
 use crate::components::steam::achievement::AchievementElement;
 use crate::data::{SteamAchievement, SteamGame};
 use crate::io::{loadImageToBytes, saveUserData_Steam, Filename_GameIcon, Path_Games};
-use crate::{join, jpg, Language, SteamAuthData, SteamUserData};
+use crate::{join, jpg, Language, NotificationList, SteamAuthData, SteamUserData};
 use crate::platforms::steam::SteamApi;
 
 #[component]
@@ -157,12 +157,14 @@ async fn loadGameData(api: &SteamApi, appId: usize)
 		{
 			game.updateAchievementsMetadata(&payload);
 			println!("Done fetching game achievements for {}", appId);
+			NotificationList.write().push_back("Achievements data downloaded".into());
 		}
 		
 		if let Some(achievements) = payload.game.availableGameStats.achievements
 		{
 			_ = api.cacheAchievementsIcons(appId, &achievements, false).await;
 			println!("Done caching achievement icons for {}!", appId);
+			NotificationList.write().push_back("Achievement icons cached".into());
 		}
 	}
 	

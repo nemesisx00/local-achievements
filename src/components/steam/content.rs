@@ -3,7 +3,7 @@ use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
 use crate::components::steam::game::GameElement;
 use crate::components::steam::list::GameList;
 use crate::io::saveUserData_Steam;
-use crate::{SelectedGameId, SteamAuthData, SteamUserData};
+use crate::{NotificationList, SelectedGameId, SteamAuthData, SteamUserData};
 use crate::platforms::steam::SteamApi;
 
 #[component]
@@ -93,6 +93,8 @@ async fn loadUserProfile(api: &SteamApi)
 	{
 		if let Some(profile) = payload.response.players.first()
 		{
+			NotificationList.write().push_back("Profile data downloaded".into());
+			
 			SteamUserData.write().update(
 				&profile.steamid,
 				&profile.personaname,
@@ -113,8 +115,15 @@ async fn loadUserProfile(api: &SteamApi)
 			{
 				match api.cacheProfileAvatar(&profile.steamid, &profile.avatarhash, false).await
 				{
-					Ok(_) => println!("Avatar cached"),
-					Err(e) => println!("Error caching avatar: {:?}", e)
+					Err(e) => {
+						println!("Error caching avatar: {:?}", e);
+						NotificationList.write().push_back("Error caching avatar".into());
+					},
+					
+					Ok(_) => {
+						println!("Avatar cached");
+						NotificationList.write().push_back("Avatar icon cached".into());
+					},
 				}
 			}
 		}

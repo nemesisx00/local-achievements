@@ -2,7 +2,7 @@ use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
 	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
 use crate::components::retroachievements::game::GameElement;
 use crate::components::retroachievements::list::GameList;
-use crate::{RetroAchievementsAuthData, RetroAchievementsUserData, SelectedGameId};
+use crate::{NotificationList, RetroAchievementsAuthData, RetroAchievementsUserData, SelectedGameId};
 use crate::io::{saveUserData_RetroAchievements};
 use crate::platforms::retroachievements::RetroAchievementsApi;
 
@@ -115,6 +115,7 @@ async fn loadUserProfile(api: &RetroAchievementsApi)
 	if let Ok(payload) = api.getUserProfile(RetroAchievementsUserData().ulid).await
 	{
 		RetroAchievementsUserData.write().processUserProfile(&payload);
+		NotificationList.write().push_back("Profile refreshed".into());
 		
 		if let Some(ulid) = RetroAchievementsUserData().ulid
 		{
@@ -122,8 +123,14 @@ async fn loadUserProfile(api: &RetroAchievementsApi)
 			{
 				match api.cacheProfileAvatar(&ulid, &avatarPath, false).await
 				{
-					Err(e) => println!("Error caching avatar: {:?}", e),
-					Ok(_) => println!("Avatar cached"),
+					Err(e) => {
+						println!("Error caching avatar: {:?}", e);
+						NotificationList.write().push_back("Error caching avatar".into());
+					},
+					Ok(_) => {
+						println!("Avatar cached");
+						NotificationList.write().push_back("Avatar cached".into());
+					},
 				}
 			}
 		}

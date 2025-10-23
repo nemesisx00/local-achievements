@@ -10,7 +10,7 @@ use crate::data::{RetroAchievementsAchievement, RetroAchievementsGame};
 use crate::io::{loadImageToBytes, saveUserData_RetroAchievements,
 	Filename_GameIcon, Path_Games};
 use crate::platforms::retroachievements::RetroAchievementsApi;
-use crate::{join, png, RetroAchievementsAuthData, RetroAchievementsUserData};
+use crate::{join, png, NotificationList, RetroAchievementsAuthData, RetroAchievementsUserData};
 
 #[component]
 pub fn GameElement(gameId: usize) -> Element
@@ -158,9 +158,14 @@ async fn loadGameData(api: &RetroAchievementsApi, gameId: usize)
 	
 	match api.getGameInfo(&ulid, gameId).await
 	{
-		Err(e) => println!("Error getting game info for {}: {:?}", gameId, e),
+		Err(e) => {
+			println!("Error getting game info for {}: {:?}", gameId, e);
+			NotificationList.write().push_back("Error downloading data".into());
+		},
 		
 		Ok(payload) => {
+			NotificationList.write().push_back("Achievements data downloaded".into());
+			
 			match RetroAchievementsUserData.write().games.iter_mut()
 				.find(|g| g.id == gameId)
 			{
@@ -170,8 +175,15 @@ async fn loadGameData(api: &RetroAchievementsApi, gameId: usize)
 			
 			match api.cacheIcon_Achievements(gameId, &payload, false).await
 			{
-				Err(e) => println!("Error caching achievement icons for {}: {:?}", gameId, e),
-				Ok(_) => println!("Finished caching achievement icons for {}", gameId),
+				Err(e) => {
+					println!("Error caching achievement icons for {}: {:?}", gameId, e);
+					NotificationList.write().push_back("Error caching achievement icons".into());
+				},
+				
+				Ok(_) => {
+					println!("Finished caching achievement icons for {}", gameId);
+					NotificationList.write().push_back("Achievement icons cached".into());
+				},
 			}
 		}
 	}
