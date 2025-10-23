@@ -25,6 +25,7 @@ pub fn SteamSettings() -> Element
 			
 			rect
 			{
+				content: "flex",
 				direction: "horizontal",
 				main_align: "center",
 				spacing: "5",
@@ -44,7 +45,8 @@ pub fn SteamSettings() -> Element
 					mode: inputModeSteamId(),
 					placeholder: "Steam ID",
 					value: "{SteamAuthData().id}",
-					width: "50%",
+					width: "flex",
+					
 					onchange: move |value| {
 						SteamAuthData.write().id = value;
 						_ = saveAuthData_Steam(&SteamAuthData());
@@ -65,6 +67,7 @@ pub fn SteamSettings() -> Element
 			
 			rect
 			{
+				content: "flex",
 				direction: "horizontal",
 				main_align: "center",
 				spacing: "5",
@@ -84,7 +87,8 @@ pub fn SteamSettings() -> Element
 					mode: inputModeSteamApiKey(),
 					placeholder: "Steam Web API Key",
 					value: "{SteamAuthData().key}",
-					width: "50%",
+					width: "flex",
+					
 					onchange: move |value| {
 						SteamAuthData.write().key = value;
 						_ = saveAuthData_Steam(&SteamAuthData());

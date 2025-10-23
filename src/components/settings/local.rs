@@ -10,8 +10,6 @@ pub fn LocalInfo() -> Element
 	let configDir = getConfigDir(false);
 	let dataDir = getDataDir(false);
 	
-	let inputWidth = "61%";
-	
 	return rsx!(
 		rect
 		{
@@ -32,6 +30,7 @@ pub fn LocalInfo() -> Element
 			{
 				rect
 				{
+					content: "flex",
 					direction: "horizontal",
 					main_align: "center",
 					spacing: "5",
@@ -50,7 +49,7 @@ pub fn LocalInfo() -> Element
 					{
 						placeholder: "",
 						value: "{dir}",
-						width: "{inputWidth}",
+						width: "flex",
 						onchange: move |_| {},
 					}
 				}
@@ -60,6 +59,7 @@ pub fn LocalInfo() -> Element
 			{
 				rect
 				{
+					content: "flex",
 					direction: "horizontal",
 					main_align: "center",
 					spacing: "5",
@@ -78,7 +78,7 @@ pub fn LocalInfo() -> Element
 					{
 						placeholder: "",
 						value: "{dir}",
-						width: "{inputWidth}",
+						width: "flex",
 						onchange: move |_| {},
 					}
 				}
@@ -88,6 +88,7 @@ pub fn LocalInfo() -> Element
 			{
 				rect
 				{
+					content: "flex",
 					direction: "horizontal",
 					main_align: "center",
 					spacing: "5",
@@ -106,7 +107,7 @@ pub fn LocalInfo() -> Element
 					{
 						placeholder: "",
 						value: "{dir}",
-						width: "{inputWidth}",
+						width: "flex",
 						onchange: move |_| {},
 					}
 				}

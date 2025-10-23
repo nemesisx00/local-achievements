@@ -25,6 +25,7 @@ pub fn RetroAchievementsSettings() -> Element
 			
 			rect
 			{
+				content: "flex",
 				direction: "horizontal",
 				main_align: "center",
 				spacing: "5",
@@ -44,7 +45,8 @@ pub fn RetroAchievementsSettings() -> Element
 					mode: inputModeUsername(),
 					placeholder: "RetroAchievements Username",
 					value: "{RetroAchievementsAuthData().username}",
-					width: "50%",
+					width: "flex",
+					
 					onchange: move |value| {
 						RetroAchievementsAuthData.write().username = value;
 						_ = saveAuthData_RetroAchievements(&RetroAchievementsAuthData());
@@ -65,6 +67,7 @@ pub fn RetroAchievementsSettings() -> Element
 			
 			rect
 			{
+				content: "flex",
 				direction: "horizontal",
 				main_align: "center",
 				spacing: "5",
@@ -84,7 +87,8 @@ pub fn RetroAchievementsSettings() -> Element
 					mode: inputModeApiKey(),
 					placeholder: "RetroAchievements Web API Key",
 					value: "{RetroAchievementsAuthData().key}",
-					width: "50%",
+					width: "flex",
+					
 					onchange: move |value| {
 						RetroAchievementsAuthData.write().key = value;
 						_ = saveAuthData_RetroAchievements(&RetroAchievementsAuthData());
