@@ -2,7 +2,7 @@
 
 <div align="center" width="100%">
 	<img alt="GitHub" src="https://img.shields.io/github/license/nemesisx00/local-achievements" />
-	<!-- <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nemesisx00/local-achievements/rust.yml" /> -->
+	<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nemesisx00/local-achievements/rust.yml" />
 	<img alt="GitHub contributors" src="https://img.shields.io/github/contributors/nemesisx00/local-achievements" />
 	<img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/nemesisx00/local-achievements" />
 </div>
