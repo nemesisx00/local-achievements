@@ -37,7 +37,7 @@ When Local Achievements releases, you will be able to download it from the Relea
 
 ## Inside Local Achievements
 
-Local Achievements is build in [Rust](https://rust-lang.org), relying on [Freya](https://freyaui.dev) to define the GUI.
+Local Achievements is built in [Rust](https://rust-lang.org), relying on [Freya](https://freyaui.dev) to define the GUI.
 
 Local Achievements is built for Linux first. However, it should be compatible with any platform that [Freya](https://freyaui.dev) supports.
 

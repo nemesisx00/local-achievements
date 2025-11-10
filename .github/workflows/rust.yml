@@ -3,6 +3,9 @@ name: Run Rust Tests
 on:
     push:
         branches: [ "main" ]
+        paths-ignore:
+            - '.github/**'
+            - 'README.md'
     pull_request:
         branches: [ "main" ]
     workflow_dispatch:
