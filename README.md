@@ -13,6 +13,10 @@ Local Achievements is a desktop application for viewing, tracking, and backing u
 
 &nbsp;
 
+## Downloads
+
+When Local Achievements releases, you will be able to download it from the Releases section.
+
 ## Table of Contents
 
 - [Supported Platforms](https://github.com/nemesisx00/local-achievements#supported-platforms)
@@ -39,13 +43,7 @@ Local Achievements is built for Linux first. However, it should be compatible wi
 
 ## Getting Started
 
-### Download
-
-When Local Achievements releases, you will be able to download it from the Releases section.
-
-### Development
-
-#### Requirements
+### Requirements
 
 In order to compile Local Achievements, you will need the following tools installed:
 
@@ -55,7 +53,7 @@ Check [Freya](https://freyaui.dev) for any potential additional requirements.
 
 Now you're ready to fork and clone the repository.
 
-#### Compiling, Running, and Testing
+### Compiling, Running, and Testing
 
 The project is primarily managed via [Cargo](https://doc.rust-lang.org/cargo). If you're new to [Rust](https://rust-lang.org), you should take some time to become more familiar with it.
 
