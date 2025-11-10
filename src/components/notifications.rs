@@ -1,27 +1,23 @@
-use freya::hooks::{use_animation, AnimNum, Ease, Function, OnCreation, OnFinish};
-use freya::prelude::{component, dioxus_elements, rsx, spawn, use_memo,
-	use_signal, Element, GlobalSignal, Readable, Props, Writable};
+use freya::hooks::{use_animation, AnimNum, Ease, Function, OnFinish};
+use freya::prelude::{component, dioxus_elements, rsx, spawn, use_memo, use_signal, Element,
+	GlobalSignal, Props, Readable, Writable};
 use crate::constants::{BorderColor, CornerRadius};
-use crate::NotificationList;
+use crate::{NotificationList, Settings};
 
 const DefaultAnimationDuration: u64 = 500;
-const DefaultShowDuration: u64 = 5000;
 
 #[component]
-pub fn NotificationElement(
-	duration: Option<u64>,
-	hideDelay: Option<u64>
-) -> Element
+pub fn NotificationElement(animationDuration: Option<u64>, displayDuration: Option<u64>) -> Element
 {
-	let duration = match duration
+	let duration = match animationDuration
 	{
 		None => DefaultAnimationDuration,
 		Some(d) => d,
 	};
 	
-	let hideDelay = match hideDelay
+	let hideDelay = match displayDuration
 	{
-		None => DefaultShowDuration,
+		None => Settings().notificationDuration,
 		Some(d) => d,
 	};
 	
@@ -29,8 +25,9 @@ pub fn NotificationElement(
 	let mut notificationState = use_signal(|| NotificationState::default());
 	
 	let animation = use_animation(move |config| {
-		config.on_creation(OnCreation::Nothing);
-		config.on_finish(OnFinish::Nothing);
+		//config.on_creation(OnCreation::Nothing);
+		//config.on_finish(OnFinish::Nothing);
+		config.on_finish(OnFinish::Stop);
 		
 		AnimNum::new(-250., 25.)
 			.ease(Ease::InOut)

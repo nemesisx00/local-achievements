@@ -15,6 +15,7 @@ pub const BorderColor: &str = "rgb(78, 78, 78)";
 pub const TextColor: &str = "rgb(204, 204, 204)";
 pub const TransparentColor: &str = "transparent";
 
+#[allow(unused)]
 pub const RetroAchievementsDarkBackground: &str = "rgb(5, 60, 135)";
 pub const RetroAchievementsProgressColorBackground: &str = "rgb(9, 9, 11)";
 pub const RetroAchievementsProgressColorCasual: &str = "rgb(115, 115, 115)";
@@ -28,6 +29,7 @@ pub const SteamContrastDark: &str = "rgb(6, 57, 99)";
 pub const SteamOrange: &str = "rgb(238, 94, 34)";
 #[allow(unused)]
 pub const SteamOrangeDark: &str = "rgb(219, 83, 27)";
+#[allow(unused)]
 pub const SteamOrangeDarkBackground: &str = "rgb(134, 40, 0)";
 
 pub const Format_ChronoDateTime: &str = "%B %d, %Y %l:%M %p";

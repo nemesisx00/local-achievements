@@ -1,15 +1,14 @@
 mod local;
-mod retroachievements;
+mod notifications;
 mod settings;
-mod steam;
 
 use freya::prelude::{InputMode, Signal, Writable};
 
 pub use settings::AppSettings;
 
-const InputModeHiddenChar: char = '*';
+pub const InputModeHiddenChar: char = '*';
 
-fn toggleInputMode(signal: &mut Signal<InputMode>)
+pub fn toggleInputMode(signal: &mut Signal<InputMode>)
 {
 	match signal()
 	{

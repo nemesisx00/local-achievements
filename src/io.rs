@@ -3,10 +3,13 @@ use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
 use std::path::Path;
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
-use crate::data::{RetroAchievementsUser, SteamUser};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use crate::data::AppSettings;
 use crate::error;
-use crate::platforms::retroachievements::data::RetroAchievementsAuth;
-use crate::platforms::steam::SteamAuth;
+use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
+use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
+use crate::steam::{SteamAuth, SteamUser};
 
 const Application: &str = "local-achievements";
 const Organization: &str = "";
@@ -16,6 +19,26 @@ pub const Filename_GameIcon: &str = "game-icon";
 
 pub const Path_Avatars: &str = "avatars";
 pub const Path_Games: &str = "games";
+
+pub fn generateImageCacheDir(
+	platform: &String,
+	group: &String
+) -> Result<()>
+{
+	if let Some(dir) = getCacheDir(true)
+	{
+		let path = Path::new(dir.as_str())
+			.join(platform.to_lowercase())
+			.join(group);
+		
+		if !path.exists()
+		{
+			create_dir_all(&path)?;
+		}
+	}
+	
+	return Ok(());
+}
 
 /**
 Get the cache directory specific to this application.
@@ -81,28 +104,27 @@ pub fn getImagePath(platform: &String, group: &String, fileName: &String) -> Opt
 }
 
 /**
+Read the application's settings data from file.
+*/
+pub fn loadAppSettings() -> Result<AppSettings>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, AppSettings::FileName),
+	};
+}
+
+/**
 Read the RetroAchievements API authorization data from file.
 */
 pub fn loadAuthData_RetroAchievements() -> Result<RetroAchievementsAuth>
 {
-	if let Some(dir) = getConfigDir(false)
+	return match getConfigDir(false)
 	{
-		let path = Path::new(dir.as_str())
-			.join(RetroAchievementsAuth::FileName);
-		
-		let file = File::open(&path)
-			.context(format!(
-				"Failed opening file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let reader = BufReader::new(file);
-		
-		return Ok(serde_json::from_reader(reader)
-			.context("Failed parsing RetroAchievementsAuth file as JSON")?);
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsAuth::FileName),
+	};
 }
 
 /**
@@ -110,24 +132,11 @@ Read the Steam API authorization data from file.
 */
 pub fn loadAuthData_Steam() -> Result<SteamAuth>
 {
-	if let Some(dir) = getConfigDir(false)
+	return match getConfigDir(false)
 	{
-		let path = Path::new(dir.as_str())
-			.join(SteamAuth::FileName);
-		
-		let file = File::open(&path)
-			.context(format!(
-				"Failed opening file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let reader = BufReader::new(file);
-		
-		return Ok(serde_json::from_reader(reader)
-			.context("Failed parsing SteamAuth file as JSON")?);
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, SteamAuth::FileName),
+	};
 }
 
 pub fn loadImageToBytes(
@@ -150,27 +159,39 @@ pub fn loadImageToBytes(
 }
 
 /**
+Read the RPCS3 settings data from file.
+*/
+pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, Rpcs3Settings::FileName),
+	};
+}
+
+/**
+Read the RPCS3 user data from file.
+*/
+pub fn loadUserData_Rpcs3() -> Result<Rpcs3User>
+{
+	return match getDataDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, Rpcs3User::FileName),
+	};
+}
+
+/**
 Read the Steam API user data from file.
 */
 pub fn loadUserData_Steam() -> Result<SteamUser>
 {
-	if let Some(dir) = getDataDir(false)
+	return match getDataDir(false)
 	{
-		let path = Path::new(dir.as_str()).join(SteamUser::Filename);
-		
-		let file = File::open(&path)
-			.context(format!(
-				"Failed opening file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let buffer = BufReader::new(file);
-		
-		return Ok(serde_json::from_reader(buffer)
-			.context("Failed parsing User data file as JSON")?);
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, SteamUser::FileName),
+	};
 }
 
 /**
@@ -178,23 +199,52 @@ Read the RetroAchievements API user data from file.
 */
 pub fn loadUserData_RetroAchievements() -> Result<RetroAchievementsUser>
 {
-	if let Some(dir) = getDataDir(false)
+	return match getDataDir(false)
 	{
-		let path = Path::new(dir.as_str()).join(RetroAchievementsUser::Filename);
-		
-		let file = File::open(&path)
-			.context(format!(
-				"Failed opening file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let buffer = BufReader::new(file);
-		
-		return Ok(serde_json::from_reader(buffer)
-			.context("Failed parsing User data file as JSON")?);
-	}
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName),
+	};
+}
+
+/**
+Generic method to read data from file and deserialize it into a given type which
+implements `DeserializeOwned`.
+
+## Parameters
+- directory: `String` Absolute path to the directory which contains the desired file.
+- fileName: `&'static str` File name with extension of the desired file.
+*/
+fn readDataFromFile<T>(directory: String, fileName: &'static str) -> Result<T>
+	where T: DeserializeOwned
+{
+	let path = Path::new(directory.as_str())
+		.join(fileName);
 	
-	return Err(error!(ErrorKind::NotFound));
+	let file = File::open(&path)
+		.context(format!(
+			"Failed opening file at: '{}'",
+			path.as_path().to_str().unwrap()
+		))?;
+	
+	let reader = BufReader::new(file);
+	
+	return Ok(serde_json::from_reader(reader)
+		.context(format!(
+			"Failed parsing as JSON file at: '{}'",
+			path.as_path().to_str().unwrap()
+		))?);
+}
+
+/**
+Write the application's settings data to file.
+*/
+pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, AppSettings::FileName, settings),
+	};
 }
 
 /**
@@ -202,29 +252,11 @@ Write the RetroAchievements API authorization data to file.
 */
 pub fn saveAuthData_RetroAchievements(auth: &RetroAchievementsAuth) -> Result<()>
 {
-	if let Some(dir) = getConfigDir(true)
+	return match getConfigDir(true)
 	{
-		let path = Path::new(dir.as_str())
-			.join(RetroAchievementsAuth::FileName);
-		
-		let file = File::create(&path)
-			.context(format!(
-				"Failed creating or truncating the file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let writer = BufWriter::new(file);
-		
-		serde_json::to_writer(writer, auth)
-			.context(format!(
-				"serde_json failed writing RetroAchievementsAuth to BufWriter at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		return Ok(());
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, RetroAchievementsAuth::FileName, auth),
+	};
 }
 
 /**
@@ -232,29 +264,11 @@ Write the Steam API authorization data to file.
 */
 pub fn saveAuthData_Steam(auth: &SteamAuth) -> Result<()>
 {
-	if let Some(dir) = getConfigDir(true)
+	return match getConfigDir(true)
 	{
-		let path = Path::new(dir.as_str())
-			.join(SteamAuth::FileName);
-		
-		let file = File::create(&path)
-			.context(format!(
-				"Failed creating or truncating the file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let writer = BufWriter::new(file);
-		
-		serde_json::to_writer(writer, auth)
-			.context(format!(
-				"serde_json failed writing SteamAuth to BufWriter at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		return Ok(());
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, SteamAuth::FileName, auth),
+	};
 }
 
 /**
@@ -271,7 +285,7 @@ pub fn saveImageToCache(
 	{
 		let mut path = Path::new(dir.as_str())
 			.join(platform.to_lowercase())
-			.join(group.to_lowercase());
+			.join(group);
 		
 		if !path.exists()
 		{
@@ -292,56 +306,72 @@ pub fn saveImageToCache(
 	return Err(error!(ErrorKind::NotFound));
 }
 
+/**
+Write the RPCS3 settings data to file.
+*/
+pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, Rpcs3Settings::FileName, settings),
+	};
+}
+
 pub fn saveUserData_RetroAchievements(user: &RetroAchievementsUser) -> Result<()>
 {
-	if let Some(dir) = getDataDir(true)
+	return match getDataDir(true)
 	{
-		let path = Path::new(dir.as_str())
-			.join(RetroAchievementsUser::Filename);
-		
-		let file = File::create(&path)
-			.context(format!(
-				"Failed creating or truncating the file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let buffer = BufWriter::new(file);
-		
-		serde_json::to_writer(buffer, user)
-			.context(format!(
-				"serde_json failed writing User data to BufWriter at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		return Ok(());
-	}
-	
-	return Err(error!(ErrorKind::NotFound));
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, RetroAchievementsUser::FileName, user),
+	};
+}
+
+pub fn saveUserData_Rpcs3(user: &Rpcs3User) -> Result<()>
+{
+	return match getDataDir(true)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, Rpcs3User::FileName, user),
+	};
 }
 
 pub fn saveUserData_Steam(user: &SteamUser) -> Result<()>
 {
-	if let Some(dir) = getDataDir(true)
+	return match getDataDir(true)
 	{
-		let path = Path::new(dir.as_str())
-			.join(SteamUser::Filename);
-		
-		let file = File::create(&path)
-			.context(format!(
-				"Failed creating or truncating the file at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		let buffer = BufWriter::new(file);
-		
-		serde_json::to_writer(buffer, user)
-			.context(format!(
-				"serde_json failed writing User data to BufWriter at: '{}'",
-				path.as_path().to_str().unwrap()
-			))?;
-		
-		return Ok(());
-	}
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, SteamUser::FileName, user),
+	};
+}
+
+/**
+Generic method to write a given type which implements `Serialize` to file.
+
+## Parameters
+- directory: `String` Absolute path to the directory which contains the desired file.
+- fileName: `&'static str` File name with extension of the desired file.
+- data: `&T` The data to be written.
+*/
+fn writeDataToFile<T>(directory: String, fileName: &'static str, data: &T) -> Result<()>
+	where T: Serialize
+{
+	let path = Path::new(directory.as_str())
+		.join(fileName);
 	
-	return Err(error!(ErrorKind::NotFound));
+	let file = File::create(&path)
+		.context(format!(
+			"Failed creating or truncating the file at: '{}'",
+			path.as_path().to_str().unwrap()
+		))?;
+	
+	let buffer = BufWriter::new(file);
+	
+	serde_json::to_writer(buffer, data)
+		.context(format!(
+			"serde_json failed writing data to BufWriter at: '{}'",
+			path.as_path().to_str().unwrap()
+		))?;
+	
+	return Ok(());
 }

@@ -1,0 +1,284 @@
+use std::fs::{copy, read, read_dir, read_to_string};
+use std::io::Cursor;
+use std::path::Path;
+use anyhow::Result;
+use crate::join;
+use crate::io::{Path_Games, generateImageCacheDir, getImagePath};
+use crate::rpcs3::data::game::Game;
+use crate::rpcs3::data::settings::Settings;
+use crate::rpcs3::platform::data::amalgam::TrophyData;
+use crate::rpcs3::platform::data::conf::TrophyConf;
+use crate::rpcs3::platform::data::user::DatFile;
+
+const DefaultAccountId: u64 = 1;
+
+#[derive(Clone, Debug)]
+pub struct Api
+{
+	pub accountId: u64,
+	pub rootDir: String,
+}
+
+impl Default for Api
+{
+	fn default() -> Self
+	{
+		return Self
+		{
+			accountId: DefaultAccountId,
+			rootDir: Default::default(),
+		};
+	}
+}
+
+impl From<Settings> for Api
+{
+	fn from(value: Settings) -> Self
+	{
+		return Self
+		{
+			accountId: value.accountId,
+			rootDir: value.appDataDirectory.to_owned(),
+		};
+	}
+}
+
+impl Api
+{
+	/**
+	The ticks value representing 1970-01-01 00:00:00.000000
+	
+	Used to convert timestamps stored in TROPUSR.DAT into a Unix-compatible
+	timestamp, in microseconds.
+	*/
+	const TicksMagicOffset: u64 = 62135596800000000;
+	
+	pub const Platform: &str = "RPCS3";
+	
+	pub const GameIconFileName: &str = "ICON0.PNG";
+	pub const TrophyIconPrefix: &str = "TROP";
+	
+	const RelativeHomeDir: &str = "config/rpcs3/dev_hdd0/home";
+	const RelativeUserTrophyDir: &str = "trophy";
+	const ConfFileName: &str = "TROPCONF.SFM";
+	const DatFileName: &str = "TROPUSR.DAT";
+	
+	pub fn cacheGameIcons(&self, npCommId: String) -> Result<()>
+	{
+		let group = join!(Path_Games, npCommId);
+		let platform = Self::Platform.into();
+		
+		generateImageCacheDir(&platform, &group)?;
+		
+		let gamePath = Path::new(&self.rootDir)
+			.join(Self::RelativeHomeDir)
+			.join(self.formatAccountId())
+			.join(Self::RelativeUserTrophyDir)
+			.join(npCommId);
+		
+		let paths = read_dir(gamePath)?;
+		
+		for path in paths
+		{
+			let entry = path?;
+			
+			if let Some(fullPath) = entry.path().to_str()
+			{
+				if fullPath.ends_with(".PNG")
+				{
+					if let Ok(fileName) = entry.file_name().into_string()
+					{
+						if let Some(imagePath) = getImagePath(&platform, &group, &fileName)
+						{
+							if !Path::new(&imagePath).exists()
+							{
+								copy(fullPath, imagePath)?;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		return Ok(());
+	}
+	
+	pub fn generateGameList(&self) -> Result<Vec<Game>>
+	{
+		let mut games: Vec<Game> = vec![];
+		
+		match self.getNpCommIdList()
+		{
+			Err(e) => println!("Error reading the NpCommId list (RPCS3): {:?}", e),
+			Ok(npCommIds) => {
+				for npCommId in npCommIds
+				{
+					match self.parseTrophyConf(npCommId.to_owned())
+					{
+						Err(e) => println!("Error parsing the TROPHYCONF.SFM for {}: {:?}", npCommId, e),
+						Ok(trophyConf) => games.push(trophyConf.into()),
+					}
+					
+					match self.parseTrophies(npCommId.to_owned())
+					{
+						Err(e) => println!("Error parsing the trophies for {}: {:?}", npCommId, e),
+						Ok(trophies) => {
+							for trophyData in trophies
+							{
+								if let Some(game) = games.iter_mut()
+									.find(|g| g.npCommId == npCommId)
+								{
+									if let Some(trophy) = game.trophies.iter_mut()
+										.find(|t| t.id == trophyData.id)
+									{
+										trophy.unlocked = trophyData.unlockTimestamp.is_some();
+										trophy.unlockedTimestamp = trophyData.unlockTimestamp.to_owned();
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		return Ok(games);
+	}
+	
+	pub fn getNpCommIdList(&self) -> Result<Vec<String>>
+	{
+		let trophiesPath = Path::new(&self.rootDir)
+			.join(Self::RelativeHomeDir)
+			.join(self.formatAccountId())
+			.join(Self::RelativeUserTrophyDir);
+		
+		let paths = read_dir(trophiesPath)?;
+		
+		let mut npCommIds = vec![];
+		
+		for path in paths
+		{
+			match path?.file_name().into_string()
+			{
+				Err(e) => println!("Failed to into_string() this path: {:?}", e),
+				Ok(p) => npCommIds.push(p),
+			}
+		}
+		
+		return Ok(npCommIds);
+	}
+	
+	pub fn parseDatFile(&self, npCommId: String) -> Result<DatFile>
+	{
+		let datPath = Path::new(&self.rootDir)
+			.join(Self::RelativeHomeDir)
+			.join(self.formatAccountId())
+			.join(Self::RelativeUserTrophyDir)
+			.join(npCommId)
+			.join(Self::DatFileName);
+		
+		let buffer = read(&datPath)?;
+		let mut cursor = Cursor::new(buffer);
+		let datFile = DatFile::readFromCursor(&mut cursor)?;
+		
+		return Ok(datFile);
+	}
+	
+	pub fn parseTrophies(&self, npCommId: String) -> Result<Vec<TrophyData>>
+	{
+		let datFile = self.parseDatFile(npCommId.to_owned())?;
+		let trophyConf = self.parseTrophyConf(npCommId.to_owned())?;
+		
+		let mut trophies = vec![];
+		
+		for metadata in trophyConf.trophies
+		{
+			let mut data: TrophyData = metadata.into();
+			
+			if let Some(entry) = datFile.type6.iter()
+				.find(|entry| entry.trophyId == data.id)
+			{
+				if entry.trophyState > 0
+				{
+					data.unlockTimestamp = Some(entry.timestamp2 - Self::TicksMagicOffset);
+				}
+			}
+			
+			trophies.push(data);
+		}
+		
+		return Ok(trophies);
+	}
+	
+	pub fn parseTrophyConf(&self, npCommId: String) -> Result<TrophyConf>
+	{
+		let confPath = Path::new(&self.rootDir)
+			.join(Self::RelativeHomeDir)
+			.join(self.formatAccountId())
+			.join(Self::RelativeUserTrophyDir)
+			.join(npCommId)
+			.join(Self::ConfFileName);
+		
+		let xml = read_to_string(confPath)?;
+		let trophyConf = serde_xml_rs::from_str::<TrophyConf>(&xml)?;
+		return Ok(trophyConf);
+	}
+	
+	fn formatAccountId(&self) -> String
+	{
+		return format!("{:08}", self.accountId);
+	}
+}
+
+#[cfg(test)]
+mod tests
+{
+	use std::env;
+	use crate::rpcs3::TrophyGrade;
+	use super::*;
+	
+	#[test]
+	fn accountId()
+	{
+		let api = Api { accountId: 1, ..Default::default() };
+		let accountId = api.formatAccountId();
+		
+		assert_eq!(accountId, "00000001");
+	}
+	
+	/**
+	Requires several environment variables to be set in order to run successfully.
+	
+	- `RPCS3_TEST_ROOT`: The absolute path to the RPCS3 app data directory.
+	- `RPCS3_TEST_ACCOUNTID`: An integer value matching the relevant RPCS3 account id.
+	- `RPCS3_TEST_NPCOMMID`: An NpCommId representing the game whose trophy data should be used in this test.
+	*/
+	#[ignore]
+	#[test]
+	fn trophyList()
+	{
+		let rootDir = env::var("RPCS3_TEST_ROOT").unwrap();
+		let accountIdString = env::var("RPCS3_TEST_ACCOUNTID").unwrap();
+		let accountId = accountIdString.parse::<u64>().unwrap();
+		let npCommId = env::var("RPCS3_TEST_NPCOMMID").unwrap();
+		
+		let api = Api { rootDir, accountId, };
+		let trophies = api.parseTrophies(npCommId.to_owned()).unwrap();
+		
+		assert_ne!(trophies.len(), 0);
+		if let Some(trophy) = trophies.first()
+		{
+			assert_eq!(trophy.id, 0);
+			assert_ne!(trophy.grade, TrophyGrade::Unknown);
+			assert!(!trophy.detail.is_empty());
+			assert!(!trophy.hidden);
+			assert!(!trophy.name.is_empty());
+			
+			match trophy.grade == TrophyGrade::Platinum
+			{
+				false => assert_ne!(trophy.pid, -1),
+				true => assert_eq!(trophy.pid, -1),
+			}
+		}
+	}
+}

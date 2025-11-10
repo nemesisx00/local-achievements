@@ -1,11 +1,17 @@
 use freya::prelude::{component, fc_to_builder, rsx, Element, GlobalSignal, Input,
-	IntoDynNode, Readable};
+	IntoDynNode, Readable, Props};
 use freya::prelude::dioxus_elements::{self};
 use crate::io::{getCacheDir, getConfigDir, getDataDir};
 
 #[component]
-pub fn LocalInfo() -> Element
+pub fn LocalInfo(labelWidth: Option<String>) -> Element
 {
+	let labelWidth = match labelWidth
+	{
+		None => "20%".into(),
+		Some(lw) => lw,
+	};
+	
 	let cacheDir = getCacheDir(false);
 	let configDir = getConfigDir(false);
 	let dataDir = getDataDir(false);
@@ -41,7 +47,7 @@ pub fn LocalInfo() -> Element
 						margin: "5 5 0 0",
 						min_width: "102",
 						text_align: "end",
-						width: "15%",
+						width: "{labelWidth}",
 						"Cache"
 					}
 					
@@ -70,7 +76,7 @@ pub fn LocalInfo() -> Element
 						margin: "5 5 0 0",
 						min_width: "102",
 						text_align: "end",
-						width: "15%",
+						width: "{labelWidth}",
 						"Configuration"
 					}
 					
@@ -99,7 +105,7 @@ pub fn LocalInfo() -> Element
 						margin: "5 5 0 0",
 						min_width: "102",
 						text_align: "end",
-						width: "15%",
+						width: "{labelWidth}",
 						"Data"
 					}
 					

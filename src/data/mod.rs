@@ -1,16 +1,11 @@
-mod retroachievements;
-mod steam;
+/*!
+The data module contains all data structures used by the local-achievements
+application.
 
-pub use retroachievements::{
-	makeRelative,
-	achievement::Achievement as RetroAchievementsAchievement,
-	game::Game as RetroAchievementsGame,
-	mode::AchievementMode as RetroAchievementsMode,
-	user::User as RetroAchievementsUser,
-};
+The data structres are designed specifically for local-achievements and are the
+final form into which the data from the platforms module is parsed.
+*/
 
-pub use steam::{
-	achievement::Achievement as SteamAchievement,
-	game::Game as SteamGame,
-	user::User as SteamUser,
-};
+mod settings;
+
+pub use settings::AppSettings;

@@ -1,7 +1,10 @@
-use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, Element, GlobalSignal, Readable};
+use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, Element,
+	GlobalSignal, Readable};
 use crate::components::settings::local::LocalInfo;
-use crate::components::settings::retroachievements::RetroAchievementsSettings;
-use crate::components::settings::steam::SteamSettings;
+use crate::components::settings::notifications::NotificationSettings;
+use crate::retroachievements::RetroAchievementsSettingsElement;
+use crate::rpcs3::Rpcs3SettingsElement;
+use crate::steam::SteamSettingsElement;
 
 #[component]
 pub fn AppSettings() -> Element
@@ -12,8 +15,10 @@ pub fn AppSettings() -> Element
 			direction: "vertical",
 			width: "fill",
 			
-			RetroAchievementsSettings {}
-			SteamSettings {}
+			NotificationSettings {}
+			RetroAchievementsSettingsElement {}
+			Rpcs3SettingsElement {}
+			SteamSettingsElement {}
 			LocalInfo {}
 		}
 	);

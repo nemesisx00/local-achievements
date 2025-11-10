@@ -1,13 +1,18 @@
 use freya::prelude::{dioxus_elements, fc_to_builder, rsx, use_hook, Element,
 	GlobalSignal, IntoDynNode, Readable, ThemeProvider};
+use crate::{ActiveContent, NotificationList, RetroAchievementsAuthData,
+	RetroAchievementsUserData, Rpcs3SettingsData, Rpcs3UserData, Settings,
+	SteamAuthData, SteamUserData};
 use crate::components::nav::NavBar;
 use crate::components::notifications::NotificationElement;
-use crate::components::retroachievements::RetroAchivementsContent;
 use crate::components::settings::AppSettings;
-use crate::components::steam::SteamContent;
-use crate::io::{loadAuthData_RetroAchievements, loadAuthData_Steam, loadUserData_RetroAchievements, loadUserData_Steam};
 use crate::constants::{BackgroundColor, TextColor, Theme};
-use crate::{ActiveContent, NotificationList, RetroAchievementsAuthData, RetroAchievementsUserData, SteamAuthData, SteamUserData};
+use crate::io::{loadAppSettings, loadAuthData_RetroAchievements,
+	loadAuthData_Steam, loadSettings_Rpcs3, loadUserData_RetroAchievements,
+	loadUserData_Rpcs3, loadUserData_Steam};
+use crate::retroachievements::RetroAchievementsContent;
+use crate::rpcs3::Rpcs3ContentElement;
+use crate::steam::SteamContent;
 
 pub fn App() -> Element
 {
@@ -32,7 +37,8 @@ pub fn App() -> Element
 				
 				match ActiveContent()
 				{
-					ActiveContent::RetroAchievements => rsx!(RetroAchivementsContent {}),
+					ActiveContent::RetroAchievements => rsx!(RetroAchievementsContent {}),
+					ActiveContent::Rpcs3 => rsx!(Rpcs3ContentElement {}),
 					ActiveContent::Settings => rsx!(AppSettings {}),
 					ActiveContent::Steam => rsx!(SteamContent {}),
 				}
@@ -43,6 +49,16 @@ pub fn App() -> Element
 
 fn initializeState()
 {
+	if let Ok(settings) = loadAppSettings()
+	{
+		*Settings.write() = settings;
+	}
+	
+	if let Ok(rpcs3Settings) = loadSettings_Rpcs3()
+	{
+		*Rpcs3SettingsData.write() = rpcs3Settings;
+	}
+	
 	if let Ok(retroAuth) = loadAuthData_RetroAchievements()
 	{
 		*RetroAchievementsAuthData.write() = retroAuth;
@@ -56,6 +72,11 @@ fn initializeState()
 	if let Ok(user) = loadUserData_RetroAchievements()
 	{
 		*RetroAchievementsUserData.write() = user;
+	}
+	
+	if let Ok(user) = loadUserData_Rpcs3()
+	{
+		*Rpcs3UserData.write() = user;
 	}
 	
 	if let Ok(user) = loadUserData_Steam()
