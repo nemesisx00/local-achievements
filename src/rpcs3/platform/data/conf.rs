@@ -11,7 +11,7 @@ pub struct TrophyConf
 	#[serde(rename = "@version")]
 	pub version: String,
 	#[serde(rename = "@policy")]
-	pub policy: String,
+	pub policy: Option<String>,
 	pub npcommid: String,
 	#[serde(rename = "trophyset-version")]
 	pub trophysetVersion: String,
@@ -100,7 +100,7 @@ mod tests
 		assert_eq!(conf.npcommid, "NPXXYYYY_00".to_string());
 		assert_eq!(conf.parentalLevel.licenseArea, "default".to_string());
 		assert_eq!(conf.parentalLevel.value, 0);
-		assert_eq!(conf.policy, "large".to_string());
+		assert_eq!(conf.policy.unwrap(), "large".to_string());
 		assert_eq!(conf.titleDetail, "Game Title Detail".to_string());
 		assert_eq!(conf.titleName, "Game Title".to_string());
 		assert_eq!(conf.trophysetVersion, "01.00".to_string());
