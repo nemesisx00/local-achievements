@@ -59,6 +59,41 @@ impl User
 		
 		return level;
 	}
+	
+	/**
+	Update the user's game data based on the given list of `games`.
+	
+	## Effects
+	
+	- Updates games which do exist.
+	- Adds games which do not exist.
+	
+	## Note
+	
+	- Does not delete games which exist but are not present in the new list.
+	*/
+	pub fn updateGamesList(&mut self, games: Vec<Game>)
+	{
+		for game in self.games.iter_mut()
+		{
+			if let Some(other) = games.iter()
+				.find(|g| g.npCommId == game.npCommId)
+			{
+				game.update(other);
+			}
+		}
+		
+		let gameIds = self.games.iter()
+			.cloned()
+			.map(|internal| internal.npCommId)
+			.collect::<Vec<String>>();
+		
+		for game in games.iter()
+			.filter(|g| !gameIds.contains(&g.npCommId))
+		{
+			self.games.push(game.to_owned());
+		}
+	}
 }
 
 #[cfg(test)]

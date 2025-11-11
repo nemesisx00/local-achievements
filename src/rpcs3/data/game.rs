@@ -70,4 +70,29 @@ impl Game
 			true => Self::MaxPoints_Disc,
 		};
 	}
+	
+	pub fn update(&mut self, game: &Self)
+	{
+		self.detail = game.detail.to_owned();
+		self.name = game.name.to_owned();
+		self.npCommId = game.npCommId.to_owned();
+		self.parentalLevel = game.parentalLevel.to_owned();
+		self.trophySetVersion = game.trophySetVersion.to_owned();
+		
+		for trophy in self.trophies.iter_mut()
+		{
+			if let Some(other) = game.trophies.iter()
+				.find(|t| t.id == trophy.id)
+			{
+				trophy.update(&other);
+			}
+		}
+		
+		let this = self.clone();
+		for trophy in game.trophies.iter()
+			.filter(|t| !this.trophies.contains(t))
+		{
+			self.trophies.push(trophy.to_owned());
+		}
+	}
 }

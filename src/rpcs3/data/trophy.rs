@@ -60,6 +60,18 @@ impl Trophy
 		
 		return Err(anyhow!("Trophy not unlocked"));
 	}
+	
+	pub fn update(&mut self, other: &Self)
+	{
+		self.detail = other.detail.to_owned();
+		self.hidden = other.hidden;
+		self.id = other.id;
+		self.grade = other.grade;
+		self.name = other.name.to_owned();
+		self.platinumRelevance = other.platinumRelevance;
+		self.unlocked = other.unlocked;
+		self.unlockedTimestamp = other.unlockedTimestamp;
+	}
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]

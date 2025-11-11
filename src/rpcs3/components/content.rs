@@ -64,8 +64,7 @@ pub fn refresh()
 					}
 				}
 				NotificationList.write().push_back("Icons Cached".into());
-				
-				Rpcs3UserData.write().games = games;
+				Rpcs3UserData.write().updateGamesList(games);
 				NotificationList.write().push_back("Trophy Data Loaded".into());
 			}
 		}
