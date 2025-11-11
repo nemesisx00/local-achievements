@@ -6,9 +6,8 @@ use crate::join;
 use crate::io::{Path_Games, generateImageCacheDir, getImagePath};
 use crate::rpcs3::data::game::Game;
 use crate::rpcs3::data::settings::Settings;
-use crate::rpcs3::platform::data::amalgam::TrophyData;
-use crate::rpcs3::platform::data::conf::TrophyConf;
-use crate::rpcs3::platform::data::user::DatFile;
+use crate::rpcs3::platform::data::conf::{TrophyConf, TrophyMetadata};
+use crate::rpcs3::platform::data::user::{DatFile, EntryType6};
 
 const DefaultAccountId: u64 = 1;
 
@@ -123,16 +122,19 @@ impl Api
 					{
 						Err(e) => println!("Error parsing the trophies for {}: {:?}", npCommId, e),
 						Ok(trophies) => {
-							for trophyData in trophies
+							for (metadata, type6) in trophies
 							{
 								if let Some(game) = games.iter_mut()
 									.find(|g| g.npCommId == npCommId)
 								{
 									if let Some(trophy) = game.trophies.iter_mut()
-										.find(|t| t.id == trophyData.id)
+										.find(|t| t.id == metadata.id)
 									{
-										trophy.unlocked = trophyData.unlockTimestamp.is_some();
-										trophy.unlockedTimestamp = trophyData.unlockTimestamp.to_owned();
+										trophy.unlocked = type6.trophyState > 0;
+										if trophy.unlocked
+										{
+											trophy.unlockedTimestamp = Some(type6.timestamp2 - Self::TicksMagicOffset);
+										}
 									}
 								}
 							}
@@ -184,7 +186,7 @@ impl Api
 		return Ok(datFile);
 	}
 	
-	pub fn parseTrophies(&self, npCommId: String) -> Result<Vec<TrophyData>>
+	pub fn parseTrophies(&self, npCommId: String) -> Result<Vec<(TrophyMetadata, EntryType6)>>
 	{
 		let datFile = self.parseDatFile(npCommId.to_owned())?;
 		let trophyConf = self.parseTrophyConf(npCommId.to_owned())?;
@@ -193,18 +195,11 @@ impl Api
 		
 		for metadata in trophyConf.trophies
 		{
-			let mut data: TrophyData = metadata.into();
-			
 			if let Some(entry) = datFile.type6.iter()
-				.find(|entry| entry.trophyId == data.id)
+				.find(|entry| entry.trophyId == metadata.id)
 			{
-				if entry.trophyState > 0
-				{
-					data.unlockTimestamp = Some(entry.timestamp2 - Self::TicksMagicOffset);
-				}
+				trophies.push((metadata.to_owned(), entry.to_owned()));
 			}
-			
-			trophies.push(data);
 		}
 		
 		return Ok(trophies);
@@ -234,7 +229,7 @@ impl Api
 mod tests
 {
 	use std::env;
-	use crate::rpcs3::TrophyGrade;
+	use crate::rpcs3::data::trophy::TrophyGrade;
 	use super::*;
 	
 	#[test]
@@ -266,18 +261,21 @@ mod tests
 		let trophies = api.parseTrophies(npCommId.to_owned()).unwrap();
 		
 		assert_ne!(trophies.len(), 0);
-		if let Some(trophy) = trophies.first()
+		if let Some((metadata, type6)) = trophies.first()
 		{
-			assert_eq!(trophy.id, 0);
-			assert_ne!(trophy.grade, TrophyGrade::Unknown);
-			assert!(!trophy.detail.is_empty());
-			assert!(!trophy.hidden);
-			assert!(!trophy.name.is_empty());
+			let grade: TrophyGrade = metadata.ttype.clone().into();
+			assert_eq!(metadata.id, 0);
+			assert_ne!(grade, TrophyGrade::Unknown);
+			assert!(!metadata.detail.is_empty());
+			assert_ne!(metadata.hidden, TrophyMetadata::HiddenTrue);
+			assert!(!metadata.name.is_empty());
+			assert_eq!(type6.timestamp1, 0);
+			assert_eq!(type6.timestamp2, 0);
 			
-			match trophy.grade == TrophyGrade::Platinum
+			match grade == TrophyGrade::Platinum
 			{
-				false => assert_ne!(trophy.pid, -1),
-				true => assert_eq!(trophy.pid, -1),
+				false => assert_ne!(metadata.pid, -1),
+				true => assert_eq!(metadata.pid, -1),
 			}
 		}
 	}

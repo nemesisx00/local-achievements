@@ -57,8 +57,8 @@ impl TrophyMetadata
 #[cfg(test)]
 mod tests
 {
+	use crate::rpcs3::data::trophy::TrophyGrade;
 	use super::*;
-	use crate::rpcs3::TrophyGrade;
 	
 	const trophyconfXml: &str = r#"<!-- comment -->
 <trophyconf version="1.1" policy="large">

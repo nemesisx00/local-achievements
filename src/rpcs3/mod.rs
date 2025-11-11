@@ -9,6 +9,5 @@ pub use components::{
 
 pub use data::{
 	settings::Settings as Rpcs3Settings,
-	trophy::TrophyGrade,
 	user::User as Rpcs3User,
 };
