@@ -3,6 +3,7 @@ mod content;
 mod nav;
 mod notifications;
 mod numput;
+mod profile;
 mod settings;
 
 pub use app::App;

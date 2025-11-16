@@ -21,12 +21,10 @@ pub fn RetroAchievementsUserProfile() -> Element
 	return rsx!(
 		rect
 		{
-			position: "absolute",
-			position_left: "0",
-			position_top: "0",
 			direction: "horizontal",
 			main_align: "start",
 			spacing: "10",
+			width: "flex",
 			
 			image { image_data: dynamic_bytes(avatar), width: "64", }
 			

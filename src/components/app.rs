@@ -6,6 +6,7 @@ use crate::{ActiveContent, NotificationList, RetroAchievementsAuthData,
 	SteamAuthData, SteamUserData};
 use crate::components::nav::NavBar;
 use crate::components::notifications::NotificationElement;
+use crate::components::profile::ProfileElement;
 use crate::components::settings::AppSettings;
 use crate::constants::{BackgroundColor, TextColor, Theme};
 use crate::io::{loadAppSettings, loadAuthData_RetroAchievements,
@@ -35,8 +36,6 @@ pub fn App() -> Element
 				
 				NavBar {}
 				
-				NotificationElement {}
-				
 				match ActiveContent()
 				{
 					ActiveContent::RetroAchievements => rsx!(RetroAchievementsContent {}),
@@ -44,6 +43,9 @@ pub fn App() -> Element
 					ActiveContent::Settings => rsx!(AppSettings {}),
 					ActiveContent::Steam => rsx!(SteamContent {}),
 				}
+				
+				ProfileElement {}
+				NotificationElement {}
 			}
 		}
 	);

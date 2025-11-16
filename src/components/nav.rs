@@ -4,8 +4,6 @@ use freya::prelude::{Button, Dropdown, DropdownItem, Element, GlobalSignal,
 	rsx, use_memo, use_signal};
 use strum::IntoEnumIterator;
 use crate::{ActiveContent, GameSelected};
-use crate::retroachievements::RetroAchievementsUserProfile;
-use crate::steam::SteamProfile;
 
 #[component]
 pub fn NavBar() -> Element
@@ -21,13 +19,6 @@ pub fn NavBar() -> Element
 		{
 			direction: "horizontal",
 			width: "fill",
-			
-			match ActiveContent()
-			{
-				ActiveContent::RetroAchievements => rsx!(RetroAchievementsUserProfile {}),
-				ActiveContent::Steam => rsx!(SteamProfile {}),
-				_ => rsx!(),
-			}
 			
 			rect
 			{

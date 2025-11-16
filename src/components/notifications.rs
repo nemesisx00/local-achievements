@@ -80,10 +80,10 @@ pub fn NotificationElement(animationDuration: Option<u64>, displayDuration: Opti
 			main_align: "center",
 			margin: "5 10",
 			min_height: "25",
-			width: "{width}",
 			position: "absolute",
 			position_right: "{x.read()}",
 			position_top: "5",
+			width: "{width}",
 			
 			label
 			{
