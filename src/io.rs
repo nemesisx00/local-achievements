@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, File};
+use std::fs::{self, File, create_dir_all};
 use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
 use std::path::Path;
 use anyhow::{Context, Result};
@@ -113,7 +113,7 @@ pub fn loadAppSettings() -> Result<AppSettings>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, AppSettings::FileName),
+		Some(dir) => readDataFromFile(dir, AppSettings::FileName.into()),
 	};
 }
 
@@ -125,7 +125,7 @@ pub fn loadAuthData_RetroAchievements() -> Result<RetroAchievementsAuth>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, RetroAchievementsAuth::FileName),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsAuth::FileName.into()),
 	};
 }
 
@@ -137,7 +137,7 @@ pub fn loadAuthData_Steam() -> Result<SteamAuth>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, SteamAuth::FileName),
+		Some(dir) => readDataFromFile(dir, SteamAuth::FileName.into()),
 	};
 }
 
@@ -168,7 +168,7 @@ pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, Rpcs3Settings::FileName),
+		Some(dir) => readDataFromFile(dir, Rpcs3Settings::FileName.into()),
 	};
 }
 
@@ -180,7 +180,22 @@ pub fn loadUserData_Rpcs3() -> Result<Rpcs3User>
 	return match getDataDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, Rpcs3User::FileName),
+		Some(dir) => readDataFromFile(dir, Rpcs3User::FileName.into()),
+	};
+}
+
+/**
+Read the Steam API user data from file.
+*/
+pub fn loadUserData_Rpcs3_lossy() -> Result<Rpcs3User>
+{
+	return match getDataDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, Rpcs3User::FileName.into())?;
+			Rpcs3User::parseJsonLossy(json)
+		},
 	};
 }
 
@@ -192,7 +207,22 @@ pub fn loadUserData_Steam() -> Result<SteamUser>
 	return match getDataDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, SteamUser::FileName),
+		Some(dir) => readDataFromFile(dir, SteamUser::FileName.into()),
+	};
+}
+
+/**
+Read the Steam API user data from file.
+*/
+pub fn loadUserData_Steam_lossy() -> Result<SteamUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, SteamUser::FileName.into())?;
+			SteamUser::parseJsonLossy(json)
+		},
 	};
 }
 
@@ -204,7 +234,22 @@ pub fn loadUserData_RetroAchievements() -> Result<RetroAchievementsUser>
 	return match getDataDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName.into()),
+	};
+}
+
+/**
+Read the RetroAchievements API user data from file.
+*/
+pub fn loadUserData_RetroAchievements_lossy() -> Result<RetroAchievementsUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(error!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, RetroAchievementsUser::FileName.into())?;
+			RetroAchievementsUser::parseJsonLossy(json)
+		},
 	};
 }
 
@@ -214,9 +259,9 @@ implements `DeserializeOwned`.
 
 ## Parameters
 - directory: `String` Absolute path to the directory which contains the desired file.
-- fileName: `&'static str` File name with extension of the desired file.
+- fileName: `String` File name with extension of the desired file.
 */
-fn readDataFromFile<T>(directory: String, fileName: &'static str) -> Result<T>
+fn readDataFromFile<T>(directory: String, fileName: String) -> Result<T>
 	where T: DeserializeOwned
 {
 	let path = Path::new(directory.as_str())
@@ -238,6 +283,30 @@ fn readDataFromFile<T>(directory: String, fileName: &'static str) -> Result<T>
 }
 
 /**
+Read data from a file.
+
+This is primarily used to preserve data when deserializing to a specific type
+fails.
+
+## Parameters
+- directory: `String` Absolute path to the directory which contains the desired file.
+- fileName: `String` File name with extension of the desired file.
+*/
+fn readRawDataFromFile(directory: String, fileName: String) -> Result<String>
+{
+	let path = Path::new(directory.as_str())
+		.join(fileName);
+	
+	let json = fs::read_to_string(&path)
+		.context(format!(
+			"Failed opening file at: '{}'",
+			path.as_path().to_str().unwrap()
+		))?;
+	
+	return Ok(json);
+}
+
+/**
 Write the application's settings data to file.
 */
 pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
@@ -245,7 +314,7 @@ pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, AppSettings::FileName, settings),
+		Some(dir) => writeDataToFile(dir, AppSettings::FileName.into(), settings),
 	};
 }
 
@@ -257,7 +326,7 @@ pub fn saveAuthData_RetroAchievements(auth: &RetroAchievementsAuth) -> Result<()
 	return match getConfigDir(true)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, RetroAchievementsAuth::FileName, auth),
+		Some(dir) => writeDataToFile(dir, RetroAchievementsAuth::FileName.into(), auth),
 	};
 }
 
@@ -269,7 +338,7 @@ pub fn saveAuthData_Steam(auth: &SteamAuth) -> Result<()>
 	return match getConfigDir(true)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, SteamAuth::FileName, auth),
+		Some(dir) => writeDataToFile(dir, SteamAuth::FileName.into(), auth),
 	};
 }
 
@@ -316,7 +385,7 @@ pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
 	return match getConfigDir(false)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, Rpcs3Settings::FileName, settings),
+		Some(dir) => writeDataToFile(dir, Rpcs3Settings::FileName.into(), settings),
 	};
 }
 
@@ -325,7 +394,7 @@ pub fn saveUserData_RetroAchievements(user: &RetroAchievementsUser) -> Result<()
 	return match getDataDir(true)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, RetroAchievementsUser::FileName, user),
+		Some(dir) => writeDataToFile(dir, RetroAchievementsUser::FileName.into(), user),
 	};
 }
 
@@ -334,7 +403,7 @@ pub fn saveUserData_Rpcs3(user: &Rpcs3User) -> Result<()>
 	return match getDataDir(true)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, Rpcs3User::FileName, user),
+		Some(dir) => writeDataToFile(dir, Rpcs3User::FileName.into(), user),
 	};
 }
 
@@ -343,7 +412,7 @@ pub fn saveUserData_Steam(user: &SteamUser) -> Result<()>
 	return match getDataDir(true)
 	{
 		None => Err(error!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, SteamUser::FileName, user),
+		Some(dir) => writeDataToFile(dir, SteamUser::FileName.into(), user),
 	};
 }
 
@@ -352,10 +421,10 @@ Generic method to write a given type which implements `Serialize` to file.
 
 ## Parameters
 - directory: `String` Absolute path to the directory which contains the desired file.
-- fileName: `&'static str` File name with extension of the desired file.
+- fileName: `String` File name with extension of the desired file.
 - data: `&T` The data to be written.
 */
-fn writeDataToFile<T>(directory: String, fileName: &'static str, data: &T) -> Result<()>
+fn writeDataToFile<T>(directory: String, fileName: String, data: &T) -> Result<()>
 	where T: Serialize
 {
 	let path = Path::new(directory.as_str())

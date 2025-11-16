@@ -11,7 +11,7 @@ use crate::retroachievements::platform::api::Api;
 use crate::{join, png, pngAlt, RetroAchievementsUserData};
 
 #[component]
-pub fn AchievementElement(gameId: usize, achievementId: usize) -> Element
+pub fn AchievementElement(gameId: u64, achievementId: u64) -> Element
 {
 	let game = match RetroAchievementsUserData().games.iter()
 		.find(|g| g.id == gameId)

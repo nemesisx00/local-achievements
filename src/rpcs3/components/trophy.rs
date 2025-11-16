@@ -6,7 +6,7 @@ use crate::{join, Rpcs3UserData};
 use crate::rpcs3::platform::api::Api;
 
 #[component]
-pub fn TrophyElement(npCommId: String, trophyId: u32) -> Element
+pub fn TrophyElement(npCommId: String, trophyId: u64) -> Element
 {
 	let game = match Rpcs3UserData().games.iter()
 		.find(|g| g.npCommId == npCommId)

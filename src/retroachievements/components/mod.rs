@@ -7,4 +7,4 @@ pub mod settings;
 
 use freya::prelude::{GlobalSignal, Signal};
 
-static SelectedGameId: GlobalSignal<Option<usize>> = Signal::global(|| None);
+static SelectedGameId: GlobalSignal<Option<u64>> = Signal::global(|| None);

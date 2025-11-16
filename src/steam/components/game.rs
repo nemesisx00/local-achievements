@@ -5,7 +5,7 @@ use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
 	ButtonThemeWith, Element, GlobalSignal, Input, IntoDynNode, Loader, Props,
 	Readable, ScrollConfig, ScrollDirection, ScrollPosition, VirtualScrollView,
 	Writable};
-use crate::io::{loadImageToBytes, saveUserData_Steam, Filename_GameIcon,
+use crate::io::{loadImageToBytes, saveUserData_Steam, FileName_GameIcon,
 	Path_Games};
 use crate::{GameSelected, Language, NotificationList, SteamAuthData,
 	SteamUserData, join, jpg};
@@ -16,7 +16,7 @@ use super::SelectedGameId;
 use super::achievement::AchievementElement;
 
 #[component]
-pub fn GameElement(appId: usize) -> Element
+pub fn GameElement(appId: u64) -> Element
 {
 	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
 	let mut search = use_signal(|| String::default());
@@ -150,7 +150,7 @@ pub fn GameElement(appId: usize) -> Element
 	);
 }
 
-fn refresh(appId: usize)
+fn refresh(appId: u64)
 {
 	spawn(async move {
 		let api = Api::from(SteamAuthData());
@@ -159,7 +159,7 @@ fn refresh(appId: usize)
 	});
 }
 
-async fn loadGameData(api: &Api, appId: usize)
+async fn loadGameData(api: &Api, appId: u64)
 {
 	if let Ok(payload) = api.getSchemaForGame(appId, &Language()).await
 	{
@@ -217,7 +217,7 @@ fn loadIcon<'a>(game: &Game) -> Vec<u8>
 	return match loadImageToBytes(
 			&Api::Platform.to_lowercase(),
 			&join!(Path_Games, game.id),
-			&jpg!(Filename_GameIcon)
+			&jpg!(FileName_GameIcon)
 		)
 	{
 		Ok(bytes) => bytes,

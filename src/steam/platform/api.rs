@@ -6,7 +6,7 @@ use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use crate::constants::Icon_Locked;
-use crate::io::{getImagePath, Filename_GameIcon, Path_Avatars, Path_Games};
+use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
 use crate::{error, join, jpg, jpgAlt};
 use crate::steam::data::game::Game;
 use crate::util::cacheImageIfNotExists;
@@ -98,7 +98,7 @@ impl Api
 	If any icons result in an error, the list of all games for which no icon
 	could be retrieved is returned. Otherwise, returns `NONE`.
 	*/
-	pub async fn cacheAchievementsIcons(&self, appId: usize, achievements: &Vec<GameAchievement>, force: bool) -> Result<()>
+	pub async fn cacheAchievementsIcons(&self, appId: u64, achievements: &Vec<GameAchievement>, force: bool) -> Result<()>
 	{
 		for achievement in achievements
 		{
@@ -161,7 +161,7 @@ impl Api
 		let mut failed = vec![];
 		
 		let platform = Self::Platform.into();
-		let fileName = jpg!(Filename_GameIcon);
+		let fileName = jpg!(FileName_GameIcon);
 		for game in games.iter()
 		{
 			let group = join!(Path_Games, game.id);
@@ -263,7 +263,7 @@ impl Api
 	gameid | AppID of the game you want the news of.
 	format | Output format. json (default), xml or vdf.
 	*/
-	pub async fn getGlobalPercentages(&self, appId: usize) -> Result<Payload_GetGlobalPercentages>
+	pub async fn getGlobalPercentages(&self, appId: u64) -> Result<Payload_GetGlobalPercentages>
 	{
 		if self.auth.validate()
 		{
@@ -389,7 +389,7 @@ impl Api
 	name | **Optional** Localized achievement name
 	description | **Optional** Localized description of the achievement
 	*/
-	pub async fn getPlayerAchievements(&self, appId: usize, language: &String) -> Result<Payload_GetPlayerAchievements>
+	pub async fn getPlayerAchievements(&self, appId: u64, language: &String) -> Result<Payload_GetPlayerAchievements>
 	{
 		if self.auth.validate()
 		{
@@ -596,7 +596,7 @@ impl Api
 				-  defaultvalue (int) Default value of stat.
 				-  displayName (string) Developer provided name of string.
 	*/
-	pub async fn getSchemaForGame(&self, appId: usize, language: &String) -> Result<Payload_GetSchemaForGame>
+	pub async fn getSchemaForGame(&self, appId: u64, language: &String) -> Result<Payload_GetSchemaForGame>
 	{
 		if self.auth.validate()
 		{

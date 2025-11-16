@@ -1,6 +1,6 @@
 use freya::hooks::{use_animation, AnimNum, Ease, Function, OnFinish};
-use freya::prelude::{component, dioxus_elements, rsx, spawn, use_memo, use_signal, Element,
-	GlobalSignal, Props, Readable, Writable};
+use freya::prelude::{component, dioxus_elements, rsx, spawn, use_memo,
+	use_signal, Element, GlobalSignal, Props, Readable, Writable};
 use crate::constants::{BorderColor, CornerRadius};
 use crate::{NotificationList, Settings};
 

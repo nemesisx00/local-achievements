@@ -1,5 +1,6 @@
 use freya::prelude::{dioxus_elements, fc_to_builder, rsx, use_hook, Element,
 	GlobalSignal, IntoDynNode, Readable, ThemeProvider};
+use tracing::{info, info_span, warn};
 use crate::{ActiveContent, NotificationList, RetroAchievementsAuthData,
 	RetroAchievementsUserData, Rpcs3SettingsData, Rpcs3UserData, Settings,
 	SteamAuthData, SteamUserData};
@@ -9,7 +10,8 @@ use crate::components::settings::AppSettings;
 use crate::constants::{BackgroundColor, TextColor, Theme};
 use crate::io::{loadAppSettings, loadAuthData_RetroAchievements,
 	loadAuthData_Steam, loadSettings_Rpcs3, loadUserData_RetroAchievements,
-	loadUserData_Rpcs3, loadUserData_Steam};
+	loadUserData_RetroAchievements_lossy, loadUserData_Rpcs3,
+	loadUserData_Rpcs3_lossy, loadUserData_Steam, loadUserData_Steam_lossy};
 use crate::retroachievements::RetroAchievementsContent;
 use crate::rpcs3::Rpcs3ContentElement;
 use crate::steam::SteamContent;
@@ -49,40 +51,93 @@ pub fn App() -> Element
 
 fn initializeState()
 {
+	let span = info_span!("initializeState");
+	let _guard = span.enter();
+	
 	if let Ok(settings) = loadAppSettings()
 	{
 		*Settings.write() = settings;
+		info!("Application settings loaded!");
 	}
 	
 	if let Ok(rpcs3Settings) = loadSettings_Rpcs3()
 	{
 		*Rpcs3SettingsData.write() = rpcs3Settings;
+		info!("RPCS3 settings data loaded!");
 	}
 	
 	if let Ok(retroAuth) = loadAuthData_RetroAchievements()
 	{
 		*RetroAchievementsAuthData.write() = retroAuth;
+		info!("RetroAchievements auth data loaded!");
 	}
 	
 	if let Ok(steamAuth) = loadAuthData_Steam()
 	{
 		*SteamAuthData.write() = steamAuth;
+		info!("Steam auth data loaded!");
 	}
 	
-	if let Ok(user) = loadUserData_RetroAchievements()
+	match loadUserData_RetroAchievements()
 	{
-		*RetroAchievementsUserData.write() = user;
+		Err(e) => {
+			warn!("Failed loading RetroAchievements user data: {:?}", e);
+			match loadUserData_RetroAchievements_lossy()
+			{
+				Err(e) => warn!("Failed lossy loading RetroAchievements user data: {:?}", e),
+				Ok(user) => {
+					*RetroAchievementsUserData.write() = user;
+					info!("RetroAchievements user data loaded - lossy method!");
+				},
+			}
+		},
+		
+		Ok(user) => {
+			*RetroAchievementsUserData.write() = user;
+			info!("RetroAchievements user data loaded!");
+		},
 	}
 	
-	if let Ok(user) = loadUserData_Rpcs3()
+	match loadUserData_Rpcs3()
 	{
-		*Rpcs3UserData.write() = user;
+		Err(e) => {
+			warn!("Failed loading RPCS3 user data: {:?}", e);
+			match loadUserData_Rpcs3_lossy()
+			{
+				Err(e) => warn!("Failed lossy loading RPCS3 user data: {:?}", e),
+				Ok(user) => {
+					*Rpcs3UserData.write() = user;
+					info!("RPCS3 user data loaded - lossy method!");
+				},
+			}
+		},
+		
+		Ok(user) => {
+			*Rpcs3UserData.write() = user;
+			info!("RPCS3 user data loaded!");
+		},
 	}
 	
-	if let Ok(user) = loadUserData_Steam()
+	match loadUserData_Steam()
 	{
-		*SteamUserData.write() = user;
+		Err(e) => {
+			warn!("Failed loading Steam user data: {:?}", e);
+			match loadUserData_Steam_lossy()
+			{
+				Err(e) => warn!("Failed lossy loading Steam user data: {:?}", e),
+				Ok(user) => {
+					*SteamUserData.write() = user;
+					info!("Steam user data loaded - lossy method!");
+				},
+			}
+		},
+		
+		Ok(user) => {
+			*SteamUserData.write() = user;
+			info!("Steam user data loaded!");
+		},
 	}
 	
 	NotificationList.write().push_back("Data loaded".into());
+	info!("Data loaded!");
 }

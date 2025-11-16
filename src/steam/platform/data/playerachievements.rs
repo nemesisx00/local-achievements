@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct PlayerAchievement
 {
 	pub apiname: String,
-	pub achieved: usize,
-	pub unlocktime: usize,
+	pub achieved: u64,
+	pub unlocktime: u64,
 	pub name: String,
 	pub description: Option<String>,
 }

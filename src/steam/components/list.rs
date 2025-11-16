@@ -7,7 +7,7 @@ use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
 	Writable};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
 	RetroAchievementsProgressColorBackground, SteamContrast, TransparentColor};
-use crate::io::{loadImageToBytes, Filename_GameIcon, Path_Games};
+use crate::io::{loadImageToBytes, FileName_GameIcon, Path_Games};
 use crate::steam::data::game::Game;
 use crate::steam::platform::api::Api;
 use crate::{GameSelected, SteamUserData, join, jpg};
@@ -217,7 +217,7 @@ fn loadIcon<'a>(game: &Game) -> Vec<u8>
 	return match loadImageToBytes(
 			&Api::Platform.to_lowercase(),
 			&join!(Path_Games, game.id),
-			&jpg!(Filename_GameIcon)
+			&jpg!(FileName_GameIcon)
 		)
 	{
 		Ok(bytes) => bytes,

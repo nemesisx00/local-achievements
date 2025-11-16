@@ -6,8 +6,9 @@ use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
 	IntoDynNode, Loader, Props, Readable, ScrollConfig, ScrollDirection,
 	ScrollPosition, Signal, VirtualScrollView, Writable};
 use crate::io::{loadImageToBytes, saveUserData_RetroAchievements,
-	Filename_GameIcon, Path_Games};
-use crate::{GameSelected, NotificationList, RetroAchievementsAuthData, RetroAchievementsUserData, join, png};
+	FileName_GameIcon, Path_Games};
+use crate::{GameSelected, NotificationList, RetroAchievementsAuthData,
+	RetroAchievementsUserData, join, png};
 use crate::retroachievements::data::achievement::Achievement;
 use crate::retroachievements::data::game::Game;
 use crate::retroachievements::platform::api::Api;
@@ -15,7 +16,7 @@ use super::SelectedGameId;
 use super::achievement::AchievementElement;
 
 #[component]
-pub fn GameElement(gameId: usize) -> Element
+pub fn GameElement(gameId: u64) -> Element
 {
 	let mut loaded = use_signal(|| false);
 	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
@@ -146,7 +147,7 @@ pub fn GameElement(gameId: usize) -> Element
 	);
 }
 
-fn refresh(gameId: usize, loaded: Signal<bool>)
+fn refresh(gameId: u64, loaded: Signal<bool>)
 {
 	let mut loaded = loaded.clone();
 	spawn(async move {
@@ -157,7 +158,7 @@ fn refresh(gameId: usize, loaded: Signal<bool>)
 	});
 }
 
-async fn loadGameData(api: &Api, gameId: usize)
+async fn loadGameData(api: &Api, gameId: u64)
 {
 	let ulid = match RetroAchievementsUserData().ulid
 	{
@@ -209,7 +210,7 @@ fn loadIcon<'a>(game: &Game) -> Vec<u8>
 	return match loadImageToBytes(
 			&Api::Platform.to_lowercase(),
 			&join!(Path_Games, game.id),
-			&png!(Filename_GameIcon)
+			&png!(FileName_GameIcon)
 		)
 	{
 		Ok(bytes) => bytes,

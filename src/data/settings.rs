@@ -6,6 +6,7 @@ const DefaultNotificationDuration: u64 = 1000;
 pub struct AppSettings
 {
 	/// The duration in milliseconds for which a notification should remain on screen.
+	#[serde(default)]
 	pub notificationDuration: u64,
 }
 

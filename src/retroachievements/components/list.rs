@@ -7,7 +7,7 @@ use freya::prelude::{component, cow_borrowed, dioxus_elements, dynamic_bytes,
 use crate::constants::{BorderColor, ButtonBackgroundColor,
 	RetroAchievementsProgressColorBackground, RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore, TransparentColor};
-use crate::io::{loadImageToBytes, Filename_GameIcon, Path_Games};
+use crate::io::{loadImageToBytes, FileName_GameIcon, Path_Games};
 use crate::{GameSelected, RetroAchievementsUserData, join, png};
 use crate::retroachievements::data::game::Game;
 use crate::retroachievements::data::mode::AchievementMode;
@@ -214,7 +214,7 @@ fn loadIcon<'a>(game: &Game) -> Vec<u8>
 	return match loadImageToBytes(
 			&Api::Platform.to_lowercase(),
 			&join!(Path_Games, game.id),
-			&png!(Filename_GameIcon)
+			&png!(FileName_GameIcon)
 		)
 	{
 		Ok(bytes) => bytes,

@@ -128,7 +128,7 @@ impl Api
 									.find(|g| g.npCommId == npCommId)
 								{
 									if let Some(trophy) = game.trophies.iter_mut()
-										.find(|t| t.id == metadata.id)
+										.find(|t| t.id == metadata.id as u64)
 									{
 										trophy.unlocked = type6.trophyState > 0;
 										if trophy.unlocked

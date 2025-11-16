@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use chrono::{MappedLocalTime, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use crate::steam::platform::{GameAchievement, PlayerAchievement};
 use crate::constants::Format_ChronoDateTime;
 
@@ -8,28 +9,35 @@ use crate::constants::Format_ChronoDateTime;
 pub struct Achievement
 {
 	/// The human-readable description of the achievement.
+	#[serde(default)]
 	pub description: String,
 	
 	/// The percentage of users on the platform who have unlocked the achievement.
+	#[serde(default)]
 	pub globalPercentage: Option<String>,
 	
 	/// Flag denoting whether or not the details of the achievement are meant to be hidden.
+	#[serde(default)]
 	pub hidden: bool,
 	
 	/// The URL used to retrieve the locked icon.
+	#[serde(default)]
 	pub iconLockedUrl: String,
 	
 	/// The URL used to retrieve the unlocked icon.
+	#[serde(default)]
 	pub iconUrl: String,
 	
 	/// The platform-specific ID of the achievement.
 	pub id: String,
 	
 	/// The human-readable name of the achievement.
+	#[serde(default)]
 	pub name: String,
 	
 	/// The timestamp at which the achievement was unlocked.
-	pub timestamp: Option<usize>,
+	#[serde(default)]
+	pub timestamp: Option<u64>,
 }
 
 impl PartialOrd for Achievement
@@ -98,6 +106,94 @@ impl Achievement
 			},
 		};
 	}
+	pub fn parseJsonMap(map: &Map<String, Value>) -> Option<Self>
+	{
+		let mut achievement = Self::default();
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "description")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.description = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "globalPercentage")
+		{
+			if let Value::String(inner) = value
+			{
+				if !inner.is_empty()
+				{
+					achievement.globalPercentage = Some(inner.to_owned());
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "hidden")
+		{
+			if let Value::Bool(inner) = value
+			{
+				achievement.hidden = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "iconLockedUrl")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.iconLockedUrl = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "iconUrl")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.iconUrl = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "id")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.id = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "name")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.name = inner.to_owned();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "timestamp")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					achievement.timestamp = Some(number);
+				}
+			}
+		}
+		
+		return match achievement.id.is_empty()
+		{
+			false => Some(achievement),
+			true => None,
+		};
+	}
 	
 	pub fn unlocked(&self) -> bool
 	{
@@ -125,5 +221,53 @@ impl Achievement
 		{
 			self.timestamp = Some(achievement.unlocktime * 1000);
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests
+{
+	use super::*;
+	
+	fn buildMap(success: bool) -> Map<String, Value>
+	{
+		let mut map = Map::new();
+		map.insert("description".into(), "The description".into());
+		map.insert("globalPercentage".into(), "The percent".into());
+		map.insert("hidden".into(), true.into());
+		map.insert("iconLockedUrl".into(), "The icon locked url".into());
+		map.insert("iconUrl".into(), "The icon url".into());
+		
+		if success
+		{
+			map.insert("id".into(), "The id".into());
+		}
+		
+		map.insert("name".into(), "The name".into());
+		map.insert("timestamp".into(), 1029384756.into());
+		
+		return map;
+	}
+	
+	#[test]
+	fn parseJsonMap()
+	{
+		let mut map = buildMap(false);
+		let fail = Achievement::parseJsonMap(&map);
+		assert_eq!(fail, None);
+		
+		map = buildMap(true);
+		let success = Achievement::parseJsonMap(&map);
+		assert_ne!(success, None);
+		
+		let achievement = success.unwrap();
+		assert_eq!(achievement.description, "The description".to_string());
+		assert_eq!(achievement.globalPercentage, Some("The percent".to_string()));
+		assert_eq!(achievement.hidden, true);
+		assert_eq!(achievement.iconLockedUrl, "The icon locked url".to_string());
+		assert_eq!(achievement.iconUrl, "The icon url".to_string());
+		assert_eq!(achievement.id, "The id".to_string());
+		assert_eq!(achievement.name, "The name".to_string());
+		assert_eq!(achievement.timestamp, Some(1029384756));
 	}
 }

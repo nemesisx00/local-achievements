@@ -22,7 +22,7 @@ impl AuthData
 	/// The filename to be used when this struct is read from, or stored to, file.
 	pub const FileName: &str = "ra-auth.json";
 	/// The expected length of the RetroAchievements API key.
-	const KeyLength: usize = 32;
+	const KeyLength: u64 = 32;
 	
 	/**
 	Evaluates whether or not this instance is valid.
@@ -36,7 +36,7 @@ impl AuthData
 	pub fn isValid(&self) -> bool
 	{
 		return !String::is_empty(&self.username)
-			&& self.key.len() == Self::KeyLength;
+			&& self.key.len() as u64 == Self::KeyLength;
 	}
 }
 

@@ -5,9 +5,9 @@ use crate::steam::data::achievement::Achievement;
 pub struct GameAchievement
 {
 	pub name: String,
-	pub defaultvalue: usize,
+	pub defaultvalue: u64,
 	pub displayName: String,
-	pub hidden: usize,
+	pub hidden: u64,
 	pub description: Option<String>,
 	pub icon: String,
 	pub icongray: String,

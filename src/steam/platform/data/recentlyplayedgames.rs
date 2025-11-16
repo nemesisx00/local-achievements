@@ -12,19 +12,19 @@ pub struct Payload
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RecentlyPlayedGames
 {
-	pub total_count: usize,
+	pub total_count: u64,
 	pub games: Vec<RecentlyPlayed>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RecentlyPlayed
 {
-	pub appid: usize,
+	pub appid: u64,
 	pub name: String,
-	pub playtime_2weeks: usize,
-	pub playtime_forever: usize,
+	pub playtime_2weeks: u64,
+	pub playtime_forever: u64,
 	pub img_icon_url: String,
-	pub playtime_windows_forever: usize,
-	pub playtime_mac_forever: usize,
-	pub playtime_linux_forever: usize,
+	pub playtime_windows_forever: u64,
+	pub playtime_mac_forever: u64,
+	pub playtime_linux_forever: u64,
 }

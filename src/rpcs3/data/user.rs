@@ -1,12 +1,20 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use super::game::Game;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct User
 {
+	#[serde(default)]
 	pub games: Vec<Game>,
+	
 	pub accountId: u64,
+	
+	#[serde(default)]
 	pub name: String,
+	
+	#[serde(default)]
 	pub points: u64,
 }
 
@@ -61,6 +69,89 @@ impl User
 	}
 	
 	/**
+	Parse a JSON string which does not strictly conform to the expected `User`
+	data structure.
+	
+	This function will retain as much data as possible but will omit objects if
+	they are missing required properties.
+	
+	Any missing properties which are not strictly required will instead be
+	filled with their default values.
+	
+	Only returns `Err` if `json` is not valid JSON.
+	*/
+	pub fn parseJsonLossy(json: String) -> Result<Self>
+	{
+		let root = serde_json::from_str::<Value>(json.as_str())?;
+		
+		let mut user = Self::default();
+		
+		match root
+		{
+			Value::Object(map) => {
+				
+				if let Some((_, value)) = map.iter()
+					.find(|(k, _)| k.as_str() == "games")
+				{
+					if let Value::Array(inner) = value
+					{
+						let mut parsedGames = vec![];
+						for gameValue in inner
+						{
+							if let Value::Object(gameMap) = gameValue
+							{
+								if let Some(game) = Game::parseJsonMap(gameMap)
+								{
+									parsedGames.push(game);
+								}
+							}
+						}
+						
+						user.games = parsedGames;
+					}
+				}
+				
+				if let Some((_, value)) = map.iter()
+					.find(|(k, _)| k.as_str() == "accountId")
+				{
+					if let Value::Number(inner) = value
+					{
+						if let Some(number) = inner.as_u64()
+						{
+							user.accountId = number;
+						}
+					}
+				}
+				
+				if let Some((_, value)) = map.iter()
+					.find(|(k, _)| k.as_str() == "name")
+				{
+					if let Value::String(value) = value
+					{
+						user.name = value.to_owned();
+					}
+				}
+				
+				if let Some((_, value)) = map.iter()
+					.find(|(k, _)| k.as_str() == "points")
+				{
+					if let Value::Number(inner) = value
+					{
+						if let Some(number) = inner.as_u64()
+						{
+							user.points = number;
+						}
+					}
+				}
+			},
+			
+			_ => {},
+		}
+		
+		return Ok(user);
+	}
+	
+	/**
 	Update the user's game data based on the given list of `games`.
 	
 	## Effects
@@ -100,6 +191,48 @@ impl User
 mod tests
 {
 	use super::*;
+	
+	const PartialJson: &str = r#"{
+	"username": "Test User",
+	"points": 12345,
+	"accountId": 3,
+	"games": [
+		{
+			"npCommId": "The game 1",
+			"name": "First game",
+			"trophies": [
+				{ "id": 4, "name": "Successful parse!" },
+				{ "name": "This one should fail to parse" }
+			]
+		},
+		
+		{
+			"name": "Test game that shouldn't parse",
+			"trophies": [
+				{ "id": 4, "name": "Successful parse!" }
+			]
+		}
+	]
+}"#;
+	
+	#[test]
+	fn parseJsonLossy()
+	{
+		let result = User::parseJsonLossy(PartialJson.into());
+		assert!(result.is_ok());
+		
+		let user = result.unwrap();
+		assert_eq!(user.games.len(), 1);
+		
+		let game = user.games.first().unwrap();
+		assert_eq!(game.npCommId, "The game 1".to_string());
+		assert_eq!(game.name, "First game".to_string());
+		assert_eq!(game.trophies.len(), 1);
+		
+		let trophy = game.trophies.first().unwrap();
+		assert_eq!(trophy.id, 4);
+		assert_eq!(trophy.name, "Successful parse!".to_string());
+	}
 	
 	#[test]
 	fn level()

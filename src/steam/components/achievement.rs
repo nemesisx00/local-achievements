@@ -1,4 +1,5 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder, rsx, Element, GlobalSignal, IntoDynNode, Loader, Props, Readable};
+use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
+	rsx, Element, GlobalSignal, IntoDynNode, Loader, Props, Readable};
 use crate::steam::SteamAchievement;
 use crate::io::{loadImageToBytes, Path_Games};
 use crate::steam::platform::api::Api;
@@ -6,7 +7,7 @@ use crate::constants::{BorderColor, Icon_Locked};
 use crate::{join, jpg, jpgAlt, SteamUserData};
 
 #[component]
-pub fn AchievementElement(appId: usize, id: String) -> Element
+pub fn AchievementElement(appId: u64, id: String) -> Element
 {
 	let achievement = match SteamUserData().games.iter()
 		.find(|g| g.id == appId)

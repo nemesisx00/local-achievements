@@ -4,7 +4,7 @@ use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use crate::constants::Icon_Locked;
-use crate::io::{getImagePath, Filename_GameIcon, Path_Avatars, Path_Games};
+use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
 use crate::util::cacheImageIfNotExists;
 use crate::{error, join, png, pngAlt};
 use crate::retroachievements::makeRelative;
@@ -39,7 +39,7 @@ impl Api
 	const Endpoint_GetUserGameCompletion: &str = "API_GetUserCompletionProgress.php";
 	const Endpoint_GetUserProfile: &str = "API_GetUserProfile.php";
 	
-	pub const GetUserGameCompletion_Count: usize = 100;
+	pub const GetUserGameCompletion_Count: u64 = 100;
 	
 	pub const BadgePath: &str = "Badge";
 	pub const BadgeLockedSuffix: &str = "lock";
@@ -49,7 +49,7 @@ impl Api
 	
 	pub const Platform: &str = "RetroAchievements";
 	
-	pub async fn cacheIcon_Achievements(&self, gameId: usize, payload: &Payload_GetGameInfo, force: bool) -> Result<()>
+	pub async fn cacheIcon_Achievements(&self, gameId: u64, payload: &Payload_GetGameInfo, force: bool) -> Result<()>
 	{
 		let group = join!(Path_Games, gameId.to_string());
 		let platform = Self::Platform.into();
@@ -97,7 +97,7 @@ impl Api
 	
 	pub async fn cacheIcon_Games(&self, payload: &Payload_GetUserCompletionProgress, force: bool) -> Result<()>
 	{
-		let filename = png!(Filename_GameIcon);
+		let filename = png!(FileName_GameIcon);
 		let platform = Self::Platform.into();
 		
 		for game in payload.Results.iter()
@@ -230,7 +230,7 @@ impl Api
 	DateEarned | String ; optional
 	DateEarnedHardcore | String ; optional
 	*/
-	pub async fn getGameInfo(&self, ulid: &String, gameId: usize) -> Result<Payload_GetGameInfo>
+	pub async fn getGameInfo(&self, ulid: &String, gameId: u64) -> Result<Payload_GetGameInfo>
 	{
 		let mut parameters = self.generateParameterMap();
 		parameters.remove(Self::Parameter_ApiUsername);
@@ -298,7 +298,7 @@ impl Api
 	HighestAwardKind | String
 	HighestAwardDate | Timestamp string
 	*/
-	pub async fn getUserCompletionProgress(&self, ulid: Option<String>, offset: Option<usize>) -> Result<Payload_GetUserCompletionProgress>
+	pub async fn getUserCompletionProgress(&self, ulid: Option<String>, offset: Option<u64>) -> Result<Payload_GetUserCompletionProgress>
 	{
 		let mut parameters = self.generateParameterMap();
 		parameters.remove(Self::Parameter_ApiUsername);

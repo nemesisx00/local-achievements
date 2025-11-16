@@ -65,9 +65,9 @@ pub fn refresh()
 #[derive(Clone, Copy, Debug, Default)]
 struct UserCompletionProgressState
 {
-	offset: usize,
-	received: usize,
-	total: usize,
+	offset: u64,
+	received: u64,
+	total: u64,
 }
 
 impl UserCompletionProgressState

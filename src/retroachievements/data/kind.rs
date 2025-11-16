@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Number;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum AwardKind
@@ -8,6 +9,25 @@ pub enum AwardKind
 	BeatenHardcore,
 	Completed,
 	Mastered,
+}
+
+impl From<Number> for AwardKind
+{
+	fn from(value: Number) -> Self
+	{
+		return match value.as_u64()
+		{
+			None => Self::default(),
+			Some(num) => match num
+			{
+				0 => Self::BeatenCasual,
+				1 => Self::BeatenHardcore,
+				2 => Self::Completed,
+				3 => Self::Mastered,
+				_ => Self::default(),
+			}
+		};
+	}
 }
 
 impl AwardKind
