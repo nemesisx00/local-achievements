@@ -15,9 +15,11 @@ const Application: &str = "local-achievements";
 const Organization: &str = "";
 const Qualifier: &str = "";
 
-pub const Filename_GameIcon: &str = "game-icon";
+pub const FileName_GameIcon: &str = "game-icon";
+pub const FileName_LogPrefix: &str = "app.log";
 
 pub const Path_Avatars: &str = "avatars";
+pub const Path_Logs: &str = "logs";
 pub const Path_Games: &str = "games";
 
 pub fn generateImageCacheDir(

@@ -14,12 +14,16 @@ mod steam;
 mod util;
 
 use std::collections::VecDeque;
+use std::path::Path;
 use freya::launch::launch_cfg;
-use freya::prelude::{GlobalSignal, LaunchConfig, Signal};//, WindowConfig};
+use freya::prelude::{GlobalSignal, LaunchConfig, Signal};
+use tracing::Level;
+use tracing_appender::non_blocking::WorkerGuard;
 
 use crate::components::{ActiveContent, App};
 use crate::data::AppSettings;
 use crate::constants::{AppTitle, BackgroundColor, DefaultWindowSize, MinimumWindowSize};
+use crate::io::{FileName_LogPrefix, Path_Logs, getConfigDir};
 use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
 use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
 use crate::steam::{SteamAuth, SteamUser};
@@ -38,6 +42,8 @@ pub static SteamUserData: GlobalSignal<SteamUser> = Signal::global(|| Default::d
 
 fn main()
 {
+	let _guard = configureLogger();
+	
 	launch_cfg(App, LaunchConfig::<()>::new()
 		.with_background(BackgroundColor)
 		.with_min_size(MinimumWindowSize.0, MinimumWindowSize.1)
@@ -57,4 +63,27 @@ fn main()
 				.with_transparency(false))
 	);
 	*/
+}
+
+fn configureLogger() -> WorkerGuard
+{
+	let dir = getConfigDir(true).unwrap();
+	
+	let logPath = Path::new(&dir)
+		.join(Path_Logs);
+	
+	let fileAppender = tracing_appender::rolling::daily(logPath, FileName_LogPrefix);
+	let (nonBlocking, workerGuard) = tracing_appender::non_blocking(fileAppender);
+	
+	let format = tracing_subscriber::fmt::format()
+		.with_ansi(false)
+		.compact();
+	
+	tracing_subscriber::fmt()
+		.event_format(format)
+		.with_max_level(Level::INFO)
+		.with_writer(nonBlocking)
+		.init();
+	
+	return workerGuard;
 }
