@@ -4,6 +4,7 @@ mod platform;
 
 pub use components::{
 	content::ContentElement as Rpcs3ContentElement,
+	profile::UserProfile as Rpcs3ProfileElement,
 	settings::SettingsElement as Rpcs3SettingsElement,
 };
 

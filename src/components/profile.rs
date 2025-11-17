@@ -3,6 +3,7 @@ use freya::prelude::{Button, Element, GlobalSignal, Props, Readable, Writable,
 	component, dioxus_elements, fc_to_builder, rsx, use_animation, use_signal};
 use crate::constants::{ButtonBackgroundColor, BorderColor};
 use crate::retroachievements::RetroAchievementsUserProfile;
+use crate::rpcs3::Rpcs3ProfileElement;
 use crate::steam::SteamProfile;
 
 #[component]
@@ -102,6 +103,21 @@ pub fn ProfileElement(duration: Option<u64>, ) -> Element
 				"RetroAchievements"
 			}
 			RetroAchievementsUserProfile {}
+			
+			rect
+			{
+				border: "none, none, 1 center {BorderColor}",
+				margin: "7 0",
+				width: "flex",
+			}
+			
+			label
+			{
+				text_align: "center",
+				width: "flex",
+				"RPCS3"
+			}
+			Rpcs3ProfileElement {}
 			
 			rect
 			{

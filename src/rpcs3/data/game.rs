@@ -153,6 +153,7 @@ impl Game
 	pub fn points(&self) -> u64
 	{
 		let points = self.trophies.iter()
+			.filter(|t| t.unlocked)
 			.fold(0, |acc, t| acc + t.grade.points());
 		
 		return match points > Self::MaxPoints_Disc

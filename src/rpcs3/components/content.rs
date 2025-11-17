@@ -1,5 +1,5 @@
 use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
-	use_hook, Button, Element, GlobalSignal, IntoDynNode, Readable};
+	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
 use crate::{NotificationList, Rpcs3SettingsData, Rpcs3UserData};
 use crate::io::saveUserData_Rpcs3;
 use crate::rpcs3::platform::api::Api;
@@ -31,12 +31,6 @@ pub fn ContentElement() -> Element
 			direction: "vertical",
 			spacing: "10",
 			width: "fill",
-			
-			Button
-			{
-				onpress: move |_| refresh(),
-				label { "Refresh" }
-			}
 			
 			match selectedGame
 			{
