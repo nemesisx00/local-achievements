@@ -1,10 +1,9 @@
 use std::cmp::Ordering;
 use std::io::ErrorKind;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use crate::error;
 use crate::constants::{Format_ChronoDateTime, TheString};
 use crate::retroachievements::platform::AchievementMetadata;
 use super::makeRelative;
@@ -114,7 +113,7 @@ impl Achievement
 			return Ok(dt.format(Format_ChronoDateTime).to_string());
 		}
 		
-		return Err(error!(ErrorKind::NotFound));
+		return Err(anyhow!(ErrorKind::NotFound));
 	}
 	
 	pub fn parseJsonMap(map: &Map<String, Value>) -> Option<Self>

@@ -1,12 +1,11 @@
 use std::fs::{self, File, create_dir_all};
 use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
 use std::path::Path;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use directories::ProjectDirs;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use crate::data::AppSettings;
-use crate::error;
 use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
 use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
 use crate::steam::{SteamAuth, SteamUser};
@@ -112,7 +111,7 @@ pub fn loadAppSettings() -> Result<AppSettings>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, AppSettings::FileName.into()),
 	};
 }
@@ -124,7 +123,7 @@ pub fn loadAuthData_RetroAchievements() -> Result<RetroAchievementsAuth>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, RetroAchievementsAuth::FileName.into()),
 	};
 }
@@ -136,7 +135,7 @@ pub fn loadAuthData_Steam() -> Result<SteamAuth>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, SteamAuth::FileName.into()),
 	};
 }
@@ -157,7 +156,7 @@ pub fn loadImageToBytes(
 		return Ok(buffer);
 	}
 	
-	return Err(error!(ErrorKind::NotFound));
+	return Err(anyhow!(ErrorKind::NotFound));
 }
 
 /**
@@ -167,7 +166,7 @@ pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, Rpcs3Settings::FileName.into()),
 	};
 }
@@ -179,7 +178,7 @@ pub fn loadUserData_Rpcs3() -> Result<Rpcs3User>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, Rpcs3User::FileName.into()),
 	};
 }
@@ -191,7 +190,7 @@ pub fn loadUserData_Rpcs3_lossy() -> Result<Rpcs3User>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => {
 			let json = readRawDataFromFile(dir, Rpcs3User::FileName.into())?;
 			Rpcs3User::parseJsonLossy(json)
@@ -206,7 +205,7 @@ pub fn loadUserData_Steam() -> Result<SteamUser>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, SteamUser::FileName.into()),
 	};
 }
@@ -218,7 +217,7 @@ pub fn loadUserData_Steam_lossy() -> Result<SteamUser>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => {
 			let json = readRawDataFromFile(dir, SteamUser::FileName.into())?;
 			SteamUser::parseJsonLossy(json)
@@ -233,7 +232,7 @@ pub fn loadUserData_RetroAchievements() -> Result<RetroAchievementsUser>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName.into()),
 	};
 }
@@ -245,7 +244,7 @@ pub fn loadUserData_RetroAchievements_lossy() -> Result<RetroAchievementsUser>
 {
 	return match getDataDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => {
 			let json = readRawDataFromFile(dir, RetroAchievementsUser::FileName.into())?;
 			RetroAchievementsUser::parseJsonLossy(json)
@@ -313,7 +312,7 @@ pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, AppSettings::FileName.into(), settings),
 	};
 }
@@ -325,7 +324,7 @@ pub fn saveAuthData_RetroAchievements(auth: &RetroAchievementsAuth) -> Result<()
 {
 	return match getConfigDir(true)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, RetroAchievementsAuth::FileName.into(), auth),
 	};
 }
@@ -337,7 +336,7 @@ pub fn saveAuthData_Steam(auth: &SteamAuth) -> Result<()>
 {
 	return match getConfigDir(true)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, SteamAuth::FileName.into(), auth),
 	};
 }
@@ -374,7 +373,7 @@ pub fn saveImageToCache(
 		return Ok(());
 	}
 	
-	return Err(error!(ErrorKind::NotFound));
+	return Err(anyhow!(ErrorKind::NotFound));
 }
 
 /**
@@ -384,7 +383,7 @@ pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
 {
 	return match getConfigDir(false)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, Rpcs3Settings::FileName.into(), settings),
 	};
 }
@@ -393,7 +392,7 @@ pub fn saveUserData_RetroAchievements(user: &RetroAchievementsUser) -> Result<()
 {
 	return match getDataDir(true)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, RetroAchievementsUser::FileName.into(), user),
 	};
 }
@@ -402,7 +401,7 @@ pub fn saveUserData_Rpcs3(user: &Rpcs3User) -> Result<()>
 {
 	return match getDataDir(true)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, Rpcs3User::FileName.into(), user),
 	};
 }
@@ -411,7 +410,7 @@ pub fn saveUserData_Steam(user: &SteamUser) -> Result<()>
 {
 	return match getDataDir(true)
 	{
-		None => Err(error!(ErrorKind::NotFound)),
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, SteamUser::FileName.into(), user),
 	};
 }

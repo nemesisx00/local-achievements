@@ -27,7 +27,7 @@ When Local Achievements releases, you will be able to download it from the Relea
 
 ## Supported Platforms
 
-- [ ] [Epic Game Store](https://store.epicgames.com)
+- [ ] [Epic Games Store](https://store.epicgames.com)
 - [ ] [GOG](https://gog.com)
 - [ ] [Playstation Network](https://www.playstation.com/playstation-network)
 - [x] [RetroAchievements](https://retroachievements.org)

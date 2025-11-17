@@ -1,12 +1,14 @@
-use std::{collections::HashMap, io::ErrorKind, path::Path};
-use anyhow::{Context, Result};
+use std::collections::HashMap;
+use std::io::ErrorKind;
+use std::path::Path;
+use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use crate::constants::Icon_Locked;
 use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
 use crate::util::cacheImageIfNotExists;
-use crate::{error, join, png, pngAlt};
+use crate::{join, png, pngAlt};
 use crate::retroachievements::makeRelative;
 use super::{Payload_GetGameInfo, Payload_GetUserCompletionProgress,
 	Payload_GetUserProfile, AuthData};
@@ -437,6 +439,6 @@ impl Api
 			return Ok(response);
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 }

@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use crate::constants::Icon_Locked;
 use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
-use crate::{error, join, jpg, jpgAlt};
+use crate::{join, jpg, jpgAlt};
 use crate::steam::data::game::Game;
 use crate::util::cacheImageIfNotExists;
 use super::{GameAchievement, Payload_GetGlobalPercentages,
@@ -285,7 +285,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**
@@ -351,7 +351,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**
@@ -410,7 +410,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidData));
+		return Err(anyhow!(ErrorKind::InvalidData));
 	}
 	
 	/**
@@ -499,7 +499,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**
@@ -555,7 +555,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**
@@ -618,7 +618,7 @@ impl Api
 			}
 		}
 		
-		return Err(error!(ErrorKind::InvalidInput));
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**

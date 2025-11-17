@@ -1,17 +1,3 @@
-/**
-Generate an anyhow::Error from a std::io::Error, given a std::io::ErrorKind.
-*/
-#[macro_export]
-macro_rules! error
-{
-	($kind:expr) => {
-		{
-			use ::anyhow::Error;
-			Error::from(std::io::Error::from($kind))
-		}
-	}
-}
-
 #[macro_export]
 macro_rules! join
 {
