@@ -1,7 +1,8 @@
-use std::fs::{copy, read, read_dir, read_to_string};
-use std::io::Cursor;
+use std::fs::{File, copy, read, read_dir, read_to_string};
+use std::io::{self, Cursor};
 use std::path::Path;
 use anyhow::Result;
+use saphyr::{LoadableYamlNode, Scalar, Yaml};
 use crate::join;
 use crate::io::{Path_Games, generateImageCacheDir, getImagePath};
 use crate::rpcs3::data::game::Game;
@@ -57,10 +58,13 @@ impl Api
 	pub const GameIconFileName: &str = "ICON0.PNG";
 	pub const TrophyIconPrefix: &str = "TROP";
 	
-	const RelativeHomeDir: &str = "config/rpcs3/dev_hdd0/home";
-	const RelativeUserTrophyDir: &str = "trophy";
 	const ConfFileName: &str = "TROPCONF.SFM";
 	const DatFileName: &str = "TROPUSR.DAT";
+	const RelativeConfigDir: &str = "config/rpcs3/";
+	const RelativeHomeDir: &str = "dev_hdd0/home";
+	const RelativeUserTrophyDir: &str = "trophy";
+	const RpcnFileName: &str = "rpcn.yml";
+	const RpcnIdYamlKey: &str = "NPID";
 	
 	pub fn cacheGameIcons(&self, npCommId: String) -> Result<()>
 	{
@@ -70,6 +74,7 @@ impl Api
 		generateImageCacheDir(&platform, &group)?;
 		
 		let gamePath = Path::new(&self.rootDir)
+			.join(Self::RelativeConfigDir)
 			.join(Self::RelativeHomeDir)
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
@@ -150,6 +155,7 @@ impl Api
 	pub fn getNpCommIdList(&self) -> Result<Vec<String>>
 	{
 		let trophiesPath = Path::new(&self.rootDir)
+			.join(Self::RelativeConfigDir)
 			.join(Self::RelativeHomeDir)
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir);
@@ -173,6 +179,7 @@ impl Api
 	pub fn parseDatFile(&self, npCommId: String) -> Result<DatFile>
 	{
 		let datPath = Path::new(&self.rootDir)
+			.join(Self::RelativeConfigDir)
 			.join(Self::RelativeHomeDir)
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
@@ -184,6 +191,29 @@ impl Api
 		let datFile = DatFile::readFromCursor(&mut cursor)?;
 		
 		return Ok(datFile);
+	}
+	
+	pub fn getRpcnId(&self) -> Result<String>
+	{
+		let rpcnPath = Path::new(&self.rootDir)
+			.join(Self::RelativeConfigDir)
+			.join(Self::RpcnFileName);
+		
+		let file = File::open(rpcnPath)?;
+		let data = io::read_to_string(file)?;
+		let yaml = Yaml::load_from_str(&data.as_str())?;
+		
+		let rpcnId = match yaml.iter().find(|y| y.is_mapping())
+		{
+			Some(Yaml::Mapping(map)) => match map.get(&Yaml::Value(Scalar::String(Self::RpcnIdYamlKey.into())))
+			{
+				Some(Yaml::Value(Scalar::String(id))) => id.to_string(),
+				_ => String::default(),
+			},
+			_ => String::default(),
+		};
+		
+		return Ok(rpcnId);
 	}
 	
 	pub fn parseTrophies(&self, npCommId: String) -> Result<Vec<(TrophyMetadata, EntryType6)>>
@@ -208,6 +238,7 @@ impl Api
 	pub fn parseTrophyConf(&self, npCommId: String) -> Result<TrophyConf>
 	{
 		let confPath = Path::new(&self.rootDir)
+			.join(Self::RelativeConfigDir)
 			.join(Self::RelativeHomeDir)
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
@@ -239,6 +270,25 @@ mod tests
 		let accountId = api.formatAccountId();
 		
 		assert_eq!(accountId, "00000001");
+	}
+	
+	/**
+	Requires the following environment variable to be set in order to run successfully.
+	
+	- `RPCS3_TEST_ROOT`: The absolute path to the RPCS3 app data directory.
+	- `RPCS3_TEST_RPCN_ID`: The expected RPCN ID. Used to verify the parsed value.
+	*/
+	#[ignore]
+	#[test]
+	fn rpcnId()
+	{
+		let rootDir = env::var("RPCS3_TEST_ROOT").unwrap();
+		let expected = env::var("RPCS3_TEST_RPCN_ID").unwrap();
+		
+		let api = Api { rootDir, ..Default::default() };
+		let rpcnId = api.getRpcnId();
+		assert!(rpcnId.is_ok());
+		assert_eq!(rpcnId.unwrap(), expected);
 	}
 	
 	/**

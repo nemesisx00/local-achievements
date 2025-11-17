@@ -19,6 +19,12 @@ pub fn UserProfile() -> Element
 			/ Rpcs3UserData().pointTotalForLevel() as f32)
 		* 100f32;
 	
+	let mut username = Rpcs3UserData().name;
+	if username.is_empty()
+	{
+		username = Rpcs3UserData().formatAccountId();
+	}
+	
 	return rsx!(
 		rect
 		{
@@ -38,7 +44,7 @@ pub fn UserProfile() -> Element
 					main_align: "center",
 					text_align: "center",
 					
-					"{Rpcs3UserData().formatAccountId()}"
+					"{username}"
 				}
 				
 				Button
