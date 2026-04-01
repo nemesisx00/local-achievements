@@ -47,7 +47,7 @@ impl GogUser
 		{
 			Value::Object(map) => {
 				if let Some((_, value)) = map.iter()
-					.find(|(k, _)| k.as_str() == "createdDate")
+					.find(|(k, _)| k.as_str() == "createdTimestamp")
 				{
 					if let Value::Number(inner) = value
 					{
@@ -55,7 +55,7 @@ impl GogUser
 						{
 							if let Some(timestamp) = DateTime::from_timestamp(number, 0)
 							{
-								user.createdTimestamp = timestamp.to_owned();
+								user.createdTimestamp = timestamp.clone();
 							}
 						}
 					}
@@ -66,7 +66,7 @@ impl GogUser
 				{
 					if let Value::Bool(inner) = value
 					{
-						user.employee = inner.to_owned();
+						user.employee = inner.clone();
 					}
 				}
 				
@@ -75,7 +75,7 @@ impl GogUser
 				{
 					if let Value::String(inner) = value
 					{
-						user.id = inner.to_owned();
+						user.id = inner.clone();
 					}
 				}
 				
@@ -84,7 +84,7 @@ impl GogUser
 				{
 					if let Value::String(inner) = value
 					{
-						user.name = inner.to_owned();
+						user.name = inner.clone();
 					}
 				}
 				
@@ -203,7 +203,7 @@ mod tests
 	use super::*;
 	
 	const PartialJson: &str = r#"{
-	"createdTimestamp": "1763543348",
+	"createdTimestamp": 1763543348,
 	"employee": true,
 	"games": [
 		{
@@ -220,7 +220,7 @@ mod tests
 				{ "id": "4", "name": "Successful parse!" }
 			]
 		}
-	]
+	],
 	"id": "The id",
 	"name": "Test User"
 }"#;

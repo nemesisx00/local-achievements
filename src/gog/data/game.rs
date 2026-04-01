@@ -175,6 +175,7 @@ impl Game
 						tags.push(string.clone());
 					}
 				}
+				game.tags = tags;
 			}
 		}
 		
@@ -441,7 +442,7 @@ mod tests
 		achievement1.insert("name".into(), "First achievement".into());
 		
 		let mut achievement2 = Map::new();
-		achievement2.insert("id".into(), "Fail achievement".into());
+		achievement2.insert("name".into(), "Fail achievement".into());
 		
 		let mut achievement3 = Map::new();
 		achievement3.insert("id".into(), "3".into());

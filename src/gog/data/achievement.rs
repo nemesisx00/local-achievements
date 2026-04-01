@@ -213,15 +213,15 @@ mod tests
 		
 		if successful
 		{
-			map.insert("achievement_id".into(), "The id".into());
+			map.insert("id".into(), "The id".into());
 		}
 		
-		map.insert("achievement_key".into(), "The key".into());
+		map.insert("key".into(), "The key".into());
 		map.insert("visible".into(), true.into());
 		map.insert("name".into(), "The name".into());
 		map.insert("description".into(), "The description".into());
 		//TODO: Use a test string representative of actual data
-		map.insert("date_unlocked".into(), "The name".into());
+		map.insert("dateUnlocked".into(), "The date unlocked".into());
 		
 		return map;
 	}
