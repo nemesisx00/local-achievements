@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use super::mode::AchievementMode;
+use super::mode::RetroAchievementsMode;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct RankData
 {
 	/// The mode corresponding to this rank and point amount.
 	#[serde(default)]
-	pub mode: AchievementMode,
+	pub mode: RetroAchievementsMode,
 	
 	/// The total number of points earned.
 	#[serde(default)]
@@ -22,9 +22,9 @@ pub struct RankData
 	pub total: u64,
 }
 
-impl From<AchievementMode> for RankData
+impl From<RetroAchievementsMode> for RankData
 {
-	fn from(value: AchievementMode) -> Self
+	fn from(value: RetroAchievementsMode) -> Self
 	{
 		return Self
 		{
@@ -98,7 +98,7 @@ mod tests
 	{
 		let mut map = Map::new();
 		
-		map.insert("mode".into(), (AchievementMode::Hardcore as u64).into());
+		map.insert("mode".into(), (RetroAchievementsMode::Hardcore as u64).into());
 		map.insert("points".into(), 250.into());
 		map.insert("rank".into(), 10000.into());
 		map.insert("total".into(), 30000.into());
@@ -112,7 +112,7 @@ mod tests
 		let map = buildMap();
 		
 		let rank = RankData::parseJsonMap(&map);
-		assert_eq!(rank.mode, AchievementMode::Hardcore);
+		assert_eq!(rank.mode, RetroAchievementsMode::Hardcore);
 		assert_eq!(rank.points, 250);
 		assert_eq!(rank.rank, 10000);
 		assert_eq!(rank.total, 30000);

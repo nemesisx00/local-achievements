@@ -1,11 +1,16 @@
 use std::fs::{self, File, create_dir_all};
-use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
-use std::path::Path;
+use std::io::{BufReader, BufWriter, ErrorKind, Write};
+use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Context, Result};
 use directories::ProjectDirs;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
+use crate::constants::{SecretsKeyFileName, SecretsVaultFileName};
+//use crate::battlenet::{BattleNetAuth, BattleNetUser};
 use crate::data::AppSettings;
+//use crate::egs::{EgsSettings, EgsUser};
+use crate::gog::GogUser;
+use crate::net::limiter::request::FileLocation;
 use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
 use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
 use crate::steam::{SteamAuth, SteamUser};
@@ -89,16 +94,41 @@ pub fn getDataDir(create: bool) -> Option<String>
 	return Some(path);
 }
 
+pub fn getSecretsKeyPath() -> Option<PathBuf>
+{
+	return Some(Path::new(&getConfigDir(true)?)
+		.join(SecretsKeyFileName));
+}
+
+pub fn getSecretsVaultPath() -> Option<PathBuf>
+{
+	return Some(Path::new(&getConfigDir(true)?)
+		.join(SecretsVaultFileName));
+}
+
+pub fn imagePathExists(location: &FileLocation) -> bool
+{
+	return match getCacheDir(false)
+	{
+		None => false,
+		Some(dir) => Path::new(dir.as_str())
+			.join(location.platform.to_lowercase())
+			.join(location.group.clone())
+			.join(location.fileName.clone())
+			.exists()
+	};
+}
+
 /**
 Get the absolute path to a cached image, if it exists.
 */
-pub fn getImagePath(platform: &String, group: &String, fileName: &String) -> Option<String>
+pub fn getImagePath(location: &FileLocation) -> Option<String>
 {
 	return Some(
 		Path::new(getCacheDir(false)?.as_str())
-			.join(platform.to_lowercase())
-			.join(group)
-			.join(fileName)
+			.join(location.platform.to_lowercase())
+			.join(location.group.clone())
+			.join(location.fileName.clone())
 			.to_str()?
 			.into()
 	);
@@ -115,6 +145,20 @@ pub fn loadAppSettings() -> Result<AppSettings>
 		Some(dir) => readDataFromFile(dir, AppSettings::FileName.into()),
 	};
 }
+
+/**
+Read the Battle.Net API authorization data from file.
+*/
+/*
+pub fn loadAuthData_BattleNet() -> Result<BattleNetAuth>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, BattleNetAuth::FileName.into()),
+	};
+}
+*/
 
 /**
 Read the RetroAchievements API authorization data from file.
@@ -140,24 +184,19 @@ pub fn loadAuthData_Steam() -> Result<SteamAuth>
 	};
 }
 
-pub fn loadImageToBytes(
-		platform: &String,
-		group: &String,
-		fileName: &String
-	) -> Result<Vec<u8>>
+/**
+Read the Epic Games Store settings data from file.
+*/
+/*
+pub fn loadSettings_EpicGamesStore() -> Result<EgsSettings>
 {
-	if let Some(path) = getImagePath(platform, group, fileName)
+	return match getConfigDir(false)
 	{
-		let file = File::open(path)?;
-		let mut reader = BufReader::new(file);
-		let mut buffer = vec![];
-		reader.read_to_end(&mut buffer)?;
-		
-		return Ok(buffer);
-	}
-	
-	return Err(anyhow!(ErrorKind::NotFound));
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, EgsSettings::FileName.into()),
+	};
 }
+*/
 
 /**
 Read the RPCS3 settings data from file.
@@ -168,6 +207,122 @@ pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, Rpcs3Settings::FileName.into()),
+	};
+}
+
+/**
+Read the Battle.Net user data from file.
+*/
+/*
+pub fn loadUserData_BattleNet() -> Result<BattleNetUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, BattleNetUser::FileName.into()),
+	};
+}
+*/
+
+/**
+Read the Battle.Net user data from file.
+*/
+/*
+pub fn loadUserData_BattleNet_lossy() -> Result<BattleNetUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, BattleNetUser::FileName.into())?;
+			BattleNetUser::parseJsonLossy(json)
+		},
+	};
+}
+*/
+
+/**
+Read the Epic Games Store user data from file.
+*/
+/*
+pub fn loadUserData_EpicGamesStore() -> Result<EgsUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, EgsUser::FileName.into()),
+	};
+}
+*/
+
+/**
+Read the Epic Games Store user data from file.
+*/
+/*
+pub fn loadUserData_EpicGamesStore_lossy() -> Result<EgsUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, EgsUser::FileName.into())?;
+			EgsUser::parseJsonLossy(json)
+		},
+	};
+}
+*/
+
+/**
+Read the GOG API user data from file.
+*/
+pub fn loadUserData_Gog() -> Result<GogUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, GogUser::FileName.into()),
+	};
+}
+
+/**
+Read the GOG API user data from file.
+*/
+pub fn loadUserData_Gog_lossy() -> Result<GogUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readDataFromFile(dir, GogUser::FileName.into())?;
+			GogUser::parseJsonLossy(json)
+		},
+	};
+}
+
+/**
+Read the RetroAchievements API user data from file.
+*/
+pub fn loadUserData_RetroAchievements() -> Result<RetroAchievementsUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName.into()),
+	};
+}
+
+/**
+Read the RetroAchievements API user data from file.
+*/
+pub fn loadUserData_RetroAchievements_lossy() -> Result<RetroAchievementsUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, RetroAchievementsUser::FileName.into())?;
+			RetroAchievementsUser::parseJsonLossy(json)
+		},
 	};
 }
 
@@ -221,33 +376,6 @@ pub fn loadUserData_Steam_lossy() -> Result<SteamUser>
 		Some(dir) => {
 			let json = readRawDataFromFile(dir, SteamUser::FileName.into())?;
 			SteamUser::parseJsonLossy(json)
-		},
-	};
-}
-
-/**
-Read the RetroAchievements API user data from file.
-*/
-pub fn loadUserData_RetroAchievements() -> Result<RetroAchievementsUser>
-{
-	return match getDataDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, RetroAchievementsUser::FileName.into()),
-	};
-}
-
-/**
-Read the RetroAchievements API user data from file.
-*/
-pub fn loadUserData_RetroAchievements_lossy() -> Result<RetroAchievementsUser>
-{
-	return match getDataDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => {
-			let json = readRawDataFromFile(dir, RetroAchievementsUser::FileName.into())?;
-			RetroAchievementsUser::parseJsonLossy(json)
 		},
 	};
 }
@@ -318,6 +446,20 @@ pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
 }
 
 /**
+Write the Battle.Net API authorization data to file.
+*/
+/*
+pub fn saveAuthData_BattleNet(auth: &BattleNetAuth) -> Result<()>
+{
+	return match getConfigDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, BattleNetAuth::FileName.into(), auth),
+	};
+}
+*/
+
+/**
 Write the RetroAchievements API authorization data to file.
 */
 pub fn saveAuthData_RetroAchievements(auth: &RetroAchievementsAuth) -> Result<()>
@@ -345,30 +487,36 @@ pub fn saveAuthData_Steam(auth: &SteamAuth) -> Result<()>
 Save an image to file in the cache directory specific to this application.
 */
 pub fn saveImageToCache(
-		platform: &String,
-		group: &String,
-		fileName: &String,
+		destination: &FileLocation,
 		buffer: &[u8]
 	) -> Result<()>
 {
 	if let Some(dir) = getCacheDir(true)
 	{
 		let mut path = Path::new(dir.as_str())
-			.join(platform.to_lowercase())
-			.join(group);
+			.join(destination.platform.to_lowercase())
+			.join(destination.group.clone());
 		
 		if !path.exists()
 		{
 			_ = create_dir_all(&path);
 		}
 		
-		path = path.join(fileName);
+		path = path.join(destination.fileName.clone());
 		
 		let mut file = File::create(&path)
-			.context(format!("Error opening file for writing: {}/{}", platform.to_lowercase(), fileName))?;
+			.context(format!(
+				"Error opening file for writing: {}/{}",
+				destination.platform.to_lowercase(),
+				destination.fileName
+			))?;
 		
 		file.write_all(buffer)
-			.context(format!("Error writing to file: {}/{}", platform.to_lowercase(), fileName))?;
+			.context(format!(
+				"Error writing to file: {}/{}",
+				destination.platform.to_lowercase(),
+				destination.fileName
+			))?;
 		
 		return Ok(());
 	}
@@ -377,14 +525,59 @@ pub fn saveImageToCache(
 }
 
 /**
-Write the RPCS3 settings data to file.
+Write the Epic Games Store settings data to file.
 */
-pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
+/*
+pub fn saveSettings_EpicGamesStore(settings: &EgsSettings) -> Result<()>
 {
 	return match getConfigDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, EgsSettings::FileName.into(), settings),
+	};
+}
+*/
+
+/**
+Write the RPCS3 settings data to file.
+*/
+pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
+{
+	return match getConfigDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, Rpcs3Settings::FileName.into(), settings),
+	};
+}
+
+/*
+pub fn saveUserData_BattleNet(user: &BattleNetUser) -> Result<()>
+{
+	return match getDataDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, BattleNetUser::FileName.into(), user),
+	};
+}
+*/
+
+/*
+pub fn saveUserData_EpicGamesStore(user: &EgsUser) -> Result<()>
+{
+	return match getDataDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, EgsUser::FileName.into(), user),
+	};
+}
+*/
+
+pub fn saveUserData_Gog(user: &GogUser) -> Result<()>
+{
+	return match getDataDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, GogUser::FileName.into(), user),
 	};
 }
 

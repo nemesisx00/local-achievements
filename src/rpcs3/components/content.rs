@@ -1,84 +1,42 @@
-use freya::prelude::{component, dioxus_elements, fc_to_builder, rsx, spawn,
-	use_hook, Element, GlobalSignal, IntoDynNode, Readable};
-use tracing::{info, warn};
-use crate::{NotificationList, Rpcs3SettingsData, Rpcs3UserData};
-use crate::io::saveUserData_Rpcs3;
-use crate::rpcs3::platform::api::Api;
-use super::SelectedGameId;
-use super::game::GameElement;
-use super::list::GameList;
+use freya::prelude::{Alignment, ChildrenExt, Component, ContainerSizeExt,
+	ContainerWithContentExt, Direction, Element, IntoElement, Size, rect};
+use freya::radio::{use_init_radio_station, use_radio};
+use crate::data::radio::GameIdChannel;
+use crate::rpcs3::components::game::GameElement;
+use crate::rpcs3::components::list::GameList;
 
-#[component]
-pub fn ContentElement() -> Element
+#[derive(Clone, PartialEq)]
+pub struct Rpcs3ContentElement {}
+
+impl Component for Rpcs3ContentElement
 {
-	use_hook(|| if Rpcs3UserData().accountId != Rpcs3SettingsData().accountId
+	fn render(&self) -> impl IntoElement
 	{
-		refresh();
-	});
-	
-	let selectedGame = match SelectedGameId()
-	{
-		None => None,
-		Some(npCommId) => Rpcs3UserData().games.iter()
-			.cloned()
-			.find(|g| g.npCommId == npCommId)
-			.map(|g| g.npCommId),
-	};
-	
-	return rsx!(
-		rect
+		use_init_radio_station::<Option<String>, GameIdChannel>(Default::default);
+		
+		let selectedGameId = use_radio::<Option<String>, GameIdChannel>(GameIdChannel::Rpcs3);
+		
+		let selectedId = selectedGameId.read().clone();
+		let element: Option<Element> = match selectedId
 		{
-			cross_align: "center",
-			direction: "vertical",
-			spacing: "10",
-			width: "fill",
+			None => Some(GameList::new().into()),
+			Some(id) => Some(GameElement::new(id).into()),
+		};
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.spacing(10.0)
+			.width(Size::Fill)
 			
-			match selectedGame
-			{
-				None => rsx!(GameList {}),
-				Some(npCommId) => rsx!(GameElement { npCommId }),
-			}
-		}
-	);
+			.maybe_child(element);
+	}
 }
 
-pub fn refresh()
+impl Rpcs3ContentElement
 {
-	spawn(async move {
-		let api: Api = Rpcs3SettingsData().into();
-		
-		match api.generateGameList()
-		{
-			Err(e) => warn!("{:?}", e),
-			Ok(games) => {
-				for npCommId in games.iter().cloned().map(|g| g.npCommId)
-				{
-					if let Err(e) = api.cacheGameIcons(npCommId.to_owned())
-					{
-						warn!("Error caching the icons for {}: {:?}", npCommId, e);
-					}
-				}
-				NotificationList.write().push_back("Icons Cached".into());
-				Rpcs3UserData.write().updateGamesList(games);
-				NotificationList.write().push_back("Trophy Data Loaded".into());
-			}
-		}
-		
-		match api.getRpcnId()
-		{
-			Err(e) => warn!("Failed to read RPCN ID: {:?}", e),
-			Ok(rpcnId) => {
-				Rpcs3UserData.write().name = rpcnId;
-				NotificationList.write().push_back("RPCN ID Loaded".into());
-			},
-		}
-		
-		Rpcs3UserData.write().accountId = Rpcs3SettingsData().accountId;
-		
-		match saveUserData_Rpcs3(&Rpcs3UserData())
-		{
-			Err(e) => warn!("Error saving user data (RPCS3): {:?}", e),
-			Ok(_) => info!("Saved user data (RPCS3)"),
-		}
-	});
+	pub fn new() -> Self
+	{
+		return Self {};
+	}
 }

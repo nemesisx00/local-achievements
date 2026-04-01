@@ -1,226 +1,271 @@
-use freya::events::Code;
-use freya::prelude::{component, cow_borrowed, dioxus_elements, dynamic_bytes,
-	fc_to_builder, rsx, theme_with, use_platform, use_scroll_controller,
-	use_signal, CursorIcon, Element, GlobalSignal, Input, IntoDynNode,
-	ProgressBar, ProgressBarThemeWith, Props, Readable, ScrollConfig,
-	ScrollDirection, ScrollPosition, VirtualScrollView, Writable};
+use std::path::PathBuf;
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
+	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	CornerRadius, CursorIcon, Direction, Event, EventHandlersExt, FontWeight,
+	Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Layer, LayerExt,
+	Platform, Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
+	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
+	VirtualScrollView, WinitPlatformExt, label, paragraph, rect,
+	use_scroll_controller, use_state};
+use freya::radio::use_radio;
 use crate::constants::{BorderColor, ButtonBackgroundColor,
-	RetroAchievementsProgressColorBackground, RetroAchievementsProgressColorCasual,
-	RetroAchievementsProgressColorHardcore, TransparentColor};
-use crate::io::{loadImageToBytes, FileName_GameIcon, Path_Games};
-use crate::{GameSelected, RetroAchievementsUserData, join, png};
-use crate::retroachievements::data::game::Game;
-use crate::retroachievements::data::mode::AchievementMode;
-use crate::retroachievements::platform::api::Api;
-use super::SelectedGameId;
+	RetroAchievementsProgressColorBackground,
+	RetroAchievementsProgressColorCasual,
+	RetroAchievementsProgressColorHardcore};
+use crate::data::AppData;
+use crate::data::radio::{AppDataChannel, GameIdChannel};
+use crate::net::limiter::request::FileLocation;
+use crate::{join, png};
+use crate::io::{FileName_GameIcon, Path_Games, getImagePath};
+use crate::retroachievements::RetroAchievementsMode;
+use crate::retroachievements::platform::api::RetroAchievementsApi;
 
-#[component]
-pub fn GameList() -> Element
+#[derive(Clone, PartialEq)]
+pub struct GameList;
+
+impl Component for GameList
 {
-	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
-	let mut search = use_signal(|| String::default());
-	
-	let mut games = RetroAchievementsUserData().games.iter()
-		.filter(|g| g.name.to_lowercase().contains(&search().to_lowercase())
-			|| g.system.name.to_lowercase().contains(&search().to_lowercase()))
-		.cloned()
-		.collect::<Vec<_>>();
-	games.sort();
-	
-	return rsx!(
-		rect
-		{
-			direction: "vertical",
-			cross_align: "center",
-			spacing: "10",
-			width: "fill",
+	fn render(&self) -> impl IntoElement
+	{
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
+		
+		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		let search = use_state(String::default);
+		
+		let games = appData.read().user.retroAchievements.filterGames(search.read().clone());
+		let gamesLength = games.len();
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.spacing(10.0)
+			.width(Size::Fill)
 			
-			onglobalkeyup: move |e| match e.code
+			.on_global_key_up(move |e: Event<KeyboardEventData>| match e.code
 			{
-				Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
-				Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
+				Code::Home => scrollController.scroll_to(ScrollPosition::Start, Direction::Vertical),
+				Code::End => scrollController.scroll_to(ScrollPosition::End, Direction::Vertical),
 				_ => {},
-			},
+			})
 			
-			Input
-			{
-				placeholder: "Search by game title",
-				value: search(),
-				width: "50%",
-				onchange: move |value| search.set(value),
-			}
+			.child(
+				label()
+					.font_size(24.0)
+					.text_align(TextAlign::Center)
+					.width(Size::percent(100.0))
+					.text("Retro Achievements")
+			)
 			
-			VirtualScrollView
-			{
-				cache_elements: true,
-				direction: "vertical",
-				item_size: 105.0,
-				length: games.len(),
-				scroll_controller: scrollController,
-				scroll_with_arrows: true,
-				
-				builder: move |i, _: &Option<()>| {
-					let game = &games[i];
-					return rsx!(GameListNode { game: game.to_owned() });
-				}
-			}
-		}
-	);
+			.child(
+				Input::new(search)
+					.placeholder("Search by game title")
+					.width(Size::percent(50.0))
+			)
+			
+			.child(
+				VirtualScrollView::new_controlled(
+					move |i, _| {
+						let game = &games[i];
+						return GameListNode::new(game.id).into();
+					},
+					scrollController
+				)
+					.direction(Direction::Vertical)
+					.item_size(105.0)
+					.length(gamesLength)
+					.scroll_with_arrows(true)
+			);
+	}
 }
 
-#[component]
-pub fn GameListNode(game: Game) -> Element
+impl GameList
 {
-    let platform = use_platform();
-	
-	let mut hovering = use_signal(|| false);
-	let bytes = loadIcon(&game);
-	
-	let background = match hovering()
+	pub fn new() -> Self
 	{
-		false => TransparentColor,
-		true => ButtonBackgroundColor,
-	};
-	
-	let progressCasual = game.percentUnlocked(AchievementMode::Casual);
-	let progressCasualString = format!("{:.2}", progressCasual);
-	let progressHardcore = game.percentUnlocked(AchievementMode::Hardcore);
-	let progressHardcoreString = format!("{:.2}", progressHardcore);
-	
-	return rsx!(
-		rect
+		return Self {};
+	}
+}
+
+#[derive(Clone, PartialEq)]
+pub struct GameListNode
+{
+	gameId: u64,
+}
+
+impl Component for GameListNode
+{
+	fn render(&self) -> impl IntoElement
+	{
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
+		let mut selectedGameId = use_radio::<Option<u64>, GameIdChannel>(GameIdChannel::RetroAchievements);
+		
+		let game = appData.read().user.retroAchievements.getGame(self.gameId)
+			.unwrap_or_default();
+		
+		let mut hovering = use_state(|| false);
+		
+		let iconPath = getImagePath(&FileLocation
 		{
-			direction: "horizontal",
-			main_align: "space-around",
-			margin: "5 0",
-			width: "fill",
+			fileName: png!(FileName_GameIcon),
+			group: join!(Path_Games, game.id),
+			platform: RetroAchievementsApi::Platform.to_lowercase(),
+		});
+		
+		let background = match hovering()
+		{
+			false => Color::TRANSPARENT,
+			true => ButtonBackgroundColor,
+		};
+		
+		let progressCasual = game.percentUnlocked(RetroAchievementsMode::Casual);
+		let progressCasualString = format!("{:.2}", progressCasual);
+		let progressHardcore = game.percentUnlocked(RetroAchievementsMode::Hardcore);
+		let progressHardcoreString = format!("{:.2}", progressHardcore);
+		
+		return rect()
+			.direction(Direction::Horizontal)
+			.main_align(Alignment::SpaceAround)
+			.margin(Gaps::new_symmetric(5.0, 0.0))
+			.min_height(Size::px(54.0))
+			.width(Size::Fill)
 			
-			rect
-			{
-				background,
-				border: "1 center {BorderColor}",
-				corner_radius: "5",
-				direction: "horizontal",
-				main_align: "space-between",
-				min_width: "540",
-				padding: "10 15",
-				spacing: "10",
-				width: "50%",
-				
-				onclick: move |_| {
-					platform.set_cursor(CursorIcon::default());
-					*GameSelected.write() = true;
-					*SelectedGameId.write() = Some(game.id);
-				},
-				
-				onpointerenter: move |_| {
-					platform.set_cursor(CursorIcon::Pointer);
-					hovering.set(true);
-				},
-				
-				onpointerleave: move |_| {
-					platform.set_cursor(CursorIcon::default());
-					hovering.set(false);
-				},
-				
-				rect
-				{
-					direction: "horizontal",
-					spacing: "15",
+			.child(
+				rect()
+					.background(background)
+					.border(Some(
+						Border::new()
+							.alignment(BorderAlignment::Center)
+							.fill(BorderColor)
+							.width(1.0)
+					))
+					.corner_radius(CornerRadius::new_all(5.0))
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::SpaceBetween)
+					.min_width(Size::px(540.0))
+					.padding(Gaps::new_symmetric(10.0, 15.0))
+					.spacing(10.0)
+					.width(Size::percent(50.0))
 					
-					if !bytes.is_empty()
-					{
-						image
-						{
-							image_data: dynamic_bytes(bytes),
-							width: "64",
-						}
-					}
+					.on_press(move |_| {
+						Platform::get().with_window(
+							None,
+							move |window| window.set_cursor(CursorIcon::default())
+						);
+						**selectedGameId.write() = Some(game.id);
+					})
 					
-					rect
-					{
-						direction: "vertical",
-						main_align: "space-around",
-						
-						label { margin: "10 0 0 0", font_size: "18", "{game.name}" }
-						label { font_size: "12", "{game.system.name}" }
-					}
-				}
-				
-				rect
-				{
-					cross_align: "end",
-					direction: "vertical",
-					main_align: "space-around",
-					min_width: "150",
-					height: "100%",
-					width: "100",
+					.on_pointer_enter(move |_| {
+						Platform::get().with_window(
+							None,
+							move |window| window.set_cursor(CursorIcon::Pointer)
+						);
+						hovering.set(true);
+					})
 					
-					rect
-					{
-						layer: "2",
-						position: "absolute",
-						position_right: "0",
-						position_top: "10",
-						width: "100",
-						
-						ProgressBar
-						{
-							progress: progressCasual as f32,
-							theme: theme_with!(ProgressBarTheme {
-								background: cow_borrowed!(RetroAchievementsProgressColorBackground),
-								height: cow_borrowed!("8"),
-								progress_background: cow_borrowed!(RetroAchievementsProgressColorCasual),
-							}),
-						}
-					}
+					.on_pointer_leave(move |_| {
+						Platform::get().with_window(
+							None,
+							move |window| window.set_cursor(CursorIcon::default())
+						);
+						hovering.set(false);
+					})
 					
-					rect
-					{
-						layer: "1",
-						position: "absolute",
-						position_right: "0",
-						position_top: "10",
-						width: "100",
-						
-						ProgressBar
-						{
-							progress: progressHardcore as f32,
-							theme: theme_with!(ProgressBarTheme {
-								background: cow_borrowed!(TransparentColor),
-								height: cow_borrowed!("8"),
-								progress_background: cow_borrowed!(RetroAchievementsProgressColorHardcore),
-							}),
-						}
-					}
+					.child(
+						rect()
+							.direction(Direction::Horizontal)
+							.spacing(15.0)
+							
+							.maybe_child(iconPath.is_some().then(||
+								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+									.width(Size::px(64.0))
+							))
+							
+							.child(
+								rect()
+									.direction(Direction::Vertical)
+									.main_align(Alignment::SpaceAround)
+									
+									.child(
+										label()
+											.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
+											.font_size(18.0)
+											.text(game.name)
+									)
+									
+									.child(
+										label()
+											.font_size(12.0)
+											.text(game.system.name)
+									)
+							)
+					)
 					
-					paragraph
-					{
-						margin: "10 0 0 0",
-						text_align: "center",
-						width: "100",
-						
-						text { font_size: "10", "{progressCasualString}% " }
-						text { font_size: "10", font_weight: "bold", "({progressHardcoreString}%)" }
-					}
-				}
-			}
-		}
-	);
+					.child(
+						rect()
+							.cross_align(Alignment::End)
+							.direction(Direction::Vertical)
+							.main_align(Alignment::SpaceAround)
+							.min_height(Size::px(40.0))
+							.min_width(Size::px(150.0))
+							.width(Size::px(100.0))
+							
+							.child(
+								rect()
+									.layer(Layer::Relative(1))
+									.position(Position::new_absolute()
+										.right(0.0)
+										.top(10.0)
+									)
+									.width(Size::px(100.0))
+									
+									.child(
+										ProgressBar::new(progressCasual as f32)
+											.background(RetroAchievementsProgressColorBackground)
+											.height(8.0)
+											.progress_background(RetroAchievementsProgressColorCasual)
+											.color(RetroAchievementsProgressColorCasual)
+									)
+							)
+							
+							.child(
+								rect()
+									.layer(Layer::Relative(2))
+									.position(Position::new_absolute()
+										.right(0.0)
+										.top(10.0)
+									)
+									.width(Size::px(100.0))
+									
+									.child(
+										ProgressBar::new(progressHardcore as f32)
+											.background(Color::TRANSPARENT)
+											.height(8.0)
+											.progress_background(RetroAchievementsProgressColorHardcore)
+											.color(RetroAchievementsProgressColorHardcore)
+									)
+							)
+							
+							.child(
+								paragraph()
+									.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
+									.text_align(TextAlign::Center)
+									.width(Size::px(100.0))
+									
+									.span(Span::new(format!("{}% ", progressCasualString)).font_size(10.0))
+									.span(Span::new(format!("({}%)", progressHardcoreString)).font_size(10.0).font_weight(FontWeight::BOLD))
+							)
+					)
+			);
+	}
 }
 
-fn loadIcon<'a>(game: &Game) -> Vec<u8>
+impl GameListNode
 {
-	return match loadImageToBytes(
-			&Api::Platform.to_lowercase(),
-			&join!(Path_Games, game.id),
-			&png!(FileName_GameIcon)
-		)
+	pub fn new(gameId: impl Into<u64>) -> Self
 	{
-		Ok(bytes) => bytes,
-		Err(e) => {
-			println!("Error: {:?}", e);
-			vec![]
-		},
-	};
+		return Self
+		{
+			gameId: gameId.into(),
+		};
+	}
 }

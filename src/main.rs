@@ -3,66 +3,88 @@ Local Achievements is an open source desktop application for collecting, storing
 and tracking your achievements across multiple platforms in one unified UI.
 */
 
+//Disable the additional command prompt window when running the application on Windows
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+//mod battlenet;
 mod components;
 mod data;
+//mod egs;
+mod gog;
 mod io;
 mod macros;
+mod net;
 mod constants;
 mod retroachievements;
 mod rpcs3;
 mod steam;
 mod util;
 
-use std::collections::VecDeque;
 use std::path::Path;
-use freya::launch::launch_cfg;
-use freya::prelude::{GlobalSignal, LaunchConfig, Signal};
+use std::sync::LazyLock;
+use freya::prelude::{LaunchConfig, WindowConfig, launch};
+use freya::radio::RadioStation;
+use securestore::{KeySource, SecretsManager};
+use tokio::sync::Mutex;
 use tracing::Level;
 use tracing_appender::non_blocking::WorkerGuard;
+use crate::components::LocalAchievementsApp;
+use crate::constants::{AppTitle, BackgroundColor, DefaultWindowSize,
+	MinimumWindowSize};
+use crate::data::AppData;
+use crate::io::{FileName_LogPrefix, Path_Logs, getConfigDir, getSecretsKeyPath,
+	getSecretsVaultPath};
 
-use crate::components::{ActiveContent, App};
-use crate::data::AppSettings;
-use crate::constants::{AppTitle, BackgroundColor, DefaultWindowSize, MinimumWindowSize};
-use crate::io::{FileName_LogPrefix, Path_Logs, getConfigDir};
-use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
-use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
-use crate::steam::{SteamAuth, SteamUser};
-
-pub static ActiveContent: GlobalSignal<ActiveContent> = Signal::global(|| Default::default());
-pub static GameSelected: GlobalSignal<bool> = Signal::global(|| false);
-pub static Language: GlobalSignal<String> = Signal::global(|| "en".to_string());
-pub static NotificationList: GlobalSignal<VecDeque<String>> = Signal::global(|| Default::default());
-pub static RetroAchievementsAuthData: GlobalSignal<RetroAchievementsAuth> = Signal::global(|| Default::default());
-pub static RetroAchievementsUserData: GlobalSignal<RetroAchievementsUser> = Signal::global(|| Default::default());
-pub static Rpcs3SettingsData: GlobalSignal<Rpcs3Settings> = Signal::global(|| Default::default());
-pub static Rpcs3UserData: GlobalSignal<Rpcs3User> = Signal::global(|| Default::default());
-pub static Settings: GlobalSignal<AppSettings> = Signal::global(|| Default::default());
-pub static SteamAuthData: GlobalSignal<SteamAuth> = Signal::global(|| Default::default());
-pub static SteamUserData: GlobalSignal<SteamUser> = Signal::global(|| Default::default());
+static Secrets: LazyLock<Mutex<SecretsManager>> = LazyLock::new(|| {
+	let keyPath = getSecretsKeyPath()
+		.expect("Error getting the secrets key path");
+	
+	let vaultPath = getSecretsVaultPath()
+		.expect("Error getting the secrets vault path");
+	
+	if !keyPath.exists() || !vaultPath.exists()
+	{
+		let m = SecretsManager::new(KeySource::Csprng)
+			.expect("Error creating secrets manager with new key");
+		
+		_ = m.export_key(keyPath.clone())
+			.expect("Error exporting new secrets key");
+		
+		_ = m.save_as(vaultPath.clone())
+			.expect("Error saving new secrets vault to file");
+	}
+	
+	Mutex::new(
+		SecretsManager::load(vaultPath, KeySource::Path(&keyPath))
+			.expect("Error loading secrets vault from file")
+	)
+});
 
 fn main()
 {
 	let _guard = configureLogger();
 	
-	launch_cfg(App, LaunchConfig::<()>::new()
-		.with_background(BackgroundColor)
-		.with_min_size(MinimumWindowSize.0, MinimumWindowSize.1)
-		.with_size(DefaultWindowSize.0, DefaultWindowSize.1)
-		.with_title(AppTitle)
-		.with_transparency(false)
-	);
+	let tokioBuilder = tokio::runtime::Builder::new_multi_thread()
+		.enable_all()
+		.build()
+		.unwrap();
 	
-	/*
-	launch_cfg(
-		LaunchConfig::new()
-			.with_window(WindowConfig::new(App)
+	let _tokioRuntime = tokioBuilder.enter();
+	
+    let radioStation = RadioStation::create_global(AppData::default());
+	
+	launch(LaunchConfig::new()
+		.with_window(
+			WindowConfig::new_app(
+					LocalAchievementsApp::new(radioStation)
+				)
 				.with_background(BackgroundColor)
 				.with_min_size(MinimumWindowSize.0, MinimumWindowSize.1)
 				.with_size(DefaultWindowSize.0, DefaultWindowSize.1)
 				.with_title(AppTitle)
-				.with_transparency(false))
+				.with_transparency(false)
+		)
 	);
-	*/
 }
 
 fn configureLogger() -> WorkerGuard

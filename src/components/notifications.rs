@@ -1,107 +1,125 @@
-use freya::hooks::{use_animation, AnimNum, Ease, Function, OnFinish};
-use freya::prelude::{component, dioxus_elements, rsx, spawn, use_memo,
-	use_signal, Element, GlobalSignal, Props, Readable, Writable};
-use crate::constants::{BorderColor, CornerRadius};
-use crate::{NotificationList, Settings};
+use std::cell::Cell;
+use std::thread::sleep;
+use std::time::Duration;
+use freya::animation::{AnimNum, Ease, Function, OnCreation, OnFinish,
+	use_animation};
+use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
+	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Direction, Gaps, IntoElement, Position, Size,
+	StyleExt, TextAlign, TextStyleExt, label, rect, spawn, use_drop, use_hook,
+	use_memo, use_state};
+use freya::radio::use_radio;
+use crate::constants::BorderColor;
+use crate::data::AppData;
+use crate::data::radio::AppDataChannel;
 
 const DefaultAnimationDuration: u64 = 500;
 
-#[component]
-pub fn NotificationElement(animationDuration: Option<u64>, displayDuration: Option<u64>) -> Element
+#[derive(Clone, PartialEq)]
+pub struct NotificationElement
 {
-	let duration = match animationDuration
+	readyToRemove: Cell<bool>,
+	text: String,
+}
+
+impl Component for NotificationElement
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => DefaultAnimationDuration,
-		Some(d) => d,
-	};
-	
-	let hideDelay = match displayDuration
-	{
-		None => Settings().notificationDuration,
-		Some(d) => d,
-	};
-	
-	let mut text = use_signal(|| String::default());
-	let mut notificationState = use_signal(|| NotificationState::default());
-	
-	let animation = use_animation(move |config| {
-		//config.on_creation(OnCreation::Nothing);
-		//config.on_finish(OnFinish::Nothing);
-		config.on_finish(OnFinish::Stop);
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
 		
-		AnimNum::new(-250., 25.)
-			.ease(Ease::InOut)
-			.function(Function::Elastic)
-			.time(duration)
-	});
-	
-	let x = &*animation.get().read_unchecked();
-	
-	use_memo(move || {
-		match notificationState()
-		{
-			NotificationState::Hidden => {
-				if !NotificationList().is_empty()
-				{
-					if let Some(t) = NotificationList.write().pop_front()
-					{
-						text.set(t);
-						animation.start();
-						notificationState.set(NotificationState::Showing);
-					}
-				}
-			},
+		let hideDelay = appData.read().app.settings.notificationDuration;
+		
+		let mut animation = use_animation(move |config| {
+			config.on_creation(OnCreation::Nothing);
+			config.on_finish(OnFinish::Nothing);
 			
-			NotificationState::Showing => delay(duration, move || notificationState.set(NotificationState::Shown)),
-			
-			NotificationState::Shown => {
-				delay(hideDelay, move || {
-					notificationState.set(NotificationState::ShouldHide);
-				});
-			},
-			
-			NotificationState::ShouldHide => {
-				animation.reverse();
-				delay(duration, move || {
-					notificationState.set(NotificationState::Hidden);
-				});
-			},
-		}
-	});
-	
-	let width = 100 + (text().len() * 2);
-	
-	return rsx!(
-		rect
-		{
-			border: "1 center {BorderColor}",
-			corner_radius: "{CornerRadius}",
-			cross_align: "center",
-			main_align: "center",
-			margin: "5 10",
-			min_height: "25",
-			position: "absolute",
-			position_right: "{x.read()}",
-			position_top: "5",
-			width: "{width}",
-			
-			label
+			AnimNum::new(-250.0, 25.0)
+				.ease(Ease::InOut)
+				.function(Function::Elastic)
+				.time(DefaultAnimationDuration)
+		});
+		
+		let mut hookAnim = animation.clone();
+		use_hook(|| hookAnim.start());
+		
+		let mut dropAnim = animation.clone();
+		use_drop(move || dropAnim.reverse());
+		
+		let mut readyToRemove = self.readyToRemove.clone();
+		let mut notificationState = use_state(|| NotificationState::Hidden);
+		use_memo(move || {
+			let mut notificationState = notificationState.write();
+			match notificationState.clone()
 			{
-				main_align: "center",
-				text_align: "center",
+				NotificationState::Hidden => {
+					animation.start();
+					*notificationState = NotificationState::Showing;
+				},
 				
-				"{text()}"
+				NotificationState::Showing => delay(DefaultAnimationDuration, move || *notificationState = NotificationState::Shown),
+				
+				NotificationState::Shown => delay(hideDelay, move || *notificationState = NotificationState::ShouldHide),
+				
+				NotificationState::ShouldHide => {
+					animation.reverse();
+					delay(DefaultAnimationDuration, move || *notificationState = NotificationState::ShouldRemove)
+				},
+				
+				NotificationState::ShouldRemove => *readyToRemove.get_mut() = true,
 			}
-		}
-	);
+		});
+		
+		let text = self.text.clone();
+		let x = animation.get().value();
+		let width = 100 + (text.len() * 2);
+		
+		return rect()
+			.border(Some(
+				Border::new()
+					.alignment(BorderAlignment::Center)
+					.fill(BorderColor)
+					.width(BorderWidth::from(1.0))
+			))
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.main_align(Alignment::Center)
+			.margin(Gaps::new_symmetric(5.0, 10.0))
+			.min_height(Size::px(25.0))
+			.position(Position::new_absolute()
+				.right(x)
+				.top(5.0)
+			)
+			.width(Size::px(width as f32))
+			
+			.child(
+				label()
+					.text_align(TextAlign::Center)
+					.text(text)
+			);
+	}
+}
+
+impl NotificationElement
+{
+	pub fn new(text: String) -> Self
+	{
+		return Self
+		{
+			readyToRemove: Cell::new(false),
+			text,
+		};
+	}
 }
 
 fn delay<F>(delay: u64, closure: F)
 	where F: FnOnce() -> () + 'static
 {
+	println!("Spawning delay for {} milliseconds", delay);
 	spawn({
 		async move {
-			tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+			println!("Waiting {} milliseconds", delay);
+			sleep(Duration::from_millis(delay));
 			closure();
 		}
 	});
@@ -113,6 +131,7 @@ enum NotificationState
 	#[default]
 	Hidden,
 	ShouldHide,
+	ShouldRemove,
 	Showing,
 	Shown,
 }

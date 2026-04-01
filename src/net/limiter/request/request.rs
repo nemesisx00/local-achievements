@@ -1,0 +1,70 @@
+use std::cmp::Ordering;
+use crate::net::limiter::request::{GogOperation, RetroAchievementsOperation,
+	SteamOperation};
+use super::location::FileLocation;
+use super::operation::DataOperation;
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord)]
+pub struct RequestData
+{
+	pub destination: Option<FileLocation>,
+	pub operation: DataOperation,
+	pub url: Option<String>,
+}
+
+impl Default for RequestData
+{
+	fn default() -> Self
+	{
+		return Self
+		{
+			destination: Default::default(),
+			operation: Default::default(),
+			url: Default::default(),
+		};
+	}
+}
+
+impl From<GogOperation> for RequestData
+{
+	fn from(value: GogOperation) -> Self
+	{
+		return Self
+		{
+			operation: DataOperation::Gog(value),
+			..Default::default()
+		};
+	}
+}
+
+impl From<RetroAchievementsOperation> for RequestData
+{
+	fn from(value: RetroAchievementsOperation) -> Self
+	{
+		return Self
+		{
+			operation: DataOperation::RetroAchievements(value),
+			..Default::default()
+		};
+	}
+}
+
+impl From<SteamOperation> for RequestData
+{
+	fn from(value: SteamOperation) -> Self
+	{
+		return Self
+		{
+			operation: DataOperation::Steam(value),
+			..Default::default()
+		};
+	}
+}
+
+impl PartialOrd for RequestData
+{
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
+	{
+		return self.operation.partial_cmp(&other.operation);
+	}
+}

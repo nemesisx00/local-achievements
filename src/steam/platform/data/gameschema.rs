@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::steam::data::achievement::Achievement;
+use crate::steam::data::achievement::SteamAchievement;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct GameAchievement
@@ -13,9 +13,9 @@ pub struct GameAchievement
 	pub icongray: String,
 }
 
-impl From<Achievement> for GameAchievement
+impl From<SteamAchievement> for GameAchievement
 {
-	fn from(value: Achievement) -> Self
+	fn from(value: SteamAchievement) -> Self
 	{
 		return Self
 		{

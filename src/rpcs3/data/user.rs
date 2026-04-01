@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use super::game::Game;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct User
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct Rpcs3User
 {
 	#[serde(default)]
 	pub games: Vec<Game>,
@@ -18,19 +18,40 @@ pub struct User
 	pub points: u64,
 }
 
-impl User
+impl Rpcs3User
 {
 	pub const FileName: &str = "rpcs3.json";
 	
+	#[allow(unused)]
 	pub fn calculatePoints(&mut self)
 	{
 		self.points = self.games.iter()
 			.fold(0, |acc, g| acc + g.points());
 	}
 	
+	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
+	{
+		let searchText = search.into();
+		let mut games = self.games.iter()
+			.filter(|g| g.name.to_lowercase().contains(&searchText.to_lowercase()))
+			.cloned()
+			.collect::<Vec<_>>();
+		games.sort();
+		
+		return games;
+	}
+	
 	pub fn formatAccountId(&self) -> String
 	{
 		return format!("{:08}", self.accountId);
+	}
+	
+	pub fn getGame(&self, npCommId: impl Into<String>) -> Option<Game>
+	{
+		let id = npCommId.into();
+		return self.games.iter()
+			.find(|g| g.npCommId == id)
+			.cloned();
 	}
 	
 	pub fn level(&self) -> u64
@@ -272,7 +293,7 @@ mod tests
 	#[test]
 	fn parseJsonLossy()
 	{
-		let result = User::parseJsonLossy(PartialJson.into());
+		let result = Rpcs3User::parseJsonLossy(PartialJson.into());
 		assert!(result.is_ok());
 		
 		let user = result.unwrap();
@@ -291,7 +312,7 @@ mod tests
 	#[test]
 	fn level()
 	{
-		let mut user = User::default();
+		let mut user = Rpcs3User::default();
 		
 		assert_eq!(user.level(), 0);
 		assert_eq!(user.pointsToNextLevel(), 1);

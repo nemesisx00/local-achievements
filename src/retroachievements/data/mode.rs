@@ -7,14 +7,14 @@ The mode representing conditions under which an achievement was unlocked.
 *Only used by: RetroAchievements*
 */
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Serialize)]
-pub enum AchievementMode
+pub enum RetroAchievementsMode
 {
 	#[default]
 	Casual,
 	Hardcore,
 }
 
-impl From<Number> for AchievementMode
+impl From<Number> for RetroAchievementsMode
 {
 	fn from(value: Number) -> Self
 	{

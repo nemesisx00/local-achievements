@@ -1,120 +1,136 @@
-use freya::hooks::{cow_borrowed, theme_with};
-use freya::prelude::{component, fc_to_builder, rsx, use_memo, use_signal,
-	Element, GlobalSignal, Input, InputMode, Readable, Props, Switch,
-	SwitchThemeWith};
-use freya::prelude::dioxus_elements::{self};
-use crate::components::{InputModeHiddenChar, toggleInputMode};
-use crate::SteamAuthData;
-use crate::io::saveAuthData_Steam;
+use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
+	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
+	use_side_effect, use_state};
+use freya::radio::use_radio;
+use crate::components::{InputModeHiddenChar, SettingsSwitch};
+use crate::data::AppData;
+use crate::data::radio::AppDataChannel;
 
-#[component]
-pub fn SettingsElement(labelWidth: Option<String>) -> Element
+#[derive(Clone, PartialEq)]
+pub struct SteamSettingsElement
 {
-	let labelWidth = match labelWidth
+	labelWidth: Size,
+}
+
+impl Component for SteamSettingsElement
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => "20%".into(),
-		Some(lw) => lw,
-	};
-	
-	let mut inputModeSteamApiKey = use_signal(|| InputMode::Hidden(InputModeHiddenChar));
-	let mut inputModeSteamId = use_signal(|| InputMode::Hidden(InputModeHiddenChar));
-	
-	use_memo(move || {
-		match saveAuthData_Steam(&SteamAuthData())
-		{
-			Err(e) => println!("Failed to save Steam authorization data: {:?}", e),
-			Ok(()) => println!("Saved Steam authorization data"),
-		}
-	});
-	
-	return rsx!(
-		rect
-		{
-			cross_align: "center",
-			direction: "vertical",
-			margin: "10",
-			spacing: "5",
-			width: "fill",
+		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
+		
+		let apiKey = use_state(|| appData.read().platform.steam.key.clone());
+		let id = use_state(|| appData.read().platform.steam.id.clone());
+		
+		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
+		let inputModeId = use_state(|| InputMode::Hidden(InputModeHiddenChar));
+		
+		use_side_effect(move || {
+			appData.write().platform.steam.id = id.read().clone();
+			appData.write().platform.steam.key = apiKey.read().clone();
+		});
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.margin(Gaps::new_all(10.0))
+			.spacing(5.0)
+			.width(Size::Fill)
 			
-			label { margin: "0 0 5", text_align: "center", "Steam Web API Authentication" }
+			.child(
+				label()
+					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
+					.text_align(TextAlign::Center)
+					.width(Size::Fill)
+					.text("Steam Web API Authentication")
+			)
 			
-			rect
-			{
-				content: "flex",
-				direction: "horizontal",
-				main_align: "center",
-				spacing: "5",
-				width: "75%",
-				
-				label
-				{
-					margin: "5 5 0 0",
-					min_width: "102",
-					text_align: "end",
-					width: "{labelWidth}",
-					"Steam ID"
-				}
-				
-				Input
-				{
-					mode: inputModeSteamId(),
-					placeholder: "Steam ID",
-					value: "{SteamAuthData().id}",
-					width: "flex",
+			.child(
+				rect()
+					.content(Content::Flex)
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::Center)
+					.spacing(10.0)
+					.width(Size::percent(75.0))
 					
-					onchange: move |value| SteamAuthData.write().id = value,
-				}
-				
-				label { margin: "5 0 0 5", text_align: "end", "Show" }
-				
-				Switch
-				{
-					theme: theme_with!(SwitchTheme {
-						margin: cow_borrowed!("4 0 0"),
-					}),
-					enabled: inputModeSteamId() == InputMode::Shown,
-					ontoggled: move |_| toggleInputMode(&mut inputModeSteamId)
-				}
-			}
-			
-			rect
-			{
-				content: "flex",
-				direction: "horizontal",
-				main_align: "center",
-				spacing: "5",
-				width: "75%",
-				
-				label
-				{
-					margin: "5 5 0 0",
-					min_width: "102",
-					text_align: "end",
-					width: "{labelWidth}",
-					"Web API Key"
-				}
-				
-				Input
-				{
-					mode: inputModeSteamApiKey(),
-					placeholder: "Steam Web API Key",
-					value: "{SteamAuthData().key}",
-					width: "flex",
+					.child(
+						label()
+							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
+							.min_width(Size::px(102.0))
+							.text_align(TextAlign::End)
+							.width(self.labelWidth.clone())
+							.text("Steam ID")
+					)
 					
-					onchange: move |value| SteamAuthData.write().key = value,
-				}
-				
-				label { margin: "5 0 0 5", text_align: "end", "Show" }
-				
-				Switch
-				{
-					theme: theme_with!(SwitchTheme {
-						margin: cow_borrowed!("4 0 0"),
-					}),
-					enabled: inputModeSteamApiKey() == InputMode::Shown,
-					ontoggled: move |_| toggleInputMode(&mut inputModeSteamApiKey)
-				}
-			}
-		}
-	);
+					.child(
+						Input::new(id)
+							.mode(inputModeId.read().clone())
+							.placeholder("Steam ID")
+							.width(Size::flex(1.0))
+					)
+					
+					.child(
+						label()
+							.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
+							.text_align(TextAlign::End)
+							.width(Size::FillMinimum)
+							.text("Show")
+					)
+					
+					.child(SettingsSwitch(inputModeId))
+			)
+			
+			.child(
+				rect()
+					.content(Content::Flex)
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::Center)
+					.spacing(10.0)
+					.width(Size::percent(75.0))
+					
+					.child(
+						label()
+							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
+							.min_width(Size::px(102.0))
+							.text_align(TextAlign::End)
+							.width(self.labelWidth.clone())
+							.text("Steam API Key")
+					)
+					
+					.child(
+						Input::new(apiKey)
+							.mode(inputModeApiKey.read().clone())
+							.placeholder("Steam Web API Key")
+							.width(Size::flex(1.0))
+					)
+					
+					.child(
+						label()
+							.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
+							.text_align(TextAlign::End)
+							.width(Size::FillMinimum)
+							.text("Show")
+					)
+					
+					.child(SettingsSwitch(inputModeApiKey))
+			)
+	}
+}
+
+impl SteamSettingsElement
+{
+	pub fn new() -> Self
+	{
+		return Self
+		{
+			labelWidth: Size::percent(20.0),
+		};
+	}
+	
+	#[allow(unused)]
+	pub fn labelWidth(mut self, width: impl Into<Size>) -> Self
+	{
+		self.labelWidth = width.into();
+		return self;
+	}
 }

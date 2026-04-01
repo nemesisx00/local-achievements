@@ -1,8 +1,10 @@
 pub mod api;
 pub mod data;
 
+pub use api::SteamApi;
+
 pub use data::{
-	auth::AuthData,
+	auth::SteamAuth,
 	gameschema::{GameAchievement, Payload as Payload_GetSchemaForGame},
 	globalpercentages::Payload as Payload_GetGlobalPercentages,
 	ownedgames::{GameInfo, Payload as Payload_GetOwnedGames},

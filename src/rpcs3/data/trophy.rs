@@ -5,7 +5,7 @@ use serde_json::{Map, Value};
 use crate::constants::Format_ChronoDateTime;
 use crate::rpcs3::platform::data::conf::TrophyMetadata;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Ord, Serialize)]
 pub struct Trophy
 {
 	#[serde(default)]
@@ -184,7 +184,7 @@ impl Trophy
 	}
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum TrophyGrade
 {
 	#[default]

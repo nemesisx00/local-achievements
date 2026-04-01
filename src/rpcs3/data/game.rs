@@ -5,7 +5,7 @@ use crate::rpcs3::platform::data::conf::TrophyConf;
 
 use super::trophy::Trophy;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Ord, Serialize)]
 pub struct Game
 {
 	#[serde(default)]
@@ -55,6 +55,7 @@ impl PartialOrd for Game
 
 impl Game
 {
+	#[allow(unused)]
 	const MaxPoints_Disc: u64 = 1230;
 	#[allow(unused)]
 	const MaxPoints_Psn: u64 = 315;
@@ -141,6 +142,20 @@ impl Game
 		};
 	}
 	
+	pub fn filterTrophies(&self, search: impl Into<String>) -> Vec<Trophy>
+	{
+		let searchText = search.into().to_lowercase();
+		
+		let mut trophies = self.trophies.iter()
+			.filter(|t| t.name.to_lowercase().contains(&searchText)
+				|| t.detail.to_lowercase().contains(&searchText))
+			.cloned()
+			.collect::<Vec<Trophy>>();
+		trophies.sort();
+		
+		return trophies;
+	}
+	
 	pub fn percentUnlocked(&self) -> f32
 	{
 		return (self.trophies.iter()
@@ -150,6 +165,7 @@ impl Game
 			* 100f32;
 	}
 	
+	#[allow(unused)]
 	pub fn points(&self) -> u64
 	{
 		let points = self.trophies.iter()

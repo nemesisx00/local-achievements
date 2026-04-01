@@ -3,16 +3,17 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use crate::constants::TheString;
 use crate::retroachievements::platform::{GameMetadata, Payload_GetGameInfo};
+use crate::util::truncateF32;
 use super::makeRelative;
 use super::achievement::Achievement;
 use super::kind::AwardKind;
-use super::mode::AchievementMode;
+use super::mode::RetroAchievementsMode;
 use super::system::System;
 
 /**
 The 
 */
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Ord, Serialize)]
 pub struct Game
 {
 	/// The list of achievements in the set.
@@ -289,15 +290,30 @@ impl Game
 		};
 	}
 	
-	pub fn percentUnlocked(&self, mode: AchievementMode) -> f64
+	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<Achievement>
 	{
-		return (match mode
-		{
-			AchievementMode::Casual => self.awardedCasual,
-			AchievementMode::Hardcore => self.awardedHardcore,
-		} as f64
-			/ self.total as f64)
-		* 100.0;
+		let search = search.into().to_lowercase();
+		let mut achievements = self.achievements.iter()
+			.filter(|a| a.name.to_lowercase().contains(&search)
+				|| a.description.to_lowercase().contains(&search))
+			.cloned()
+			.collect::<Vec<_>>();
+		achievements.sort();
+		
+		return achievements;
+	}
+	
+	pub fn percentUnlocked(&self, mode: RetroAchievementsMode) -> f32
+	{
+		return truncateF32((match mode
+			{
+				RetroAchievementsMode::Casual => self.awardedCasual,
+				RetroAchievementsMode::Hardcore => self.awardedHardcore,
+			} as f32
+				/ self.total as f32)
+			* 100.0,
+		2
+		);
 	}
 	
 	pub fn sortName(&self) -> String

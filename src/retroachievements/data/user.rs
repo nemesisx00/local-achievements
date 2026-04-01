@@ -1,15 +1,16 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::retroachievements::data::achievement::Achievement;
 use crate::retroachievements::platform::{Payload_GetUserCompletionProgress,
 	Payload_GetUserProfile};
 use super::makeRelative;
-use super::mode::AchievementMode;
+use super::mode::RetroAchievementsMode;
 use super::rank::RankData;
 use super::game::Game;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct User
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct RetroAchievementsUser
 {
 	/// The relative path to the user's avatar on RetroAchievements.org.
 	#[serde(default)]
@@ -35,14 +36,14 @@ pub struct User
 	pub username: String,
 }
 
-impl Default for User
+impl Default for RetroAchievementsUser
 {
 	fn default() -> Self
 	{
 		return Self
 		{
 			avatar: None,
-			casual: AchievementMode::Casual.into(),
+			casual: RetroAchievementsMode::Casual.into(),
 			games: vec![],
 			hardcore: RankData::default(),
 			ulid: None,
@@ -51,7 +52,7 @@ impl Default for User
 	}
 }
 
-impl User
+impl RetroAchievementsUser
 {
 	pub const FileName: &str = "retroAchievements.json";
 	
@@ -148,6 +149,50 @@ impl User
 		return Ok(user);
 	}
 	
+	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
+	{
+		let search = search.into().to_lowercase();
+		let mut games = self.games.iter()
+			.filter(|g| g.name.to_lowercase().contains(&search)
+					|| g.system.name.to_lowercase().contains(&search))
+			.cloned()
+			.collect::<Vec<_>>();
+		games.sort();
+		
+		return games;
+	}
+	
+	pub fn getAchievement(&self, gameId: impl Into<u64>, achievementId: impl Into<u64>) -> Option<Achievement>
+	{
+		let achievementId = achievementId.into();
+		return match self.getGame(gameId)
+		{
+			None => None,
+			Some(g) => g.achievements.iter()
+				.find(|a| a.id == achievementId)
+				.cloned(),
+		};
+	}
+	
+	pub fn getDistinctPlayersForGame(&self, id: impl Into<u64>) -> Option<u64>
+	{
+		let id = id.into();
+		return match self.games.iter()
+			.find(|g| g.id == id)
+		{
+			None => None,
+			Some(g) => Some(g.distinctPlayers),
+		};
+	}
+	
+	pub fn getGame(&self, id: impl Into<u64>) -> Option<Game>
+	{
+		let id = id.into();
+		return self.games.iter()
+			.find(|g| g.id == id)
+			.cloned();
+	}
+	
 	pub fn processUserCompletionProgress(&mut self, payload: &Payload_GetUserCompletionProgress)
 	{
 		for metadata in payload.Results.iter()
@@ -210,7 +255,7 @@ mod tests
 	#[test]
 	fn parseJsonLossy()
 	{
-		let result = User::parseJsonLossy(PartialJson.into());
+		let result = RetroAchievementsUser::parseJsonLossy(PartialJson.into());
 		assert!(result.is_ok());
 		
 		let user = result.unwrap();

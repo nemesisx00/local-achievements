@@ -1,222 +1,176 @@
-use freya::events::Code;
-use freya::hooks::cow_borrowed;
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, spawn, theme_with, use_hook, use_memo, use_scroll_controller,
-	use_signal, Button, ButtonThemeWith, Element, GlobalSignal, Input,
-	IntoDynNode, Loader, Props, Readable, ScrollConfig, ScrollDirection,
-	ScrollPosition, Signal, VirtualScrollView, Writable};
-use crate::io::{loadImageToBytes, saveUserData_RetroAchievements,
-	FileName_GameIcon, Path_Games};
-use crate::{GameSelected, NotificationList, RetroAchievementsAuthData,
-	RetroAchievementsUserData, join, png};
-use crate::retroachievements::data::achievement::Achievement;
-use crate::retroachievements::data::game::Game;
-use crate::retroachievements::platform::api::Api;
-use super::SelectedGameId;
-use super::achievement::AchievementElement;
+use std::path::PathBuf;
+use freya::icons::lucide;
+use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
+	EventHandlersExt, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData,
+	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
+	VirtualScrollView, label, rect, spawn, use_scroll_controller,
+	use_side_effect, use_state};
+use freya::radio::{IntoWritable, use_radio};
+use crate::net::limiter::RateLimiter;
+use crate::net::limiter::request::{FileLocation, RequestEvent,
+	RetroAchievementsOperation};
+use crate::{join, png};
+use crate::data::radio::{AppDataChannel, DataChannel, GameIdChannel};
+use crate::components::IconButton;
+use crate::components::refresh::confirm::ConfirmRefresh;
+use crate::data::AppData;
+use crate::io::{FileName_GameIcon, Path_Games, getImagePath};
+use crate::retroachievements::components::achievement::AchievementElement;
+use crate::retroachievements::platform::api::RetroAchievementsApi;
 
-#[component]
-pub fn GameElement(gameId: u64) -> Element
+#[derive(Clone, PartialEq)]
+pub struct GameElement
 {
-	let mut loaded = use_signal(|| false);
-	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
-	let mut search = use_signal(|| String::default());
-	
-	let game = match RetroAchievementsUserData().games.iter()
-		.find(|g| g.id == gameId)
-	{
-		None => Game::default(),
-		Some(g) => {
-			loaded.set(!g.achievements.is_empty());
-			g.to_owned()
-		},
-	};
-	
-	let mut achievementsList: Vec<Achievement> = game.achievements.iter()
-		.filter(|a| a.name.to_lowercase().contains(&search().to_lowercase())
-			|| a.description.to_lowercase().contains(&search().to_lowercase()))
-		.cloned()
-		.collect();
-	achievementsList.sort();
-	
-	let bytes = loadIcon(&game);
-	
-	use_hook(|| if !loaded() && gameId > 0
-	{
-		refresh(gameId, loaded);
-	});
-	
-	use_memo(move || {
-		if !GameSelected()
-		{
-			*SelectedGameId.write() = None;
-		}
-	});
-	
-	return rsx!(
-		if !loaded()
-		{
-			rect
-			{
-				direction: "horizontal",
-				main_align: "center",
-				width: "fill",
-				Loader {}
-			}
-		}
-		else
-		{
-			rect
-			{
-				direction: "vertical",
-				cross_align: "center",
-				margin: "10 0 5",
-				spacing: "10",
-				width: "fill",
-				
-				onglobalkeyup: move |e| match e.code
-				{
-					Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
-					Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
-					_ => {},
-				},
-				
-				rect
-				{
-					direction: "horizontal",
-					main_align: "center",
-					margin: "5 0 0",
-					spacing: "10",
-					width: "fill",
-					
-					if !bytes.is_empty()
-					{
-						image
-						{
-							image_data: dynamic_bytes(bytes),
-							width: "32",
-						}
-					}
-					
-					label
-					{
-						font_size: "24",
-						main_align: "center",
-						"{game.name} ({game.system.name})"
-					}
-					
-					Button
-					{
-						theme: theme_with!(ButtonTheme {
-							margin: cow_borrowed!("5 0 0 0"),
-						}),
-						onpress: move |_| {
-							if gameId > 0
-							{
-								refresh(gameId, loaded);
-							}
-						},
-						label { "Refresh" }
-					}
-				}
-				
-				Input
-				{
-					onchange: move |value: String| search.set(value),
-					placeholder: "Search by achievement name",
-					value: search(),
-					width: "50%",
-				}
-			}
-			
-			VirtualScrollView
-			{
-				cache_elements: true,
-				direction: "vertical",
-				item_size: 105.0,
-				length: achievementsList.len(),
-				scroll_controller: scrollController,
-				scroll_with_arrows: true,
-				
-				builder: move |i, _: &Option<()>| {
-					let chievo = &achievementsList[i];
-					return rsx!(AchievementElement { gameId, achievementId: chievo.id });
-				}
-			}
-		}
-	);
+	gameId: u64,
 }
 
-fn refresh(gameId: u64, loaded: Signal<bool>)
+impl Component for GameElement
 {
-	let mut loaded = loaded.clone();
-	spawn(async move {
-		let api = Api::from(RetroAchievementsAuthData());
-		loadGameData(&api, gameId).await;
-		println!("Game data loaded for {}", gameId);
-		loaded.set(true);
-	});
-}
-
-async fn loadGameData(api: &Api, gameId: u64)
-{
-	let ulid = match RetroAchievementsUserData().ulid
+	fn render(&self) -> impl IntoElement
 	{
-		None => RetroAchievementsUserData().username,
-		Some(ulid) => ulid,
-	};
-	
-	match api.getGameInfo(&ulid, gameId).await
-	{
-		Err(e) => {
-			println!("Error getting game info for {}: {:?}", gameId, e);
-			NotificationList.write().push_back("Error downloading data".into());
-		},
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
+		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
+		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
+		let mut selectedGameId = use_radio::<Option<u64>, GameIdChannel>(GameIdChannel::RetroAchievements);
 		
-		Ok(payload) => {
-			NotificationList.write().push_back("Achievements data downloaded".into());
-			
-			match RetroAchievementsUserData.write().games.iter_mut()
-				.find(|g| g.id == gameId)
+		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		
+		let mut cancelled = use_state(bool::default);
+		let mut confirmed = use_state(bool::default);
+		let search = use_state(String::default);
+		let mut showConfirmationDialog = use_state(bool::default);
+		
+		let game = appData.read().user.retroAchievements
+			.getGame(self.gameId)
+			.unwrap_or_default();
+		
+		let achievements = game.filterAchievements(search.read().clone());
+		let achievementsListLength = achievements.len();
+		
+		let gameId = game.id;
+		
+		let iconPath = getImagePath(&FileLocation
+		{
+			fileName: png!(FileName_GameIcon),
+			group: join!(Path_Games, game.id),
+			platform: RetroAchievementsApi::Platform.to_lowercase(),
+		});
+		
+		use_side_effect(move || {
+			if (cancelled() || confirmed()) && showConfirmationDialog()
 			{
-				None => RetroAchievementsUserData.write().games.push(payload.to_owned().into()),
-				Some(game) => game.updateDetailed(&payload),
-			}
-			
-			match api.cacheIcon_Achievements(gameId, &payload, false).await
-			{
-				Err(e) => {
-					println!("Error caching achievement icons for {}: {:?}", gameId, e);
-					NotificationList.write().push_back("Error caching achievement icons".into());
-				},
+				if confirmed() && gameId > 0
+				{
+					spawn(async move {
+						rateLimiter.read().pushAll(vec![
+							RetroAchievementsOperation::GetGameInfo(gameId).into(),
+							RetroAchievementsOperation::SaveToFile.into(),
+						]).await;
+						
+						**requestEvent.write() = RequestEvent::Added;
+					});
+				}
 				
-				Ok(_) => {
-					println!("Finished caching achievement icons for {}", gameId);
-					NotificationList.write().push_back("Achievement icons cached".into());
-				},
+				cancelled.set(false);
+				confirmed.set(false);
+				showConfirmationDialog.set(false);
 			}
-		}
-	}
-	
-	match saveUserData_RetroAchievements(&RetroAchievementsUserData())
-	{
-		Err(e) => println!("Error saving user data (RetroAchievements): {:?}", e),
-		Ok(_) => println!("Saved user data (RetroAchievements)"),
+		});
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.expanded()
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
+			.spacing(10.0)
+			
+			.on_global_key_up(move |e: Event<KeyboardEventData>| match e.code
+			{
+				Code::Home => scrollController.scroll_to(ScrollPosition::Start, Direction::Vertical),
+				Code::End => scrollController.scroll_to(ScrollPosition::End, Direction::Vertical),
+				_ => {},
+			})
+			
+			.child(
+				rect()
+					.content(Content::Flex)
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::SpaceBetween)
+					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+					.spacing(10.0)
+					.width(Size::percent(50.0))
+					
+					.child(
+						IconButton::new(lucide::arrow_big_left())
+							.alt("Back")
+							.onPress(move |_| **selectedGameId.write() = None)
+					)
+					
+					.maybe_child(iconPath.is_some().then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.width(Size::px(64.0))
+					))
+					
+					.child(
+						label()
+							.font_size(24.0)
+							.text_align(TextAlign::Center)
+							.text(format!("{} ({})", game.name, game.system.name))
+							.width(Size::flex(0.8))
+					)
+					
+					.child(
+						IconButton::new(lucide::refresh_ccw())
+							.alt("Refresh")
+							.onPress(move |_| showConfirmationDialog.set(true))
+					)
+			)
+			
+			.child(
+				rect()
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::Center)
+					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+					.width(Size::percent(50.0))
+					
+					.child(
+						Input::new(search)
+							.placeholder("Search by achievement name")
+							.width(Size::Fill)
+					)
+			)
+			
+			.child(
+				VirtualScrollView::new_controlled(
+					move |i, _| {
+						let chievo = &achievements[i];
+						return AchievementElement::new(game.id, chievo.id).into();
+					},
+					scrollController
+				)
+					.direction(Direction::Vertical)
+					.item_size(105.0)
+					.length(achievementsListLength)
+					.scroll_with_arrows(true)
+			)
+			
+			.maybe_child(showConfirmationDialog().then(||
+				ConfirmRefresh::new(
+					cancelled.into_writable(),
+					confirmed.into_writable()
+				)
+			));
 	}
 }
 
-fn loadIcon<'a>(game: &Game) -> Vec<u8>
+impl GameElement
 {
-	return match loadImageToBytes(
-			&Api::Platform.to_lowercase(),
-			&join!(Path_Games, game.id),
-			&png!(FileName_GameIcon)
-		)
+	pub fn new(gameId: u64) -> Self
 	{
-		Ok(bytes) => bytes,
-		Err(e) => {
-			println!("Error loading game icon (Steam): {:?}", e);
-			vec![]
-		},
-	};
+		return Self
+		{
+			gameId,
+		};
+	}
 }

@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 use crate::constants::TheString;
 use crate::steam::platform::{GameInfo, Payload_GetGlobalPercentages,
 	Payload_GetPlayerAchievements, Payload_GetSchemaForGame};
-use super::achievement::Achievement;
+use super::achievement::SteamAchievement;
 use super::playtime::Playtime;
 
 /**
@@ -15,7 +15,7 @@ pub struct Game
 {
 	/// The list of achievements associated with this game.
 	#[serde(default)]
-	pub achievements: Vec<Achievement>,
+	pub achievements: Vec<SteamAchievement>,
 	
 	/// Flag denoting whether or not the game has any achievements.
 	#[serde(default)]
@@ -53,10 +53,30 @@ impl PartialOrd for Game
 		{
 			None => match self.hasAchievements.partial_cmp(&other.hasAchievements)
 			{
-				None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+				None => match self.lastPlayed.partial_cmp(&other.lastPlayed)
+				{
+					None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+					Some(c) => match c
+					{
+						Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+						Ordering::Greater => Some(Ordering::Less),
+						Ordering::Less => Some(Ordering::Greater),
+					}
+				},
+				
 				Some(c) => match c
 				{
-					Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+					Ordering::Equal => match self.lastPlayed.partial_cmp(&other.lastPlayed)
+					{
+						None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+						Some(c) => match c
+						{
+							Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+							Ordering::Greater => Some(Ordering::Less),
+							Ordering::Less => Some(Ordering::Greater),
+						}
+					},
+					
 					Ordering::Greater => Some(Ordering::Less),
 					Ordering::Less => Some(Ordering::Greater),
 				},
@@ -66,10 +86,30 @@ impl PartialOrd for Game
 			{
 				Ordering::Equal => match self.hasAchievements.partial_cmp(&other.hasAchievements)
 				{
-					None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+					None => match self.lastPlayed.partial_cmp(&other.lastPlayed)
+					{
+						None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+						Some(c) => match c
+						{
+							Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+							Ordering::Greater => Some(Ordering::Less),
+							Ordering::Less => Some(Ordering::Greater),
+						}
+					}
+					
 					Some(c) => match c
 					{
-						Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+						Ordering::Equal => match self.lastPlayed.partial_cmp(&other.lastPlayed)
+						{
+							None => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+							Some(c) => match c
+							{
+								Ordering::Equal => self.sortName().to_lowercase().partial_cmp(&other.sortName().to_lowercase()),
+								Ordering::Greater => Some(Ordering::Less),
+								Ordering::Less => Some(Ordering::Greater),
+							}
+						},
+						
 						Ordering::Greater => Some(Ordering::Less),
 						Ordering::Less => Some(Ordering::Greater),
 					},
@@ -108,7 +148,7 @@ impl Game
 				{
 					if let Value::Object(achievementMap) = achievementValue
 					{
-						if let Some(achievement) = Achievement::parseJsonMap(achievementMap)
+						if let Some(achievement) = SteamAchievement::parseJsonMap(achievementMap)
 						{
 							parsedAchievements.push(achievement);
 						}
@@ -193,6 +233,20 @@ impl Game
 			0 => None,
 			_ => Some(game),
 		};
+	}
+	
+	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<SteamAchievement>
+	{
+		let search = search.into().to_lowercase();
+		
+		let mut achievements = self.achievements.iter()
+			.cloned()
+			.filter(|a| a.name.to_lowercase().contains(&search)
+				|| a.description.to_lowercase().contains(&search))
+			.collect::<Vec<_>>();
+		achievements.sort();
+		
+		return achievements;
 	}
 	
 	pub fn percentUnlocked(&self) -> f64

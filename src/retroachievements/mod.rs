@@ -5,13 +5,18 @@ mod platform;
 pub use components::{
 	content::RetroAchievementsContent,
 	profile::RetroAchievementsUserProfile,
-	settings::SettingsElement as RetroAchievementsSettingsElement,
+	refresh,
+	settings::RetroAchievementsSettingsElement,
 };
 
 pub use data::{
 	makeRelative,
-	mode::AchievementMode as RetroAchievementsMode,
-	user::User as RetroAchievementsUser,
+	mode::RetroAchievementsMode,
+	progress::RetroAchievementsProgressState,
+	user::RetroAchievementsUser,
 };
 
-pub use platform::AuthData as RetroAchievementsAuth;
+pub use platform::{
+	api::RetroAchievementsApi,
+	RetroAchievementsAuth,
+};

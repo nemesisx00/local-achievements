@@ -1,123 +1,105 @@
-use freya::prelude::{component, fc_to_builder, rsx, Element, GlobalSignal, Input,
-	IntoDynNode, Readable, Props};
-use freya::prelude::dioxus_elements::{self};
+use std::borrow::Cow;
+use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
+	InputValidator, IntoElement, Size, TextAlign, TextStyleExt, Writable, label,
+	rect, use_state};
 use crate::io::{getCacheDir, getConfigDir, getDataDir};
 
-#[component]
-pub fn LocalInfo(labelWidth: Option<String>) -> Element
+#[derive(Clone, Default, PartialEq)]
+pub struct LocalInfo
 {
-	let labelWidth = match labelWidth
+	labelWidth: Option<Size>,
+}
+
+impl Component for LocalInfo
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => "20%".into(),
-		Some(lw) => lw,
-	};
-	
-	let cacheDir = getCacheDir(false);
-	let configDir = getConfigDir(false);
-	let dataDir = getDataDir(false);
-	
-	return rsx!(
-		rect
+		let labelWidth = match self.labelWidth.clone()
 		{
-			cross_align: "center",
-			direction: "vertical",
-			margin: "10",
-			spacing: "5",
-			width: "fill",
+			None => Size::percent(20.0),
+			Some(lw) => lw,
+		};
+		
+		let cacheDir = use_state(|| match getCacheDir(false)
+		{
+			None => String::default(),
+			Some(dir) => dir
+		});
+		
+		let configDir = use_state(|| match getConfigDir(false)
+		{
+			None => String::default(),
+			Some(dir) => dir
+		});
+		
+		let dataDir = use_state(|| match getDataDir(false)
+		{
+			None => String::default(),
+			Some(dir) => dir
+		});
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.margin(Gaps::new_all(10.0))
+			.spacing(5.0)
+			.width(Size::Fill)
 			
-			label
-			{
-				margin: "0 0 5",
-				text_align: "center",
-				"Local Directories"
-			}
+			.child(
+				label()
+					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
+					.text_align(TextAlign::Center)
+					.width(Size::Fill)
+					.text("Local Directories")
+			)
 			
-			if let Some(dir) = cacheDir
-			{
-				rect
-				{
-					content: "flex",
-					direction: "horizontal",
-					main_align: "center",
-					spacing: "5",
-					width: "75%",
-					
-					label
-					{
-						margin: "5 5 0 0",
-						min_width: "102",
-						text_align: "end",
-						width: "{labelWidth}",
-						"Cache"
-					}
-					
-					Input
-					{
-						placeholder: "",
-						value: "{dir}",
-						width: "flex",
-						onchange: move |_| {},
-					}
-				}
-			}
-			
-			if let Some(dir) = configDir
-			{
-				rect
-				{
-					content: "flex",
-					direction: "horizontal",
-					main_align: "center",
-					spacing: "5",
-					width: "75%",
-					
-					label
-					{
-						margin: "5 5 0 0",
-						min_width: "102",
-						text_align: "end",
-						width: "{labelWidth}",
-						"Configuration"
-					}
-					
-					Input
-					{
-						placeholder: "",
-						value: "{dir}",
-						width: "flex",
-						onchange: move |_| {},
-					}
-				}
-			}
-			
-			if let Some(dir) = dataDir
-			{
-				rect
-				{
-					content: "flex",
-					direction: "horizontal",
-					main_align: "center",
-					spacing: "5",
-					width: "75%",
-					
-					label
-					{
-						margin: "5 5 0 0",
-						min_width: "102",
-						text_align: "end",
-						width: "{labelWidth}",
-						"Data"
-					}
-					
-					Input
-					{
-						placeholder: "",
-						value: "{dir}",
-						width: "flex",
-						onchange: move |_| {},
-					}
-				}
-			}
-		}
-	);
+			.child(directoryDisplay("Cache", labelWidth.clone(), cacheDir))
+			.child(directoryDisplay("Configuration", labelWidth.clone(), configDir))
+			.child(directoryDisplay("Data", labelWidth.clone(), dataDir));
+	}
+}
+
+impl LocalInfo
+{
+	pub fn new() -> Self
+	{
+		return Self::default();
+	}
+	
+	#[allow(unused)]
+	pub fn labelWidth(mut self, width: impl Into<Size>) -> Self
+	{
+		self.labelWidth = Some(width.into());
+		return self;
+	}
+}
+
+fn directoryDisplay(
+	labelText: impl Into<Cow<'static, str>>,
+	labelWidth: impl Into<Size>,
+	value: impl Into<Writable<String>>,
+) -> impl IntoElement
+{
+	return rect()
+		.content(Content::Flex)
+		.direction(Direction::Horizontal)
+		.main_align(Alignment::Center)
+		.spacing(10.0)
+		.width(Size::percent(75.0))
+		
+		.child(
+			label()
+				.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
+				.min_width(Size::px(102.0))
+				.text_align(TextAlign::End)
+				.width(labelWidth)
+				.text(labelText)
+		)
+		
+		.child(
+			Input::new(value)
+				.width(Size::flex(1.0))
+				.on_validate(move |validator: InputValidator| validator.set_valid(false))
+		);
 }

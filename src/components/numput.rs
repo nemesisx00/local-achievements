@@ -1,49 +1,72 @@
-use freya::prelude::{component, fc_to_builder, rsx, Element, GlobalSignal, Input,
-	InputValidator, Props, Readable, Signal, Writable};
+use freya::prelude::{Component, Input, InputValidator, IntoElement, Size, State,
+	use_side_effect, use_state};
 
-#[component]
-pub fn NumericInput(
-	value: Signal<u64>,
-	max: Option<u64>,
-	min: Option<u64>,
-	placeholder: Option<String>,
-	width: Option<String>
-) -> Element
+#[derive(Clone, PartialEq)]
+pub struct NumericInput
 {
-	let max = match max
+	value: State<u64>,
+	max: u64,
+	min: u64,
+	placeholder: String,
+	width: Size,
+}
+
+impl Component for NumericInput
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => u64::MAX,
-		Some(m) => m,
-	};
-	
-	let min = match min
+		let mut value = self.value.clone();
+		let textValue = use_state(|| value.read().to_string());
+		use_side_effect(move || value.set(textValue.read().parse::<u64>().unwrap()));
+		
+		let max = self.max;
+		let min = self.min;
+		
+		return Input::new(textValue)
+			.placeholder(self.placeholder.clone())
+			.width(self.width.clone())
+			.on_validate(move |validator| validate(validator, max, min));
+	}
+}
+
+#[allow(unused)]
+impl NumericInput
+{
+	pub fn new(value: State<u64>) -> Self
 	{
-		None => u64::MIN,
-		Some(m) => m,
-	};
-	
-	let placeholder = match placeholder
-	{
-		None => "500".into(),
-		Some(p) => p,
-	};
-	
-	let width = match width
-	{
-		None => "auto".into(),
-		Some(w) => w,
-	};
-	
-	return rsx!(
-		Input
+		return Self
 		{
-			placeholder,
-			value: value().to_string(),
-			width,
-			onchange: move |text: String| value.set(text.parse::<u64>().unwrap()),
-			onvalidate: move |validator: InputValidator| validate(validator, max, min),
-		}
-	);
+			value,
+			max: u64::MAX,
+			min: u64::MIN,
+			placeholder: String::default(),
+			width: Size::default(),
+		};
+	}
+	
+	pub fn max(mut self, max: impl Into<u64>) -> Self
+	{
+		self.max = max.into();
+		return self;
+	}
+	
+	pub fn min(mut self, min: impl Into<u64>) -> Self
+	{
+		self.min = min.into();
+		return self;
+	}
+	
+	pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self
+	{
+		self.placeholder = placeholder.into();
+		return self;
+	}
+	
+	pub fn width(mut self, width: impl Into<Size>) -> Self
+	{
+		self.width = width.into();
+		return self;
+	}
 }
 
 fn validate(validator: InputValidator, max: u64, min: u64)

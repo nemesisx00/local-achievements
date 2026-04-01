@@ -1,138 +1,154 @@
-use freya::hooks::{AnimNum, Ease, Function, OnFinish};
-use freya::prelude::{Button, Element, GlobalSignal, Props, Readable, Writable,
-	component, dioxus_elements, fc_to_builder, rsx, use_animation, use_signal};
-use crate::constants::{ButtonBackgroundColor, BorderColor};
+use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
+	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Gaps,
+	IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt, TextAlign,
+	TextStyleExt, label, rect, use_state};
+use freya::radio::use_radio;
+use crate::constants::{BorderColor, ButtonBackgroundColor};
+use crate::data::radio::DataChannel;
+use crate::gog::GogUserProfile;
 use crate::retroachievements::RetroAchievementsUserProfile;
 use crate::rpcs3::Rpcs3ProfileElement;
 use crate::steam::SteamProfile;
 
-#[component]
-pub fn ProfileElement(duration: Option<u64>, ) -> Element
+const AnimationDuration: u64 = 500;
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum ProfileState
 {
-	let duration = match duration
+	#[default]
+	Hidden,
+	Hiding,
+	Showing,
+	Shown,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ProfileElement
+{
+	duration: u64,
+	width: f32,
+}
+
+impl Component for ProfileElement
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => 500,
-		Some(d) => d,
-	};
-	let width = 250.;
-	let paddedWidth = width + 15.;
-	let paddedEnd = -15.;
-	
-	let mut visible = use_signal(|| false);
-	
-	let animation = use_animation(move |config| {
-		//config.on_creation(OnCreation::Nothing);
-		//config.on_finish(OnFinish::Nothing);
-		config.auto_start(false);
-		config.on_finish(OnFinish::Stop);
+		let profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
 		
-		AnimNum::new(-paddedWidth, paddedEnd)
-			.ease(Ease::InOut)
-			.function(Function::Cubic)
-			.time(duration)
-	});
-	
-	let x = &*animation.get().read_unchecked();
-	
-	if x.read() == -paddedWidth as f32
-	{
-		visible.set(false);
-	}
-	else if x.read() == paddedEnd
-	{
-		visible.set(true);
-	}
-	
-	let buttonLabel = match visible()
-	{
-		false => ">",
-		true => "<",
-	};
-	
-	return rsx!(
-		rect
+		let mut visible = use_state(|| false);
+		let leftShown = self.width;
+		let leftHidden = 0.0;
+		
+		visible.set(profileState.read().clone() != ProfileState::Hidden);
+		
+		let x = match visible()
 		{
-			background: "{ButtonBackgroundColor}",
-			border: "none, 1 center {BorderColor}, none, none",
-			content: "flex",
-			direction: "vertical",
-			height: "100v",
-			margin: "0",
-			layer: "-1",
-			padding: "15",
-			position: "absolute",
-			position_left: "{x.read()}",
-			position_top: "-15",
-			spacing: "10",
-			width: "{width}",
-			
-			rect
-			{
-				layer: "-1",
-				position: "absolute",
-				position_right: "-15",
-				position_top: "0",
-				
-				Button
-				{
-					onpress: move |_| {
-						if visible()
-						{
-							animation.reverse();
-						}
-						else
-						{
-							animation.start();
-						}
-					},
-					
-					label
+			false => leftHidden,
+			true => leftShown,
+		};
+		
+		return rect()
+			.background(ButtonBackgroundColor)
+			.border(Some(
+				Border::new()
+					.alignment(BorderAlignment::Center)
+					.fill(BorderColor)
+					.width(BorderWidth
 					{
-						font_size: "40",
-						font_weight: "bold",
-						
-						"{buttonLabel}"
-					}
-				}
-			}
+						bottom: 0.0,
+						top: 0.0,
+						right: 1.0,
+						left: 0.0,
+					})
+			))
+			.height(Size::Fill)
+			.layer(Layer::Overlay)
+			.padding(Gaps::new_all(15.0))
+			.spacing(10.0)
+			.width(Size::px(x))
 			
-			label
-			{
-				text_align: "center",
-				width: "flex",
-				"RetroAchievements"
-			}
-			RetroAchievementsUserProfile {}
-			
-			rect
-			{
-				border: "none, none, 1 center {BorderColor}",
-				margin: "7 0",
-				width: "flex",
-			}
-			
-			label
-			{
-				text_align: "center",
-				width: "flex",
-				"RPCS3"
-			}
-			Rpcs3ProfileElement {}
-			
-			rect
-			{
-				border: "none, none, 1 center {BorderColor}",
-				margin: "7 0",
-				width: "flex",
-			}
-			
-			label
-			{
-				text_align: "center",
-				width: "flex",
-				"Steam"
-			}
-			SteamProfile {}
-		}
-	);
+			// Profiles
+			.child(
+				ScrollView::new()
+					.show_scrollbar(visible())
+					/*
+					.child(profileLabelElement("Battle.Net"))
+					.child(BattleNetUserProfile())
+					
+					.child(separatorElement())
+					*/
+					.child(profileLabelElement("GOG"))
+					.child(GogUserProfile())
+					
+					.child(separatorElement())
+					
+					.child(profileLabelElement("RetroAchievements"))
+					.child(RetroAchievementsUserProfile())
+					
+					.child(separatorElement())
+					
+					.child(profileLabelElement("RPCS3"))
+					.child(Rpcs3ProfileElement())
+					
+					.child(separatorElement())
+					
+					.child(profileLabelElement("Steam"))
+					.child(SteamProfile())
+			);
+	}
+}
+
+impl ProfileElement
+{
+	pub fn new() -> Self
+	{
+		return Self
+		{
+			duration: AnimationDuration,
+			width: 250.0,
+		};
+	}
+	
+	#[allow(unused)]
+	pub fn duration(mut self, duration: impl Into<u64>) -> Self
+	{
+		self.duration = duration.into();
+		return self;
+	}
+	
+	#[allow(unused)]
+	pub fn width(mut self, width: impl Into<f32>) -> Self
+	{
+		self.width = width.into();
+		return self;
+	}
+}
+
+fn profileLabelElement(text: impl Into<String>) -> impl IntoElement
+{
+	return label()
+		.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
+		.text_align(TextAlign::Center)
+		.width(Size::Fill)
+		.text(text.into());
+}
+
+fn separatorElement() -> impl IntoElement
+{
+	return rect()
+		.border(Some(
+			Border::new()
+				.alignment(BorderAlignment::Center)
+				.fill(BorderColor)
+				.width(BorderWidth
+				{
+					top: 0.0,
+					right: 0.0,
+					bottom: 1.0,
+					left: 0.0,
+				})
+		))
+		.height(Size::px(1.0))
+		.margin(Gaps::new_symmetric(25.0, 0.0))
+		.width(Size::Fill);
 }

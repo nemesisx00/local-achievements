@@ -6,7 +6,7 @@ use crate::steam::platform::{GameAchievement, PlayerAchievement};
 use crate::constants::Format_ChronoDateTime;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
-pub struct Achievement
+pub struct SteamAchievement
 {
 	/// The human-readable description of the achievement.
 	#[serde(default)]
@@ -40,7 +40,7 @@ pub struct Achievement
 	pub timestamp: Option<u64>,
 }
 
-impl PartialOrd for Achievement
+impl PartialOrd for SteamAchievement
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{
@@ -58,7 +58,7 @@ impl PartialOrd for Achievement
 	}
 }
 
-impl From<GameAchievement> for Achievement
+impl From<GameAchievement> for SteamAchievement
 {
 	fn from(value: GameAchievement) -> Self
 	{
@@ -79,7 +79,7 @@ impl From<GameAchievement> for Achievement
 	}
 }
 
-impl From<PlayerAchievement> for Achievement
+impl From<PlayerAchievement> for SteamAchievement
 {
 	fn from(value: PlayerAchievement) -> Self
 	{
@@ -91,7 +91,7 @@ impl From<PlayerAchievement> for Achievement
 	}
 }
 
-impl Achievement
+impl SteamAchievement
 {
 	pub fn formatTimestamp(&self) -> Option<String>
 	{
@@ -253,11 +253,11 @@ mod tests
 	fn parseJsonMap()
 	{
 		let mut map = buildMap(false);
-		let fail = Achievement::parseJsonMap(&map);
+		let fail = SteamAchievement::parseJsonMap(&map);
 		assert_eq!(fail, None);
 		
 		map = buildMap(true);
-		let success = Achievement::parseJsonMap(&map);
+		let success = SteamAchievement::parseJsonMap(&map);
 		assert_ne!(success, None);
 		
 		let achievement = success.unwrap();

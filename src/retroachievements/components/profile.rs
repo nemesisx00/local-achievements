@@ -1,63 +1,101 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, Button, Element, GlobalSignal, Readable};
-use crate::{png, RetroAchievementsUserData};
-use crate::io::{loadImageToBytes, Path_Avatars};
-use crate::retroachievements::platform::api::Api;
-use super::content::refresh;
+use std::path::PathBuf;
+use freya::icons::lucide;
+use freya::prelude::{Alignment, ChildrenExt, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Direction, Gaps, ImageViewer, IntoElement, Size,
+	TextAlign, TextStyleExt, label, rect, spawn, use_side_effect, use_state};
+use freya::radio::{IntoWritable, use_radio};
+use crate::png;
+use crate::data::radio::{AppDataChannel, DataChannel};
+use crate::net::limiter::RateLimiter;
+use crate::net::limiter::request::{FileLocation, RequestEvent,
+	RetroAchievementsOperation};
+use crate::components::refresh::confirm::ConfirmRefresh;
+use crate::components::IconButton;
+use crate::data::AppData;
+use crate::io::{Path_Avatars, getImagePath};
+use crate::retroachievements::platform::api::RetroAchievementsApi;
 
-#[component]
-pub fn RetroAchievementsUserProfile() -> Element
+pub fn RetroAchievementsUserProfile() -> impl IntoElement
 {
-	let avatar = match RetroAchievementsUserData().ulid
+	let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
+	let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
+	let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
+	
+	let mut cancelled = use_state(bool::default);
+	let mut confirmed = use_state(bool::default);
+	let mut showConfirmationDialog = use_state(bool::default);
+	
+	let ulid = appData.read().user.retroAchievements.ulid.clone();
+	let username = appData.read().user.retroAchievements.username.clone();
+	
+	let avatarPath = match ulid
 	{
-		None => vec![],
-		Some(ulid) => loadIcon(
-			&Api::Platform.into(),
-			&Path_Avatars.into(),
-			&png!(ulid)
-		),
+		None => None,
+		Some(ulid) => getImagePath(&FileLocation
+		{
+			fileName: png!(ulid),
+			group: Path_Avatars.into(),
+			platform: RetroAchievementsApi::Platform.into(),
+		}),
 	};
 	
-	return rsx!(
-		rect
+	use_side_effect(move || {
+		if (cancelled() || confirmed()) && showConfirmationDialog()
 		{
-			direction: "horizontal",
-			main_align: "start",
-			spacing: "10",
-			width: "flex",
-			
-			image { image_data: dynamic_bytes(avatar), width: "64", }
-			
-			rect
+			if confirmed()
 			{
-				direction: "vertical",
-				height: "100%",
-				main_align: "space-around",
-				
-				label
-				{
-					main_align: "center",
-					margin: "0 0 0 7",
-					text_align: "center",
+				spawn(async move {
+					rateLimiter.read().pushAll(vec![
+						RetroAchievementsOperation::GetUserProfile.into(),
+						RetroAchievementsOperation::GetUserProgress(Default::default()).into(),
+					]).await;
 					
-					"{RetroAchievementsUserData().username}"
-				}
-				
-				Button
-				{
-					onclick: move |_| refresh(),
-					label { "Refresh" }
-				}
+					**requestEvent.write() = RequestEvent::Added;
+				});
 			}
+			
+			cancelled.set(false);
+			confirmed.set(false);
+			showConfirmationDialog.set(false);
 		}
-	);
-}
-
-fn loadIcon<'a>(platform: &String, group: &String, fileName: &String) -> Vec<u8>
-{
-	return match loadImageToBytes(platform, group, fileName)
-	{
-		Ok(b) => b,
-		Err(_) => vec![],
-	};
+	});
+	
+	return rect()
+		.direction(Direction::Horizontal)
+		.main_align(Alignment::Start)
+		.spacing(10.0)
+		.width(Size::Fill)
+		
+		.maybe_child(avatarPath.is_some().then(||
+			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
+				.width(Size::px(64.0))
+		))
+		
+		.child(
+			rect()
+				.direction(Direction::Vertical)
+				.main_align(Alignment::SpaceAround)
+				
+				.child(
+					label()
+						.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
+						.text_align(TextAlign::Start)
+						.text(username)
+				)
+				
+				.child(
+					IconButton::new(lucide::refresh_ccw())
+						.alt("Refresh")
+						.height(Size::px(32.0))
+						.width(Size::px(32.0))
+						.onPress(move |_| showConfirmationDialog.set(true))
+				)
+		)
+		
+		.maybe_child(showConfirmationDialog().then(||
+			ConfirmRefresh::new(
+				cancelled.into_writable(),
+				confirmed.into_writable()
+			)
+		));
 }

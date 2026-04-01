@@ -1,59 +1,72 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, Button, Element, GlobalSignal, Readable};
-use crate::io::{loadImageToBytes, Path_Avatars};
-use crate::SteamUserData;
-use crate::steam::platform::api::Api;
-use super::content::refresh;
+use std::path::PathBuf;
+use freya::icons::lucide;
+use freya::prelude::{Alignment, ChildrenExt, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Direction, Gaps, ImageViewer, IntoElement, Size,
+	TextAlign, TextStyleExt, label, rect, spawn};
+use freya::radio::use_radio;
+use crate::components::IconButton;
+use crate::data::AppData;
+use crate::data::radio::{AppDataChannel, DataChannel};
+use crate::io::{Path_Avatars, getImagePath};
+use crate::net::limiter::RateLimiter;
+use crate::net::limiter::request::{FileLocation, RequestEvent, SteamOperation};
+use crate::steam::platform::api::SteamApi;
 
-#[component]
-pub fn SteamProfile() -> Element
+pub fn SteamProfile() -> impl IntoElement
 {
-	let avatar = loadIcon(
-		&Api::Platform.into(),
-		&Path_Avatars.into(),
-		&format!("{}_full.jpg", SteamUserData().id)
-	);
+	let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
+	let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
+	let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 	
-	return rsx!(
-		rect
-		{
-			direction: "horizontal",
-			main_align: "start",
-			spacing: "10",
-			width: "flex",
-			
-			image { image_data: dynamic_bytes(avatar), width: "64", }
-			
-			rect
-			{
-				direction: "vertical",
-				height: "100%",
-				main_align: "space-around",
-				
-				label
-				{
-					main_align: "center",
-					margin: "0 0 0 7",
-					text_align: "center",
-					
-					"{SteamUserData().name}"
-				}
-				
-				Button
-				{
-					onclick: move |_| refresh(),
-					label { "Refresh" }
-				}
-			}
-		}
-	);
-}
-
-fn loadIcon<'a>(platform: &String, group: &String, fileName: &String) -> Vec<u8>
-{
-	return match loadImageToBytes(platform, group, fileName)
+	let userId = appData.read().user.steam.id.clone();
+	let username = appData.read().user.steam.name.clone();
+	
+	let avatarPath = getImagePath(&FileLocation
 	{
-		Ok(b) => b,
-		Err(_) => vec![],
-	};
+		fileName: format!("{}_full.jpg", userId),
+		group: Path_Avatars.into(),
+		platform: SteamApi::Platform.into(),
+	});
+	
+	return rect()
+		.direction(Direction::Horizontal)
+		.main_align(Alignment::Start)
+		.spacing(10.0)
+		.width(Size::flex(1.0))
+		
+		.maybe_child(avatarPath.is_some().then(||
+			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
+				.width(Size::px(64.0))
+		))
+		
+		.child(
+			rect()
+				.direction(Direction::Vertical)
+				.main_align(Alignment::SpaceAround)
+				
+				.child(
+					label()
+						.margin(Gaps::new(0.0, 0.0, 0.0, 7.0))
+						.text_align(TextAlign::Center)
+						.text(username)
+				)
+				
+				.child(
+					IconButton::new(lucide::refresh_ccw())
+						.alt("Refresh")
+						.height(Size::px(32.0))
+						.width(Size::px(32.0))
+						.onPress(move |_| {
+							spawn(async move {
+								rateLimiter.read().pushAll(vec![
+									SteamOperation::GetPlayerSummary.into(),
+									SteamOperation::GetGameList.into(),
+									SteamOperation::SaveToFile.into(),
+								]).await;
+								
+								**requestEvent.write() = RequestEvent::Added;
+							});
+						})
+				)
+		);
 }

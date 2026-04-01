@@ -3,23 +3,25 @@ use std::io::{self, Cursor};
 use std::path::Path;
 use anyhow::Result;
 use saphyr::{LoadableYamlNode, Scalar, Yaml};
+use tracing::warn;
 use crate::join;
 use crate::io::{Path_Games, generateImageCacheDir, getImagePath};
+use crate::net::limiter::request::FileLocation;
 use crate::rpcs3::data::game::Game;
-use crate::rpcs3::data::settings::Settings;
+use crate::rpcs3::data::settings::Rpcs3Settings;
 use crate::rpcs3::platform::data::conf::{TrophyConf, TrophyMetadata};
 use crate::rpcs3::platform::data::user::{DatFile, EntryType6};
 
 const DefaultAccountId: u64 = 1;
 
 #[derive(Clone, Debug)]
-pub struct Api
+pub struct Rpcs3Api
 {
 	pub accountId: u64,
 	pub rootDir: String,
 }
 
-impl Default for Api
+impl Default for Rpcs3Api
 {
 	fn default() -> Self
 	{
@@ -31,9 +33,9 @@ impl Default for Api
 	}
 }
 
-impl From<Settings> for Api
+impl From<Rpcs3Settings> for Rpcs3Api
 {
-	fn from(value: Settings) -> Self
+	fn from(value: Rpcs3Settings) -> Self
 	{
 		return Self
 		{
@@ -43,7 +45,7 @@ impl From<Settings> for Api
 	}
 }
 
-impl Api
+impl Rpcs3Api
 {
 	/**
 	The ticks value representing 1970-01-01 00:00:00.000000
@@ -66,7 +68,7 @@ impl Api
 	const RpcnFileName: &str = "rpcn.yml";
 	const RpcnIdYamlKey: &str = "NPID";
 	
-	pub fn cacheGameIcons(&self, npCommId: String) -> Result<()>
+	pub fn cacheGameIcons(&self, npCommId: &String) -> Result<()>
 	{
 		let group = join!(Path_Games, npCommId);
 		let platform = Self::Platform.into();
@@ -92,7 +94,12 @@ impl Api
 				{
 					if let Ok(fileName) = entry.file_name().into_string()
 					{
-						if let Some(imagePath) = getImagePath(&platform, &group, &fileName)
+						if let Some(imagePath) = getImagePath(&FileLocation
+						{
+							fileName,
+							group: group.clone(),
+							platform: platform.clone(),
+						})
 						{
 							if !Path::new(&imagePath).exists()
 							{
@@ -113,19 +120,19 @@ impl Api
 		
 		match self.getNpCommIdList()
 		{
-			Err(e) => println!("Error reading the NpCommId list (RPCS3): {:?}", e),
+			Err(e) => warn!("[RPCS3] Error reading the NpCommId list (RPCS3): {:?}", e),
 			Ok(npCommIds) => {
 				for npCommId in npCommIds
 				{
 					match self.parseTrophyConf(npCommId.to_owned())
 					{
-						Err(e) => println!("Error parsing the TROPHYCONF.SFM for {}: {:?}", npCommId, e),
+						Err(e) => warn!("[RPCS3] Error parsing the TROPHYCONF.SFM for {}: {:?}", npCommId, e),
 						Ok(trophyConf) => games.push(trophyConf.into()),
 					}
 					
 					match self.parseTrophies(npCommId.to_owned())
 					{
-						Err(e) => println!("Error parsing the trophies for {}: {:?}", npCommId, e),
+						Err(e) => warn!("[RPCS3] Error parsing the trophies for {}: {:?}", npCommId, e),
 						Ok(trophies) => {
 							for (metadata, type6) in trophies
 							{
@@ -266,7 +273,7 @@ mod tests
 	#[test]
 	fn accountId()
 	{
-		let api = Api { accountId: 1, ..Default::default() };
+		let api = Rpcs3Api { accountId: 1, ..Default::default() };
 		let accountId = api.formatAccountId();
 		
 		assert_eq!(accountId, "00000001");
@@ -285,7 +292,7 @@ mod tests
 		let rootDir = env::var("RPCS3_TEST_ROOT").unwrap();
 		let expected = env::var("RPCS3_TEST_RPCN_ID").unwrap();
 		
-		let api = Api { rootDir, ..Default::default() };
+		let api = Rpcs3Api { rootDir, ..Default::default() };
 		let rpcnId = api.getRpcnId();
 		assert!(rpcnId.is_ok());
 		assert_eq!(rpcnId.unwrap(), expected);
@@ -307,7 +314,7 @@ mod tests
 		let accountId = accountIdString.parse::<u64>().unwrap();
 		let npCommId = env::var("RPCS3_TEST_NPCOMMID").unwrap();
 		
-		let api = Api { rootDir, accountId, };
+		let api = Rpcs3Api { rootDir, accountId, };
 		let trophies = api.parseTrophies(npCommId.to_owned()).unwrap();
 		
 		assert_ne!(trophies.len(), 0);

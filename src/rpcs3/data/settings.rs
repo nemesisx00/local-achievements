@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct Settings
+pub struct Rpcs3Settings
 {
 	#[serde(default)]
 	pub accountId: u64,
@@ -11,7 +11,7 @@ pub struct Settings
 	pub appDataDirectory: String,
 }
 
-impl Settings
+impl Rpcs3Settings
 {
 	pub const FileName: &str = "rpcs3.json";
 }

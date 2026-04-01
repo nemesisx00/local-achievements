@@ -5,37 +5,36 @@ use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
-use crate::constants::Icon_Locked;
-use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
-use crate::{join, jpg, jpgAlt};
-use crate::steam::data::game::Game;
-use crate::util::cacheImageIfNotExists;
-use super::{GameAchievement, Payload_GetGlobalPercentages,
-	Payload_GetOwnedGames, Payload_GetPlayerAchievements,
-	Payload_GetPlayerSummaries, Payload_GetRecentlyPlayedGames,
-	Payload_GetSchemaForGame};
-use super::data::auth::AuthData;
+use crate::io::Path_Avatars;
+use crate::net::limiter::request::FileLocation;
+use super::{Payload_GetGlobalPercentages, Payload_GetOwnedGames,
+	Payload_GetPlayerAchievements, Payload_GetPlayerSummaries,
+	Payload_GetRecentlyPlayedGames, Payload_GetSchemaForGame};
+use super::data::auth::SteamAuth;
 
-#[derive(Clone, Debug, Default)]
-pub struct Api
+#[derive(Clone, Debug)]
+pub struct SteamApi
 {
-	pub auth: AuthData,
+	pub auth: SteamAuth,
 	pub client: Client,
 }
 
-impl From<AuthData> for Api
+impl From<SteamAuth> for SteamApi
 {
-	fn from(value: AuthData) -> Self
+	fn from(value: SteamAuth) -> Self
 	{
 		return Self
 		{
 			auth: value,
-			..Default::default()
+			client: Client::builder()
+				.https_only(true)
+				.build()
+				.unwrap_or_default(),
 		};
 	}
 }
 
-impl Api
+impl SteamApi
 {
 	pub const Platform: &str = "Steam";
 	
@@ -50,6 +49,7 @@ impl Api
 	const Endpoint_GetOwnedGames: &str = "GetOwnedGames/v0001";
 	const Endpoint_GetPlayerAchievements: &str = "GetPlayerAchievements/v0001";
 	const Endpoint_GetPlayerSummaries: &str = "GetPlayerSummaries/v0002";
+	#[allow(unused)]
 	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
 	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGame/v0002";
 	
@@ -80,122 +80,15 @@ impl Api
 	const AvatarUrl_ReplaceMedium: &str = "_medium";
 	const AvatarUrl_ReplaceFull: &str = "_full";
 	
-	/**
-	Retrieve and cache the icon images for a list of `achievements`.
-	
-	---
-	
-	Parameter | Description
-	:--|:--
-	appId | The app id to which these achievements belong.
-	achievements | The list of achievements for which to retrieve icon images.
-	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
-	
-	---
-	
-	#### Returns
-	
-	If any icons result in an error, the list of all games for which no icon
-	could be retrieved is returned. Otherwise, returns `NONE`.
-	*/
-	pub async fn cacheAchievementsIcons(&self, appId: u64, achievements: &Vec<GameAchievement>, force: bool) -> Result<()>
+	pub fn constructGameIconUrl(id: u64, hash: &String) -> String
 	{
-		for achievement in achievements
-		{
-			let group = join!(Path_Games, appId);
-			let filename = jpg!(achievement.name);
-			let filenameLocked = jpgAlt!(achievement.name, Icon_Locked);
-			let platform = Self::Platform.into();
-			
-			if let Some(path) = getImagePath(&platform, &group, &filename)
-			{
-				cacheImageIfNotExists(
-					&self.client,
-					&achievement.icon,
-					&path,
-					&platform,
-					&group,
-					&filename,
-					force
-				)
-					.await?;
-			}
-			
-			if let Some(path) = getImagePath(&platform, &group, &filenameLocked)
-			{
-				cacheImageIfNotExists(
-					&self.client,
-					&achievement.icongray,
-					&path,
-					&platform,
-					&group,
-					&filenameLocked,
-					force
-				)
-					.await?;
-			}
-		}
-		
-		return Ok(());
+		return Self::IconUrl_Game
+			.replace(Self::Replace_AppId, &id.to_string())
+			.replace(Self::Replace_Hash, hash);
 	}
 	
 	/**
-	Retrieve and cache the icon images for a list of `games`.
-	
-	---
-	
-	Parameter | Description
-	:--|:--
-	games | The list of games for which to retrieve icon images.
-	force | If `TRUE`, retrieve all images and overwrite the cache. Otherwise, only retrieve non-cached images.
-	
-	---
-	
-	#### Returns
-	
-	If any icons result in an error, the list of all games for which no icon
-	could be retrieved is returned. Otherwise, returns `NONE`.
-	*/
-	pub async fn cacheGameIcons(&self, games: &Vec<Game>, force: bool) -> Option<Vec<Game>>
-	{
-		let mut failed = vec![];
-		
-		let platform = Self::Platform.into();
-		let fileName = jpg!(FileName_GameIcon);
-		for game in games.iter()
-		{
-			let group = join!(Path_Games, game.id);
-			
-			if let Some(path) = getImagePath(&platform, &group, &fileName)
-			{
-				let url = Self::IconUrl_Game
-					.replace(Self::Replace_AppId, game.id.to_string().as_str())
-					.replace(Self::Replace_Hash, &game.iconHash);
-				
-				if let Err(_) = cacheImageIfNotExists(
-						&self.client,
-						&url,
-						&path,
-						&platform,
-						&group,
-						&fileName,
-						force
-					).await
-				{
-					failed.push(game.clone());
-				}
-			}
-		}
-		
-		return match failed.is_empty()
-		{
-			true => None,
-			false => Some(failed),
-		}
-	}
-	
-	/**
-	Retrieve and cache all three sizes of avatar image for the given `steamId` and `hash`.
+	Generate a `FileLocation` destination and `String` URL for retrieving a user's avatar image.
 	
 	---
 	
@@ -203,43 +96,29 @@ impl Api
 	:--|:--
 	steamId | The 64-bit Steam ID identifying the user whose avatar images are being retrieved.
 	hash | The hash value used to build the URL for retrieving the avatar images.
-	force | If `TRUE`, retrieve all the images and overwrite the cache. Otherwise, only retrieve non-cached images.
+	size | Numeric flag to determine which size of avatar to use when preparing the url. 
 	*/
-	pub async fn cacheProfileAvatar(&self, steamId: &String, hash: &String, force: bool) -> Result<()>
+	pub fn constructProfileAvatarMetadata(steamId: String, hash: String, size: i64) -> (FileLocation, String)
 	{
-		let mut nameMod = String::default();
-		for i in 0..3
+		let nameMod = match size
 		{
-			match i
-			{
-				1 => nameMod = Self::AvatarUrl_ReplaceMedium.into(),
-				2 => nameMod = Self::AvatarUrl_ReplaceFull.into(),
-				_ => {},
-			}
-			
-			let url = Self::AvatarUrl
-				.replace(Self::Replace_Hash, hash.as_str())
-				.replace(Self::Replace_Size, nameMod.as_str());
-			
-			let filename = format!("{}{}.jpg", steamId, nameMod);
-			let group = Path_Avatars.into();
-			let platform = Self::Platform.into();
-			
-			if let Some(path) = getImagePath(&platform, &group, &filename)
-			{
-				cacheImageIfNotExists(
-					&self.client,
-					&url,
-					&path,
-					&platform,
-					&group,
-					&filename,
-					force
-				).await?;
-			}
-		}
+			1 => Self::AvatarUrl_ReplaceMedium.into(),
+			2 => Self::AvatarUrl_ReplaceFull.into(),
+			_ => String::default(),
+		};
 		
-		return Ok(());
+		let url = Self::AvatarUrl
+			.replace(Self::Replace_Hash, hash.as_str())
+			.replace(Self::Replace_Size, nameMod.as_str());
+		
+		let destination = FileLocation
+		{
+			fileName: format!("{}{}.jpg", steamId, nameMod),
+			group: Path_Avatars.into(),
+			platform: Self::Platform.into(),
+		};
+		
+		return (destination, url);
 	}
 	
 	/**
@@ -538,6 +417,7 @@ impl Api
 		- playtime_forever - The total number of minutes played "on record", since Steam began tracking total playtime in early 2009.
 		- img_icon_url, img_logo_url - These are the filenames of various images for the game. To construct the URL to the image, use this format: `http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg`. For example, the TF2 logo is returned as `07385eb55b5ba974aebbe74d3c99626bda7920b8`, which maps to the URL: `http://media.steampowered.com/steamcommunity/public/images/apps/440/07385eb55b5ba974aebbe74d3c99626bda7920b8.jpg`
 	*/
+	#[allow(unused)]
 	pub async fn getRecentlyPlayedGames(&self) -> Result<Payload_GetRecentlyPlayedGames>
 	{
 		if self.auth.validate()
@@ -662,6 +542,16 @@ impl Api
 		}
 		
 		let requestUrl = format!("{}{}", url, params);
+		
+		/*
+		let response = self.agent.get(requestUrl)
+			.call()
+				.context("Error retrieving Steam API response")?
+			.body_mut()
+			.read_json::<T>()
+				.context("Error parsing Steam API response as JSON")?;
+		*/
+		
 		let response = self.client.get(requestUrl)
 			.send().await
 				.context("Error retrieving Steam API response")?

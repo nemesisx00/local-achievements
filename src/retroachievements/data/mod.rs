@@ -2,6 +2,7 @@ pub mod achievement;
 pub mod game;
 pub mod kind;
 pub mod mode;
+pub mod progress;
 pub mod rank;
 pub mod system;
 pub mod user;

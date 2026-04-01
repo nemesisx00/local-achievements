@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 /**
 The data necessary to access the Steam Web API.
 */
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct AuthData
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct SteamAuth
 {
 	/// The user's SteamID
 	pub id: String,
@@ -12,7 +12,7 @@ pub struct AuthData
 	pub key: String,
 }
 
-impl AuthData
+impl SteamAuth
 {
 	/// The filename to be used when this struct is read from, or written to, the file system.
 	pub const FileName: &str = "steam-auth.json";
@@ -22,8 +22,8 @@ impl AuthData
 	*/
 	pub fn validate(&self) -> bool
 	{
-		return !String::is_empty(&self.id)
-			&& !String::is_empty(&self.key);
+		return !self.id.is_empty()
+			&& !self.key.is_empty();
 	}
 }
 
@@ -38,9 +38,9 @@ mod tests
 		let id = "Test".to_string();
 		let key = "abcdefghijklmnopqrstuvwxyz".to_string();
 		
-		assert!(AuthData { id: id.to_owned(), key: key.to_owned() }.validate());
-		assert!(!AuthData { key: key.to_owned(), ..Default::default() }.validate());
-		assert!(!AuthData { id: id.to_owned(), ..Default::default() }.validate());
-		assert!(!AuthData::default().validate());
+		assert!(SteamAuth { id: id.to_owned(), key: key.to_owned() }.validate());
+		assert!(!SteamAuth { key: key.to_owned(), ..Default::default() }.validate());
+		assert!(!SteamAuth { id: id.to_owned(), ..Default::default() }.validate());
+		assert!(!SteamAuth::default().validate());
 	}
 }

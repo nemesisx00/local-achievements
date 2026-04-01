@@ -4,9 +4,7 @@ description = "A desktop application for collecting, storing, and tracking achie
 edition = "2021"
 name = "local-achievements"
 publish = false
-version = "0.3.0"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version = "0.4.0"
 
 [dependencies]
 anyhow = "1"
@@ -14,24 +12,30 @@ byteorder = "1"
 chrono = "0"
 directories = "5"
 path-slash = "0"
-reqwest = { version = "0", features = [ "json" ] }
+regex = "1"
+reqwest = { version = "0.12.28", features = [ "json" ] } #Match version required by oauth2
 saphyr = "0"
 serde = "1"
 serde_json = "1"
+serde_url_params = "0"
 serde-xml-rs = "0"
 strum = "0"
 strum_macros = "0"
-tokio = "1"
+tokio = { version = "1", features = [ "rt", "rt-multi-thread", "sync" ] }
+ureq = { version = "3", features = [ "json" ] } # synchronous requests only
 
 # Freya and dependencies
-freya = "0.3"
-dioxus = { version = "0.6.3", default-features = false, features = ["macro", "signals", "hooks"] }
-dioxus-core = { version = "0.6.3" }
+freya = { version = "0.4.0-rc.16", features = [ "icons", "radio" ] }
 
 # Logging
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
+
+# OAuth2 and authorization related
+oauth2 = "5"
+securestore = "0.100.0"
+webbrowser = { version = "1", features = [ "hardened" ] }
 
 [lints.rust]
 non_snake_case = "allow"

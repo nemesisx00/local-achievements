@@ -5,12 +5,16 @@ mod platform;
 pub use components::{
 	content::SteamContent,
 	profile::SteamProfile,
-	settings::SettingsElement as SteamSettingsElement,
+	refresh,
+	settings::SteamSettingsElement,
 };
 
 pub use data::{
-	achievement::Achievement as SteamAchievement,
-	user::User as SteamUser,
+	achievement::SteamAchievement,
+	user::SteamUser,
 };
 
-pub use platform::AuthData as SteamAuth;
+pub use platform::{
+	SteamApi,
+	SteamAuth,
+};

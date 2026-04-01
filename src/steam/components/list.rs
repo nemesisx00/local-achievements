@@ -1,229 +1,262 @@
-use freya::events::Code;
-use freya::hooks::{cow_borrowed, theme_with};
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, use_platform, use_scroll_controller, use_signal, CursorIcon, Element,
-	GlobalSignal, Input, IntoDynNode, ProgressBar, ProgressBarThemeWith, Props,
-	Readable, ScrollConfig, ScrollDirection, ScrollPosition, VirtualScrollView,
-	Writable};
+use std::path::PathBuf;
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
+	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	CursorIcon, Direction, Event, EventHandlersExt, Gaps, ImageViewer, Input,
+	IntoElement, KeyboardEventData, Layer, LayerExt, Platform, Position,
+	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
+	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, WinitPlatformExt,
+	label, rect, use_scroll_controller, use_state};
+use freya::radio::use_radio;
+use crate::data::radio::{AppDataChannel, GameIdChannel};
+use crate::net::limiter::request::FileLocation;
+use crate::{join, jpg};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
-	RetroAchievementsProgressColorBackground, SteamContrast, TransparentColor};
-use crate::io::{loadImageToBytes, FileName_GameIcon, Path_Games};
-use crate::steam::data::game::Game;
-use crate::steam::platform::api::Api;
-use crate::{GameSelected, SteamUserData, join, jpg};
-use super::SelectedGameId;
+		RetroAchievementsProgressColorBackground, SteamContrast};
+use crate::data::AppData;
+use crate::io::{FileName_GameIcon, Path_Games, getImagePath};
+use crate::steam::platform::api::SteamApi;
 
-#[component]
-pub fn GameList() -> Element
+#[derive(Clone, PartialEq)]
+pub struct GameList;
+
+impl Component for GameList
 {
-	let mut scrollController = use_scroll_controller(|| ScrollConfig::default());
-	let mut search = use_signal(|| String::default());
-	
-	let mut games = SteamUserData().games.iter()
-		.filter(|g| g.name.to_lowercase().contains(&search().to_lowercase()))
-		.cloned()
-		.collect::<Vec<_>>();
-	games.sort();
-	
-	return rsx!(
-		rect
-		{
-			direction: "vertical",
-			cross_align: "center",
-			spacing: "10",
-			width: "fill",
+	fn render(&self) -> impl IntoElement
+	{
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
+		
+		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		let search = use_state(String::default);
+		
+		let games = appData.read().user.steam.filterGames(search.read().clone());
+		let gamesLength = games.len();
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.spacing(10.0)
+			.width(Size::Fill)
 			
-			onglobalkeyup: move |e| match e.code
+			.on_global_key_up(move |e: Event<KeyboardEventData>| match e.code
 			{
-				Code::Home => scrollController.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical),
-				Code::End => scrollController.scroll_to(ScrollPosition::End, ScrollDirection::Vertical),
+				Code::Home => scrollController.scroll_to(ScrollPosition::Start, Direction::Vertical),
+				Code::End => scrollController.scroll_to(ScrollPosition::End, Direction::Vertical),
 				_ => {},
-			},
+			})
 			
-			Input
-			{
-				placeholder: "Search by game title",
-				value: search(),
-				width: "50%",
-				onchange: move |value| search.set(value),
-			}
+			.child(
+				label()
+					.font_size(24.0)
+					.text_align(TextAlign::Center)
+					.width(Size::percent(100.0))
+					.text("Steam")
+			)
 			
-			VirtualScrollView
-			{
-				cache_elements: true,
-				direction: "vertical",
-				item_size: 105.0,
-				length: games.len(),
-				scroll_controller: scrollController,
-				scroll_with_arrows: true,
-				
-				builder: move |i, _: &Option<()>| {
-					let game = &games[i];
-					return rsx!(GameListNode { game: game.to_owned() });
-				}
-			}
-		}
-	);
+			.child(
+				Input::new(search)
+					.placeholder("Search by game title")
+					.width(Size::percent(50.0))
+			)
+			
+			.child(
+				VirtualScrollView::new_controlled(
+					move |i, _| {
+						let game = &games[i];
+						GameListNode::new(game.id).into()
+					},
+					scrollController
+				)
+					.direction(Direction::Vertical)
+					.item_size(105.0)
+					.length(gamesLength)
+					.scroll_with_arrows(true)
+			);
+	}
 }
 
-#[component]
-pub fn GameListNode(game: Game) -> Element
+impl GameList
 {
-    let platform = use_platform();
-	
-	let mut hovering = use_signal(|| false);
-	let bytes = loadIcon(&game);
-	
-	let background = match hovering()
+	pub fn new() -> Self
 	{
-		false => TransparentColor,
-		true => ButtonBackgroundColor,
-	};
-	
-	let percentUnlocked = game.percentUnlocked();
-	let percentUnlockedString = format!("{:.2}", percentUnlocked);
-	
-	return rsx!(
-		rect
+		return Self {};
+	}
+}
+
+
+#[derive(Clone, PartialEq)]
+pub struct GameListNode
+{
+	gameId: u64,
+}
+
+impl Component for GameListNode
+{
+	fn render(&self) -> impl IntoElement
+	{
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
+		let mut selectedGameId = use_radio::<Option<u64>, GameIdChannel>(GameIdChannel::Steam);
+		
+		let game = appData.read().user.steam.getGame(self.gameId)
+			.unwrap_or_default();
+		
+		let mut hovering = use_state(|| false);
+		
+		let iconPath = getImagePath(&FileLocation
 		{
-			direction: "horizontal",
-			main_align: "space-around",
-			margin: "5 0",
-			width: "fill",
+			fileName: jpg!(FileName_GameIcon),
+			group: join!(Path_Games, game.id),
+			platform: SteamApi::Platform.to_lowercase(),
+		});
+		
+		let background = match hovering()
+		{
+			false => Color::TRANSPARENT,
+			true => ButtonBackgroundColor,
+		};
+		
+		let percentUnlocked = game.percentUnlocked();
+		let percentUnlockedString = format!("{:.2}", percentUnlocked);
+		
+		return rect()
+			.direction(Direction::Horizontal)
+			.main_align(Alignment::SpaceAround)
+			.margin(Gaps::new_symmetric(5.0, 0.0))
+			.min_height(Size::px(54.0))
+			.width(Size::Fill)
 			
-			rect
-			{
-				background,
-				border: "1 center {BorderColor}",
-				corner_radius: "5",
-				direction: "horizontal",
-				main_align: "space-between",
-				min_width: "540",
-				padding: "10 15",
-				spacing: "10",
-				width: "50%",
-				
-				onclick: move |_| {
-					platform.set_cursor(Default::default());
-					*GameSelected.write() = true;
-					*SelectedGameId.write() = Some(game.id);
-				},
-				
-				onpointerenter: move |_| {
-					platform.set_cursor(CursorIcon::Pointer);
-					hovering.set(true);
-				},
-				
-				onpointerleave: move |_| {
-					platform.set_cursor(Default::default());
-					hovering.set(false);
-				},
-				
-				rect
-				{
-					direction: "horizontal",
-					spacing: "15",
+			.child(
+				rect()
+					.background(background)
+					.border(Some(
+						Border::new()
+							.alignment(BorderAlignment::Center)
+							.fill(BorderColor)
+							.width(1.0)
+					))
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::SpaceBetween)
+					.min_width(Size::px(540.0))
+					.padding(Gaps::new_symmetric(10.0, 15.0))
+					.spacing(10.0)
+					.width(Size::percent(50.0))
 					
-					if !bytes.is_empty()
-					{
-						image
-						{
-							image_data: dynamic_bytes(bytes),
-							width: "64",
-						}
-					}
+					.on_press(move |_| {
+						Platform::get().with_window(None, move |window| {
+							window.set_cursor(CursorIcon::default());
+						});
+						**selectedGameId.write() = Some(game.id);
+					})
 					
-					rect
-					{
-						direction: "vertical",
-						main_align: "space-around",
-						
-						label
-						{
-							margin: "10 0 0 0",
-							font_size: "18",
-							"{game.name}"
-						}
-					}
-				}
-				
-				rect
-				{
-					cross_align: "end",
-					direction: "vertical",
-					main_align: "space-around",
-					min_width: "150",
-					height: "100%",
-					width: "100",
+					.on_pointer_enter(move |_| {
+						Platform::get().with_window(
+							None,
+							move |window| window.set_cursor(CursorIcon::Pointer)
+						);
+						hovering.set(true);
+					})
 					
-					if game.hasAchievements
-					{
-						rect
-						{
-							layer: "2",
-							position: "absolute",
-							position_right: "0",
-							position_top: "10",
-							width: "100",
+					.on_pointer_leave(move |_| {
+						Platform::get().with_window(
+							None,
+							move |window| window.set_cursor(CursorIcon::default())
+						);
+						hovering.set(false);
+					})
+					
+					.child(
+						rect()
+							.direction(Direction::Horizontal)
+							.spacing(15.0)
 							
-							ProgressBar
-							{
-								progress: percentUnlocked as f32,
-								theme: theme_with!(ProgressBarTheme {
-									background: cow_borrowed!(RetroAchievementsProgressColorBackground),
-									height: cow_borrowed!("8"),
-									progress_background: cow_borrowed!(SteamContrast),
-								}),
-							}
-						}
-						
-						label
-						{
-							margin: "10 0 0 0",
-							font_size: "10",
-							text_align: "center",
-							width: "100",
-							"{percentUnlockedString}%"
-						}
-					}
-					else if game.loaded
-					{
-						label
-						{
-							font_size: "10",
-							text_align: "center",
-							width: "100",
-							"Achievements N/A"
-						}
-					}
-					else
-					{
-						label
-						{
-							font_size: "10",
-							text_align: "center",
-							width: "100",
-							"Click to Load"
-						}
-					}
-				}
-			}
-		}
-	);
+							.maybe_child(iconPath.is_some()
+								.then(|| rect()
+									.cross_align(Alignment::Center)
+									.direction(Direction::Vertical)
+									.height(Size::px(64.0))
+									.main_align(Alignment::Center)
+									.child(
+										ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+											.width(Size::px(48.0))
+									)
+							))
+							
+							.child(
+								rect()
+									.direction(Direction::Vertical)
+									.main_align(Alignment::SpaceAround)
+									
+									.child(
+										label()
+											.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
+											.font_size(18.0)
+											.text(game.name)
+									)
+							)
+					)
+					
+					.child(
+						rect()
+							.cross_align(Alignment::End)
+							.direction(Direction::Vertical)
+							.main_align(Alignment::SpaceAround)
+							.min_width(Size::px(150.0))
+							.min_height(Size::px(40.0))
+							.width(Size::px(100.0))
+							
+							.maybe_child(game.hasAchievements.then(||
+								rect()
+									.layer(Layer::Relative(2))
+									.position(Position::new_absolute()
+										.right(0.0)
+										.top(10.0)
+									)
+									.width(Size::px(100.0))
+									
+									.child(
+										ProgressBar::new(percentUnlocked as f32)
+											.background(RetroAchievementsProgressColorBackground)
+											.color(SteamContrast)
+											.height(8.0)
+											.progress_background(SteamContrast)
+									)
+							))
+							
+							.maybe_child(game.hasAchievements.then(||
+								label()
+									.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
+									.font_size(10.0)
+									.text_align(TextAlign::Center)
+									.width(Size::px(100.0))
+									.text(format!("{}%", percentUnlockedString))
+							))
+							
+							.maybe_child((!game.hasAchievements && game.loaded).then(||
+								label()
+									.font_size(10.0)
+									.text_align(TextAlign::Center)
+									.width(Size::px(100.0))
+									.text("Achievements N/A")
+							))
+							
+							.maybe_child((!game.hasAchievements && !game.loaded).then(||
+								label()
+									.font_size(10.0)
+									.text_align(TextAlign::Center)
+									.width(Size::px(100.0))
+									.text("Click to Load")
+							))
+					)
+			);
+	}
 }
 
-fn loadIcon<'a>(game: &Game) -> Vec<u8>
+impl GameListNode
 {
-	return match loadImageToBytes(
-			&Api::Platform.to_lowercase(),
-			&join!(Path_Games, game.id),
-			&jpg!(FileName_GameIcon)
-		)
+	pub fn new(id: u64) -> Self
 	{
-		Ok(bytes) => bytes,
-		Err(e) => {
-			println!("Error loading game list node icon: {:?}", e);
-			vec![]
-		},
-	};
+		return Self
+		{
+			gameId: id,
+		};
+	}
 }

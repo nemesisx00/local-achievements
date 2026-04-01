@@ -1,14 +1,14 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::steam::platform::Payload_GetOwnedGames;
+use crate::steam::{SteamAchievement, platform::Payload_GetOwnedGames};
 use super::game::Game;
 
 /**
 Profile information for a Steam user.
 */
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct User
+pub struct SteamUser
 {
 	/**
 	The list of games associated with this user which also have achievements
@@ -29,7 +29,7 @@ pub struct User
 	pub name: String,
 }
 
-impl User
+impl SteamUser
 {
 	pub const FileName: &str = "steam.json";
 	
@@ -113,6 +113,37 @@ impl User
 		return Ok(user);
 	}
 	
+	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
+	{
+		let text = search.into().to_lowercase();
+		let mut games = self.games.iter()
+			.filter(|g| g.name.to_lowercase().contains(&text))
+			.cloned()
+			.collect::<Vec<_>>();
+		games.sort();
+		
+		return games;
+	}
+	
+	pub fn getGame(&self, appId: u64) -> Option<Game>
+	{
+		return self.games.iter()
+			.find(|g| g.id == appId)
+			.cloned();
+	}
+	
+	pub fn getAchievement(&self, appId: impl Into<u64>, id: impl Into<String>) -> Option<SteamAchievement>
+	{
+		let achievementId = id.into();
+		return match self.getGame(appId.into())
+		{
+			None => None,
+			Some(g) => g.achievements.iter()
+				.find(|a| a.id == achievementId)
+				.cloned(),
+		};
+	}
+	
 	pub fn processOwnedGames(&mut self, payload: Payload_GetOwnedGames)
 	{
 		for game in payload.response.games
@@ -165,7 +196,7 @@ mod tests
 	#[test]
 	fn parseJsonLossy()
 	{
-		let result = User::parseJsonLossy(PartialJson.into());
+		let result = SteamUser::parseJsonLossy(PartialJson.into());
 		assert!(result.is_ok());
 		
 		let user = result.unwrap();

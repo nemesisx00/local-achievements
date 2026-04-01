@@ -1,73 +1,86 @@
-use freya::prelude::{component, fc_to_builder, rsx, use_memo, use_signal,
-	Element, GlobalSignal, Readable, Props};
-use freya::prelude::dioxus_elements::{self};
-use crate::Settings;
-use crate::components::numput::NumericInput;
-use crate::io::saveAppSettings;
+use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps,
+	IntoElement, Size, TextAlign, TextStyleExt, label, rect, use_side_effect,
+	use_state};
+use freya::radio::use_radio;
+use crate::components::NumericInput;
+use crate::data::AppData;
+use crate::data::radio::AppDataChannel;
 
-#[component]
-pub fn NotificationSettings(labelWidth: Option<String>) -> Element
+#[derive(Clone, PartialEq)]
+pub struct NotificationSettings
 {
-	let labelWidth = match labelWidth
+	labelWidth: Size,
+}
+
+impl Component for NotificationSettings
+{
+	fn render(&self) -> impl IntoElement
 	{
-		None => "20%".into(),
-		Some(lw) => lw,
-	};
-	
-	let duration = use_signal(|| Settings().notificationDuration);
-	
-	use_memo(move || {
-		Settings.write().notificationDuration = duration();
+		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
 		
-		match saveAppSettings(&Settings())
+		let duration = use_state(|| appData.read().app.settings.notificationDuration);
+		
+		use_side_effect(move || appData.write().app.settings.notificationDuration = duration());
+		
+		let labelWidth = self.labelWidth.clone();
+		
+		return rect()
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.margin(Gaps::new_all(10.0))
+			.spacing(5.0)
+			.width(Size::Fill)
+			
+			.child(
+				label()
+					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
+					.text_align(TextAlign::Center)
+					.width(Size::Fill)
+					.text("Notifications")
+			)
+			
+			.child(
+				rect()
+					.content(Content::Flex)
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::Center)
+					.spacing(10.0)
+					.width(Size::percent(75.0))
+					
+					.child(
+						label()
+							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
+							.min_width(Size::px(102.0))
+							.text_align(TextAlign::End)
+							.width(labelWidth)
+							.text("Duration")
+					)
+					
+					.child(
+						NumericInput::new(duration)
+							.max(5000u64)
+							.placeholder("1000")
+							.width(Size::flex(1.0))
+					)
+			);
+	}
+}
+
+impl NotificationSettings
+{
+	pub fn new() -> Self
+	{
+		return Self
 		{
-			Err(e) => println!("Failed to save application settings: {:?}", e),
-			Ok(()) => println!("Saved application settings"),
-		}
-	});
+			labelWidth: Size::percent(20.0),
+		};
+	}
 	
-	return rsx!(
-		rect
-		{
-			cross_align: "center",
-			direction: "vertical",
-			margin: "10",
-			spacing: "5",
-			width: "fill",
-			
-			label
-			{
-				margin: "0 0 5",
-				text_align: "center",
-				"Notifications"
-			}
-			
-			rect
-			{
-				content: "flex",
-				direction: "horizontal",
-				main_align: "center",
-				spacing: "5",
-				width: "75%",
-				
-				label
-				{
-					margin: "5 5 0 0",
-					min_width: "102",
-					text_align: "end",
-					width: "{labelWidth}",
-					"Duration"
-				}
-				
-				NumericInput
-				{
-					min: 500,
-					max: 5000,
-					placeholder: "1000",
-					value: duration,
-					width: "flex",
-				}
-			}
-		}
-	);
+	#[allow(unused)]
+	pub fn labelWidth(mut self, width: impl Into<Size>) -> Self
+	{
+		self.labelWidth = width.into();
+		return self;
+	}
 }

@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 use crate::constants::TheString;
 use crate::retroachievements::platform::{GameMetadata, Payload_GetGameInfo};
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Ord, Serialize)]
 pub struct System
 {
 	pub id: u64,

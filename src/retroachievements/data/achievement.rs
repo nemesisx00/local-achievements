@@ -7,9 +7,9 @@ use serde_json::{Map, Value};
 use crate::constants::{Format_ChronoDateTime, TheString};
 use crate::retroachievements::platform::AchievementMetadata;
 use super::makeRelative;
-use super::mode::AchievementMode;
+use super::mode::RetroAchievementsMode;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Ord, Serialize)]
 pub struct Achievement
 {
 	/// Number of users who have unlocked the achievement in Casual mode.
@@ -66,8 +66,8 @@ impl PartialOrd for Achievement
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{
-		let unlocked = self.unlocked(AchievementMode::Casual) || self.unlocked(AchievementMode::Hardcore);
-		let otherUnlocked = other.unlocked(AchievementMode::Casual) || other.unlocked(AchievementMode::Hardcore);
+		let unlocked = self.unlocked(RetroAchievementsMode::Casual) || self.unlocked(RetroAchievementsMode::Hardcore);
+		let otherUnlocked = other.unlocked(RetroAchievementsMode::Casual) || other.unlocked(RetroAchievementsMode::Hardcore);
 		
 		return match unlocked.partial_cmp(&otherUnlocked)
 		{
@@ -102,11 +102,11 @@ impl PartialOrd for Achievement
 
 impl Achievement
 {
-	pub fn formatEarnedTimestamp(&self, mode: AchievementMode) -> Result<String>
+	pub fn formatEarnedTimestamp(&self, mode: RetroAchievementsMode) -> Result<String>
 	{
 		if let Some(timestamp) = match mode {
-				AchievementMode::Casual => &self.earnedTimestampCasual,
-				AchievementMode::Hardcore => &self.earnedTimestampHardcore,
+				RetroAchievementsMode::Casual => &self.earnedTimestampCasual,
+				RetroAchievementsMode::Hardcore => &self.earnedTimestampHardcore,
 			}
 		{
 			let dt = self.parseTimestamp(timestamp)?;
@@ -260,24 +260,28 @@ impl Achievement
 		};
 	}
 	
-	pub fn unlocked(&self, mode: AchievementMode) -> bool
+	pub fn unlocked(&self, mode: RetroAchievementsMode) -> bool
 	{
 		return match mode
 		{
-			AchievementMode::Casual => self.earnedTimestampCasual.is_some(),
-			AchievementMode::Hardcore => self.earnedTimestampHardcore.is_some(),
+			RetroAchievementsMode::Casual => self.earnedTimestampCasual.is_some(),
+			RetroAchievementsMode::Hardcore => self.earnedTimestampHardcore.is_some(),
 		};
 	}
 	
-	pub fn unlockedPercent(&self, mode: AchievementMode, distinctPlayers: u64) -> f64
+	pub fn unlockedPercent(&self, mode: RetroAchievementsMode, distinctPlayers: u64) -> f64
 	{
-		return (match mode
+		return match distinctPlayers > 0
 		{
-			AchievementMode::Casual => self.awardedCasual,
-			AchievementMode::Hardcore => self.awardedHardcore,
-		} as f64
-			/ distinctPlayers as f64)
-		* 100.0;
+			false => 0 as f64,
+			true => (match mode
+			{
+				RetroAchievementsMode::Casual => self.awardedCasual,
+				RetroAchievementsMode::Hardcore => self.awardedHardcore,
+			} as f64
+				/ distinctPlayers as f64)
+			* 100.0,
+		};
 	}
 	
 	pub fn update(&mut self, achievement: &AchievementMetadata)

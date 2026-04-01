@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Number;
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum AwardKind
 {
 	#[default]

@@ -1,121 +1,165 @@
-use freya::prelude::{component, dioxus_elements, dynamic_bytes, fc_to_builder,
-	rsx, Element, GlobalSignal, IntoDynNode, Loader, Props, Readable};
-use crate::steam::SteamAchievement;
-use crate::io::{loadImageToBytes, Path_Games};
-use crate::steam::platform::api::Api;
+use std::path::PathBuf;
+use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
+	ChildrenExt, CircularLoader, Component, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Content, CornerRadius, Direction, Gaps,
+	ImageViewer, IntoElement, Size, StyleExt, TextAlign, TextStyleExt, label,
+	rect};
+use freya::radio::use_radio;
+use crate::data::AppData;
+use crate::data::radio::AppDataChannel;
+use crate::net::limiter::request::FileLocation;
+use crate::{join, jpg, jpgAlt};
 use crate::constants::{BorderColor, Icon_Locked};
-use crate::{join, jpg, jpgAlt, SteamUserData};
+use crate::io::{Path_Games, getImagePath};
+use crate::steam::platform::api::SteamApi;
 
-#[component]
-pub fn AchievementElement(appId: u64, id: String) -> Element
+#[derive(Clone, Default, PartialEq)]
+pub struct AchievementElement
 {
-	let achievement = match SteamUserData().games.iter()
-		.find(|g| g.id == appId)
-	{
-		None => SteamAchievement::default(),
-		Some(game) => match game.achievements.iter()
-			.find(|a| a.id == id)
-		{
-			None => SteamAchievement::default(),
-			Some(a) => a.clone(),
-		}
-	};
-	
-	let iconName = match achievement.unlocked()
-	{
-		true => jpg!(achievement.id),
-		false => jpgAlt!(achievement.id, Icon_Locked),
-	};
-	
-	let bytes = loadIcon(
-		&Api::Platform.to_lowercase(),
-		&join!(Path_Games, appId),
-		&iconName
-	);
-	
-	let timestamp = match achievement.formatTimestamp()
-	{
-		None => String::default(),
-		Some(ts) => ts,
-	};
-	
-	let globalPercentage = match achievement.globalPercentage
-	{
-		Some(gp) => format!("{}% of players have this achievement", gp),
-		None => String::default(),
-	};
-	
-	return rsx!(
-		rect
-		{
-			direction: "horizontal",
-			main_align: "space-around",
-			margin: "5 0",
-			width: "fill",
-			
-			rect
-			{
-				border: "1 center {BorderColor}",
-				corner_radius: "10",
-				direction: "horizontal",
-				main_align: "space-between",
-				margin: "5",
-				min_height: "64",
-				min_width: "540",
-				padding: "5 10",
-				width: "50%",
-				
-				rect
-				{
-					direction: "horizontal",
-					spacing: "10",
-					
-					match bytes.is_empty()
-					{
-						true => rsx!(Loader{}),
-						false => rsx!(image
-						{
-							image_data: dynamic_bytes(bytes),
-							width: "64",
-						})
-					}
-					
-					rect
-					{
-						direction: "vertical",
-						height: "100%",
-						main_align: "space-between",
-						min_height: "64",
-						max_height: "256",
-						spacing: "15",
-						width: "60%",
-						
-						label { "{achievement.name}" }
-						label { font_size: "10", "{achievement.description}" }
-					}
-				}
-				
-				rect
-				{
-					cross_align: "end",
-					direction: "vertical",
-					height: "100%",
-					main_align: "space-between",
-					width: "200",
-					
-					label { font_size: "10", text_align: "end", "{globalPercentage}"}
-					label { font_size: "10", text_align: "end", "{timestamp}" }
-				}
-			}
-		}
-	);
+	gameId: u64,
+	id: String,
 }
 
-fn loadIcon<'a>(platform: &String, group: &String, fileName: &String) -> Vec<u8>
+impl Component for AchievementElement
 {
-	return match loadImageToBytes(platform, group, fileName)
+	fn render(&self) -> impl IntoElement
 	{
-		Ok(b) => b,
-		Err(_) => vec![],
-	};
+		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
+		
+		let achievement = appData.read().user.steam
+			.getAchievement(self.gameId, self.id.clone())
+			.unwrap_or_default();
+		
+		let iconPath = getImagePath(&FileLocation
+		{
+			fileName: match achievement.unlocked()
+			{
+				false => jpgAlt!(achievement.id, Icon_Locked),
+				true => jpg!(achievement.id),
+			},
+			group: join!(Path_Games, self.gameId),
+			platform: SteamApi::Platform.to_lowercase(),
+		});
+		
+		let timestamp = achievement.formatTimestamp()
+			.unwrap_or_default();
+		
+		let globalPercentage = match achievement.globalPercentage
+		{
+			None => Default::default(),
+			Some(gp) => format!("{}% of players have this achievement", gp),
+		};
+		
+		return rect()
+			.direction(Direction::Horizontal)
+			.main_align(Alignment::SpaceAround)
+			//.margin(Gaps::new_symmetric(5.0, 0.0))
+			.width(Size::Fill)
+			
+			.child(
+				rect()
+					.border(Some(
+						Border::new()
+							.alignment(BorderAlignment::Center)
+							.fill(BorderColor)
+							.width(BorderWidth::from(1.0))
+					))
+					.corner_radius(CornerRadius::new_all(10.0))
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::SpaceBetween)
+					.margin(Gaps::new_symmetric(5.0, 0.0))
+					.min_height(Size::px(64.0))
+					.min_width(Size::px(540.0))
+					.padding(Gaps::new_symmetric(10.0, 10.0))
+					.width(Size::percent(50.0))
+					
+					.maybe_child(iconPath.is_none().then(||
+						CircularLoader::new()
+					))
+					
+					.maybe_child(iconPath.is_some().then(||
+						rect()
+							.cross_align(Alignment::Center)
+							.main_align(Alignment::Center)
+							
+							.child(
+								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+									.width(Size::px(64.0))
+							)
+					))
+					
+					.child(
+						rect()
+							.content(Content::Flex)
+							.direction(Direction::Vertical)
+							//.min_height(Size::px(40.0))
+							//.padding(Gaps::new(0.0, 20.0, 0.0, 0.0))
+							.spacing(10.0)
+							.width(Size::percent(80.0))
+							
+							.child(
+								rect()
+									.cross_align(Alignment::Center)
+									.direction(Direction::Horizontal)
+									.main_align(Alignment::SpaceBetween)
+									.width(Size::percent(100.0))
+									
+									.child(
+										label()
+											.text(achievement.name)
+											.width(Size:: percent(100.0))
+									)
+							)
+							
+							.child(
+								rect()
+									.direction(Direction::Horizontal)
+									.main_align(Alignment::Start)
+									.width(Size::percent(100.0))
+									
+									.child(
+										label()
+											.font_size(10.0)
+											.text(achievement.description)
+									)
+							)
+							
+							.child(
+								rect()
+									.content(Content::Flex)
+									.direction(Direction::Horizontal)
+									.main_align(Alignment::SpaceBetween)
+									.width(Size::percent(100.0))
+									
+									.child(
+										label()
+											.font_size(10.0)
+											.text_align(TextAlign::Start)
+											.text(timestamp)
+											.width(Size::flex(0.5))
+									)
+									
+									.child(
+										label()
+											.font_size(10.0)
+											.text_align(TextAlign::End)
+											.text(globalPercentage)
+											.width(Size::flex(0.5))
+									)
+							)
+					)
+			);
+	}
+}
+
+impl AchievementElement
+{
+	pub fn new(gameId: impl Into<u64>, id: impl Into<String>) -> Self
+	{
+		return Self
+		{
+			gameId: gameId.into(),
+			id: id.into(),
+		};
+	}
 }

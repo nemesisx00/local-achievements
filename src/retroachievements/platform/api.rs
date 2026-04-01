@@ -3,36 +3,28 @@ use std::io::ErrorKind;
 use std::path::Path;
 use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
-use reqwest::Client;
 use serde::de::DeserializeOwned;
-use crate::constants::Icon_Locked;
-use crate::io::{getImagePath, FileName_GameIcon, Path_Avatars, Path_Games};
-use crate::util::cacheImageIfNotExists;
-use crate::{join, png, pngAlt};
-use crate::retroachievements::makeRelative;
 use super::{Payload_GetGameInfo, Payload_GetUserCompletionProgress,
-	Payload_GetUserProfile, AuthData};
+	Payload_GetUserProfile, RetroAchievementsAuth};
 
-#[derive(Clone, Debug, Default)]
-pub struct Api
+#[derive(Clone, Debug)]
+pub struct RetroAchievementsApi
 {
-	pub auth: AuthData,
-	pub client: Client,
+	pub auth: RetroAchievementsAuth,
 }
 
-impl From<AuthData> for Api
+impl From<RetroAchievementsAuth> for RetroAchievementsApi
 {
-	fn from(value: AuthData) -> Self
+	fn from(value: RetroAchievementsAuth) -> Self
 	{
 		return Self
 		{
 			auth: value,
-			..Default::default()
 		};
 	}
 }
 
-impl Api
+impl RetroAchievementsApi
 {
 	const BaseUrl: &str = "https://retroachievements.org/API/";
 	const MediaUrl: &str = "https://media.retroachievements.org/";
@@ -46,108 +38,16 @@ impl Api
 	pub const BadgePath: &str = "Badge";
 	pub const BadgeLockedSuffix: &str = "lock";
 	
-	const Parameter_ApiUsername: &str = "z";
 	const Parameter_ApiKey: &str = "y";
+	const Parameter_ApiUsername: &str = "u";
 	
 	pub const Platform: &str = "RetroAchievements";
 	
-	pub async fn cacheIcon_Achievements(&self, gameId: u64, payload: &Payload_GetGameInfo, force: bool) -> Result<()>
+	pub fn sanitizeIconTitle(title: &String) -> String
 	{
-		let group = join!(Path_Games, gameId.to_string());
-		let platform = Self::Platform.into();
-		
-		for achievement in payload.Achievements.values()
-		{
-			let filename = png!(achievement.Title);
-			let filenameLocked = pngAlt!(achievement.Title, Icon_Locked);
-			
-			if let Some(url) = self.buildUrl(&Self::MediaUrl, join!(Self::BadgePath, png!(achievement.BadgeName)).as_str())
-			{
-				if let Some(path) = getImagePath(&platform, &group, &filename)
-				{
-					cacheImageIfNotExists(
-						&self.client,
-						&url,
-						&path,
-						&platform,
-						&group,
-						&filename,
-						force
-					).await?;
-				}
-			}
-			
-			if let Some(url) = self.buildUrl(&Self::MediaUrl, join!(Self::BadgePath, pngAlt!(achievement.BadgeName, Self::BadgeLockedSuffix)).as_str())
-			{
-				if let Some(path) = getImagePath(&platform, &group, &filenameLocked)
-				{
-					cacheImageIfNotExists(
-						&self.client,
-						&url,
-						&path,
-						&platform,
-						&group,
-						&filenameLocked,
-						force
-					).await?;
-				}
-			}
-		}
-		
-		return Ok(());
-	}
-	
-	pub async fn cacheIcon_Games(&self, payload: &Payload_GetUserCompletionProgress, force: bool) -> Result<()>
-	{
-		let filename = png!(FileName_GameIcon);
-		let platform = Self::Platform.into();
-		
-		for game in payload.Results.iter()
-		{
-			if let Some(url) = self.buildUrl(&Self::MediaUrl, &makeRelative(&game.ImageIcon))
-			{
-				let group = join!(Path_Games, game.GameID.to_string());
-				if let Some(path) = getImagePath(&platform, &group, &filename)
-				{
-					cacheImageIfNotExists(
-						&self.client,
-						&url,
-						&path,
-						&platform,
-						&group,
-						&filename,
-						force
-					).await?;
-				}
-			}
-		}
-		
-		return Ok(());
-	}
-	
-	pub async fn cacheProfileAvatar(&self, ulid: &String, endpoint: &String, force: bool) -> Result<()>
-	{
-		if let Some(url) = self.buildUrl(&Self::MediaUrl, endpoint)
-		{
-			let filename = png!(ulid);
-			let group = Path_Avatars.into();
-			let platform = Self::Platform.into();
-			
-			if let Some(path) = getImagePath(&platform, &group, &filename)
-			{
-				cacheImageIfNotExists(
-					&self.client,
-					&url,
-					&path,
-					&platform,
-					&group,
-					&filename,
-					force
-				).await?;
-			}
-		}
-		
-		return Ok(());
+		return title
+			.replace("/", " - ")
+			.replace("\\", " - ");
 	}
 	
 	/**
@@ -232,20 +132,22 @@ impl Api
 	DateEarned | String ; optional
 	DateEarnedHardcore | String ; optional
 	*/
-	pub async fn getGameInfo(&self, ulid: &String, gameId: u64) -> Result<Payload_GetGameInfo>
+	#[allow(unused)]
+	pub fn getGameInfo(&self, ulid: &String, gameId: u64) -> Result<Payload_GetGameInfo>
 	{
 		let mut parameters = self.generateParameterMap();
 		parameters.remove(Self::Parameter_ApiUsername);
-		parameters.insert("u".into(), ulid.to_owned());
+		parameters.insert("u".into(), ulid.clone());
 		parameters.insert("g".into(), gameId.to_string());
 		parameters.insert("a".into(), "1".into());
 		
 		return Ok(self.get::<Payload_GetGameInfo>(
 			&Self::Endpoint_GetGameInfo.into(),
 			&parameters
-		).await
+		)
 			.context(format!(
-				"Error retrieving user profile for username {}",
+				"Error retrieving game info for {} from username {}",
+				gameId,
 				self.auth.username
 			))?);
 	}
@@ -300,11 +202,11 @@ impl Api
 	HighestAwardKind | String
 	HighestAwardDate | Timestamp string
 	*/
-	pub async fn getUserCompletionProgress(&self, ulid: Option<String>, offset: Option<u64>) -> Result<Payload_GetUserCompletionProgress>
+	pub fn getUserCompletionProgress(&self, ulid: Option<String>, offset: Option<u64>) -> Result<Payload_GetUserCompletionProgress>
 	{
 		let mut parameters = self.generateParameterMap();
 		parameters.remove(Self::Parameter_ApiUsername);
-		parameters.insert("u".into(), match ulid
+		parameters.insert("u".into(), match ulid.clone()
 		{
 			Some(ulid) => ulid,
 			None => self.auth.username.to_owned(),
@@ -319,10 +221,11 @@ impl Api
 		return Ok(self.get::<Payload_GetUserCompletionProgress>(
 			&Self::Endpoint_GetUserGameCompletion.into(),
 			&parameters
-		).await
+		)
 			.context(format!(
-				"Error retrieving user profile for username {}",
-				self.auth.username
+				"Error retrieving user completion progress for username {} (ulid {})",
+				self.auth.username,
+				ulid.unwrap_or_default(),
 			))?);
 	}
 	
@@ -370,7 +273,7 @@ impl Api
 	UserWallActive | bool
 	Motto | String
 	*/
-	pub async fn getUserProfile(&self, ulid: Option<String>) -> Result<Payload_GetUserProfile>
+	pub fn getUserProfile(&self, ulid: Option<String>) -> Result<Payload_GetUserProfile>
 	{
 		let mut parameters = self.generateParameterMap();
 		parameters.remove(Self::Parameter_ApiUsername);
@@ -383,11 +286,16 @@ impl Api
 		return Ok(self.get::<Payload_GetUserProfile>(
 			&Self::Endpoint_GetUserProfile.into(),
 			&parameters
-		).await
+		)
 			.context(format!(
 				"Error retrieving user profile for username {}",
 				self.auth.username
 			))?);
+	}
+	
+	pub fn buildMediaUrl(&self, endpoint: &str) -> Option<String>
+	{
+		return self.buildUrl(Self::MediaUrl, endpoint);
 	}
 	
 	/**
@@ -417,23 +325,24 @@ impl Api
 	/**
 	Execute an HTTP GET request.
 	*/
-	async fn get<T>(&self, endpoint: &String, parameters: &HashMap<String, String>) -> Result<T>
+	fn get<T>(&self, endpoint: &String, parameters: &HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
 		if let Some(url) = self.buildUrl(Self::BaseUrl, endpoint)
 		{
-			let mut params = String::from("?");
+			let mut params = String::default();
 			for (k, v) in parameters
 			{
 				params = format!("{}&{}={}", params, k, v);
 			}
 			
-			let requestUrl = format!("{}{}", url, params);
+			let requestUrl = format!("{}?{}", url, params.split_off(1));
 			
-			let response = self.client.get(requestUrl)
-				.send().await
+			let response = ureq::get(requestUrl)
+				.call()
 					.context("Error retrieving RetroAchievements API response")?
-				.json::<T>().await
+				.body_mut()
+				.read_json::<T>()
 					.context("Error parsing RetroAchievements API response as JSON")?;
 			
 			return Ok(response);

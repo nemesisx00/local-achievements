@@ -1,102 +1,119 @@
-use dioxus::hooks::use_memo;
-use freya::hooks::{cow_borrowed, theme_with};
-use freya::prelude::{Button, Element, GlobalSignal, ProgressBar,
-	ProgressBarThemeWith, Readable, component, dioxus_elements, fc_to_builder,
-	rsx};
-use crate::Rpcs3UserData;
-use crate::constants::{RetroAchievementsProgressColorBackground,
-	RetroAchievementsProgressColorHardcore};
-use super::content::refresh;
+use freya::icons::lucide;
+use freya::prelude::{AccessibilityExt, Alignment, Button, ChildrenExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, IntoElement, ProgressBar, ProgressBarThemePartialExt, Size, TextAlign, TextStyleExt, label, rect, spawn, svg};
+use freya::radio::use_radio;
+use crate::constants::{RetroAchievementsProgressColorHardcore, TextColor};
+use crate::data::AppData;
+use crate::data::radio::AppDataChannel;
+use crate::rpcs3::components::refresh::refreshUserData;
+use crate::util::truncateF32;
 
-#[component]
-pub fn UserProfile() -> Element
+pub fn Rpcs3ProfileElement() -> impl IntoElement
 {
-	use_memo(move || {
-		Rpcs3UserData.write().calculatePoints();
-	});
+	let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Rpcs3);
 	
-	let percent = (Rpcs3UserData().pointsToNextLevel() as f32
-			/ Rpcs3UserData().pointTotalForLevel() as f32)
-		* 100f32;
+	let level = appData.read().user.rpcs3.level();
+	let platinumCount = appData.read().user.rpcs3.platinumCount().to_string();
+	let pointsToNextLevel = appData.read().user.rpcs3.pointsToNextLevel() as f32;
+	let pointTotalForLevel = appData.read().user.rpcs3.pointTotalForLevel() as f32;
 	
-	let mut username = Rpcs3UserData().name;
-	if username.is_empty()
+	let username = match appData.read().user.rpcs3.name.is_empty()
 	{
-		username = Rpcs3UserData().formatAccountId();
-	}
+		false => appData.read().user.rpcs3.formatAccountId(),
+		true => appData.read().user.rpcs3.name.clone(),
+	};
 	
-	return rsx!(
-		rect
-		{
-			direction: "horizontal",
-			main_align: "space-between",
-			spacing: "25",
-			width: "flex",
-			
-			rect
-			{
-				direction: "vertical",
-				main_align: "space-around",
-				spacing: "10",
-				
-				label
-				{
-					main_align: "center",
-					text_align: "center",
-					
-					"{username}"
-				}
-				
-				Button
-				{
-					onclick: move |_| refresh(),
-					
-					label
-					{
-						main_align: "center",
-						text_align: "center",
-						"Refresh"
-					}
-				}
-			}
-			
-			rect
-			{
-				direction: "vertical",
-				main_align: "space-around",
-				spacing: "10",
-				
-				rect
-				{
-					content: "flex",
-					cross_align: "center",
-					direction: "horizontal",
-					main_align: "start",
-					spacing: "10",
-					
-					label { "Level {Rpcs3UserData().level()}" }
-					
-					ProgressBar
-					{
-						width: "flex",
-						progress: percent,
-						theme: theme_with!(ProgressBarTheme {
-							background: cow_borrowed!(RetroAchievementsProgressColorBackground),
-							height: cow_borrowed!("8"),
-							progress_background: cow_borrowed!(RetroAchievementsProgressColorHardcore),
-						}),
-					}
-				}
-				
-				label
-				{
-					main_align: "center",
-					text_align: "center",
-					width: "flex",
-					
-					"Platinums {Rpcs3UserData().platinumCount()}"
-				}
-			}
-		}
+	let percent = truncateF32(
+		(pointsToNextLevel / pointTotalForLevel) * 100.0,
+		2
 	);
+	
+	return rect()
+		.direction(Direction::Horizontal)
+		.main_align(Alignment::SpaceBetween)
+		.spacing(25.0)
+		.width(Size::Fill)
+		
+		.child(
+			rect()
+				.direction(Direction::Vertical)
+				.main_align(Alignment::SpaceAround)
+				.spacing(10.0)
+				.width(Size::percent(40.0))
+				
+				.child(
+					label()
+						.text_align(TextAlign::Center)
+						.width(Size::Fill)
+						.text(username)
+				)
+				
+				.child(
+					Button::new()
+						.on_press(move |_| _ = spawn(async move {
+							let refreshedData = refreshUserData(appData.read().clone()).await;
+							appData.write().user.rpcs3 = refreshedData.user.rpcs3;
+						}))
+						
+						.child(
+							svg(lucide::refresh_ccw())
+								.color(TextColor)
+								.height(Size::px(32.0))
+								.width(Size::px(32.0))
+								.a11y_alt("Refresh")
+						)
+				)
+		)
+		
+		.child(
+			rect()
+				.direction(Direction::Vertical)
+				.main_align(Alignment::SpaceAround)
+				.spacing(10.0)
+				.width(Size::percent(55.0))
+				
+				.child(
+					rect()
+						.content(Content::Flex)
+						.cross_align(Alignment::Center)
+						.direction(Direction::Horizontal)
+						.main_align(Alignment::Start)
+						.spacing(10.0)
+						.width(Size::Fill)
+						
+						.child(
+							label()
+								.text(format!("Level {}", level))
+						)
+						
+						.child(
+							ProgressBar::new(percent)
+								//Match the background color until more properties are exposed to customize the text
+								.color(RetroAchievementsProgressColorHardcore)
+								.progress_background(RetroAchievementsProgressColorHardcore)
+								.width(Size::Fill)
+						)
+				)
+				
+				.child(
+					rect()
+						.content(Content::Flex)
+						.direction(Direction::Horizontal)
+						.main_align(Alignment::Start)
+						.width(Size::flex(1.0))
+						
+						.child(
+							label()
+								.text_align(TextAlign::Start)
+								.width(Size::flex(1.5))
+								.text("Platinums")
+						)
+						
+						.child(
+							label()
+								.text_align(TextAlign::End)
+								.width(Size::flex(0.5))
+								.text(platinumCount)
+						)
+				)
+		);
 }
