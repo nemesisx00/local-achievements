@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-
-use crate::battlenet::{data::region::Region, platform::data::starcraft2::{account::PayloadPlayer, profile::profile::PayloadProfile}};
+use crate::battlenet::data::region::Region;
+use crate::battlenet::platform::data::starcraft2::account::PayloadPlayer;
+use crate::battlenet::platform::data::starcraft2::profile::profile::PayloadProfile;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ProfileStarcraft2
