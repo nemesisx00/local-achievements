@@ -38,6 +38,7 @@ impl AuthorizationManager
 				color: rgb(204, 204, 204);
 				background-color: rgb(35, 35, 35);
 				height: 100vh;
+				overflow: hidden;
 				width: 100vw;
 			}
 			
