@@ -1,18 +1,17 @@
 use std::cmp::Ordering;
-use crate::net::limiter::request::{GogOperation, RetroAchievementsOperation,
-	SteamOperation};
+use crate::net::limiter::request::{BattleNetOperation, GogOperation, RetroAchievementsOperation, SteamOperation};
 use super::location::FileLocation;
 use super::operation::DataOperation;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord)]
-pub struct RequestData
+pub struct DataRequest
 {
 	pub destination: Option<FileLocation>,
 	pub operation: DataOperation,
 	pub url: Option<String>,
 }
 
-impl Default for RequestData
+impl Default for DataRequest
 {
 	fn default() -> Self
 	{
@@ -25,7 +24,19 @@ impl Default for RequestData
 	}
 }
 
-impl From<GogOperation> for RequestData
+impl From<BattleNetOperation> for DataRequest
+{
+	fn from(value: BattleNetOperation) -> Self
+	{
+		return Self
+		{
+			operation: DataOperation::BattleNet(value),
+			..Default::default()
+		};
+	}
+}
+
+impl From<GogOperation> for DataRequest
 {
 	fn from(value: GogOperation) -> Self
 	{
@@ -37,7 +48,7 @@ impl From<GogOperation> for RequestData
 	}
 }
 
-impl From<RetroAchievementsOperation> for RequestData
+impl From<RetroAchievementsOperation> for DataRequest
 {
 	fn from(value: RetroAchievementsOperation) -> Self
 	{
@@ -49,7 +60,7 @@ impl From<RetroAchievementsOperation> for RequestData
 	}
 }
 
-impl From<SteamOperation> for RequestData
+impl From<SteamOperation> for DataRequest
 {
 	fn from(value: SteamOperation) -> Self
 	{
@@ -61,7 +72,7 @@ impl From<SteamOperation> for RequestData
 	}
 }
 
-impl PartialOrd for RequestData
+impl PartialOrd for DataRequest
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering>
 	{

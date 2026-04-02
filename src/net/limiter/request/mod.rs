@@ -14,6 +14,6 @@ pub use gog::GogOperation;
 pub use location::FileLocation;
 pub use operation::DataOperation;
 pub use retro::RetroAchievementsOperation;
-pub use request::RequestData;
+pub use request::DataRequest;
 pub use result::DataOperationResult;
 pub use steam::SteamOperation;

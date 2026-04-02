@@ -5,7 +5,7 @@ use crate::data::secure::getSteamAuth;
 use crate::io::{FileName_GameIcon, Path_Games, saveUserData_Steam};
 use crate::{join, jpg, jpgAlt};
 use crate::net::limiter::request::{DataOperation, DataOperationResult,
-	FileLocation, RequestData, SteamOperation};
+	FileLocation, DataRequest, SteamOperation};
 use crate::steam::SteamApi;
 
 pub async fn handleDataOperation(mut appData: AppData, operation: SteamOperation) -> Option<DataOperationResult>
@@ -13,58 +13,38 @@ pub async fn handleDataOperation(mut appData: AppData, operation: SteamOperation
 	return match operation
 	{
 		SteamOperation::GetGameList => {
-			let (appData, requests) = refreshGameList(appData).await;
+			let result = refreshGameList(appData).await;
 			info!("[Steam API] Refreshed game list");
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		SteamOperation::GetGlobalPercentages(id) => {
 			let appData = refreshGlobalPercentages(appData, id).await;
 			info!("[Steam API] Refreshed global percentages for app id {}", id);
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests: vec![],
-			})
+			Some(appData.into())
 		}
 		
 		SteamOperation::GetPlayerAchievements(id) => {
 			let appData = refreshGameAchievements(appData, id).await;
 			info!("[Steam API] Refreshed achievements for app id {}", id);
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests: vec![],
-			})
+			Some(appData.into())
 		}
 		
 		SteamOperation::GetPlayerSummary => {
-			let (appData, requests) = refreshPlayerSummary(appData).await;
+			let result = refreshPlayerSummary(appData).await;
 			info!("[Steam API] Refreshed player summary");
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		SteamOperation::GetSchemaForGame(id)  => {
-			let (appData, requests) = refreshGameSchema(appData, id).await;
+			let result = refreshGameSchema(appData, id).await;
 			info!("[Steam API] Refreshed schema for app id {}", id);
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		SteamOperation::SaveToFile => {
@@ -84,16 +64,12 @@ pub async fn handleDataOperation(mut appData: AppData, operation: SteamOperation
 				game.loaded = loaded;
 			}
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests: vec![],
-			})
+			Some(appData.into())
 		}
 	};
 }
 
-async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData>)
+async fn refreshPlayerSummary(mut appData: AppData) -> DataOperationResult
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -123,7 +99,7 @@ async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData
 						i
 					);
 					
-					requests.push(RequestData
+					requests.push(DataRequest
 					{
 						destination: Some(avatarDestination),
 						operation: DataOperation::CacheImage,
@@ -134,10 +110,14 @@ async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
-async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
+async fn refreshGameList(mut appData: AppData) -> DataOperationResult
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -162,7 +142,7 @@ async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
 				
 				let url = SteamApi::constructGameIconUrl(game.id, &game.iconHash);
 				
-				requests.push(RequestData
+				requests.push(DataRequest
 				{
 					destination: Some(destination),
 					operation: DataOperation::CacheImage,
@@ -172,7 +152,11 @@ async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
 /*
@@ -188,7 +172,7 @@ if let Ok(payload) = api.getRecentlyPlayedGames().await
 }
 */
 
-async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
+async fn refreshGameSchema(mut appData: AppData, id: u64) -> DataOperationResult
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -211,7 +195,7 @@ async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<Reque
 				for achievement in achievements
 				{
 					//Unlocked
-					requests.push(RequestData
+					requests.push(DataRequest
 					{
 						destination: Some(FileLocation
 						{
@@ -224,7 +208,7 @@ async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<Reque
 					});
 					
 					//Locked
-					requests.push(RequestData
+					requests.push(DataRequest
 					{
 						destination: Some(FileLocation
 						{
@@ -240,7 +224,11 @@ async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<Reque
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
 async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData

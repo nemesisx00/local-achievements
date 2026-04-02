@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicU64;
 use chrono::{DateTime, Utc};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use super::request::RequestData;
+use super::request::DataRequest;
 
 #[derive(Debug, Default)]
 pub struct RateLimiter
@@ -15,7 +15,7 @@ pub struct RateLimiter
 	capacity: AtomicU64,
 	lastUsed: Arc<Mutex<DateTime<Utc>>>,
 	lastRefunded: AtomicBool,
-	requests: Arc<Mutex<VecDeque<RequestData>>>,
+	requests: Arc<Mutex<VecDeque<DataRequest>>>,
 	used: AtomicU64,
 }
 
@@ -74,7 +74,7 @@ impl RateLimiter
 		};
 	}
 	
-	pub async fn next(&self) -> Option<RequestData>
+	pub async fn next(&self) -> Option<DataRequest>
 	{
 		self.decayUses().await;
 		
@@ -117,7 +117,7 @@ impl RateLimiter
 	}
 	
 	#[allow(unused)]
-	pub async fn push(&self, request: RequestData)
+	pub async fn push(&self, request: DataRequest)
 	{
 		let mut requests = self.requests.lock()
 			.await;
@@ -127,7 +127,7 @@ impl RateLimiter
 			.sort();
 	}
 	
-	pub async fn pushAll(&self, requestList: Vec<RequestData>)
+	pub async fn pushAll(&self, requestList: Vec<DataRequest>)
 	{
 		if !requestList.is_empty()
 		{

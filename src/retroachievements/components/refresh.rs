@@ -5,7 +5,7 @@ use crate::data::secure::getRetroAchievementsAuth;
 use crate::io::{FileName_GameIcon, Path_Avatars, Path_Games,
 	saveUserData_RetroAchievements};
 use crate::net::limiter::request::{DataOperation, DataOperationResult,
-	FileLocation, RequestData, RetroAchievementsOperation};
+	FileLocation, DataRequest, RetroAchievementsOperation};
 use crate::{join, png, pngAlt};
 use crate::retroachievements::{RetroAchievementsApi,
 	RetroAchievementsProgressState, makeRelative};
@@ -15,36 +15,24 @@ pub async fn handleDataOperation(appData: AppData, operation: RetroAchievementsO
 	return match operation
 	{
 		RetroAchievementsOperation::GetGameInfo(id) => {
-			let (appData, requests) = refreshGameInfo(appData, id);
+			let result = refreshGameInfo(appData, id);
 			info!("[RetroAchievements] Refreshed game info for {}", id);
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		RetroAchievementsOperation::GetUserProfile => {
-			let (appData, requests) = refreshUserProfile(appData);
+			let result = refreshUserProfile(appData);
 			info!("[RetroAchievements] Refreshed user profile");
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		RetroAchievementsOperation::GetUserProgress(state) => {
-			let (appData, requests) = refreshUserProgress(appData, state.clone());
+			let result = refreshUserProgress(appData, state.clone());
 			info!("[RetroAchievements] Refreshed user progress");
 			
-			Some(DataOperationResult
-			{
-				appData,
-				requests,
-			})
+			Some(result)
 		}
 		
 		RetroAchievementsOperation::SaveToFile => {
@@ -59,7 +47,7 @@ pub async fn handleDataOperation(appData: AppData, operation: RetroAchievementsO
 	};
 }
 
-fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
+fn refreshUserProfile(mut appData: AppData) -> DataOperationResult
 {
 	let mut requests = vec![];
 	
@@ -74,7 +62,7 @@ fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 			{
 				if let Some(avatarPath) = appData.user.retroAchievements.avatar.clone()
 				{
-					requests.push(RequestData
+					requests.push(DataRequest
 					{
 						destination: Some(FileLocation
 						{
@@ -91,11 +79,14 @@ fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
-fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgressState)
-	-> (AppData, Vec<RequestData>)
+fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgressState) -> DataOperationResult
 {
 	let mut requests = vec![];
 	
@@ -127,7 +118,7 @@ fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgres
 				{
 					if let Some(url) = RetroAchievementsApi::buildMediaUrl(&makeRelative(&game.ImageIcon))
 					{
-						requests.push(RequestData
+						requests.push(DataRequest
 						{
 							destination: Some(FileLocation
 							{
@@ -144,10 +135,14 @@ fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgres
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
-fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
+fn refreshGameInfo(mut appData: AppData, id: u64) -> DataOperationResult
 {
 	let mut requests = vec![];
 	
@@ -187,7 +182,7 @@ fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 						).as_str()
 					)
 					{
-						requests.push(RequestData
+						requests.push(DataRequest
 						{
 							destination: Some(FileLocation
 							{
@@ -212,7 +207,7 @@ fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 						).as_str()
 					)
 					{
-						requests.push(RequestData
+						requests.push(DataRequest
 						{
 							destination: Some(FileLocation
 							{
@@ -230,5 +225,9 @@ fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }

@@ -8,7 +8,7 @@ use crate::gog::{GogAchievement, GogApi, GogSession};
 use crate::io::{Path_Avatars, Path_Games, saveUserData_Gog};
 use crate::{join, jpg, jpgAlt};
 use crate::net::limiter::request::{DataOperation, FileLocation, GogOperation,
-	DataOperationResult, RequestData};
+	DataOperationResult, DataRequest};
 
 pub fn exchangeCode(url: String)
 {
@@ -40,14 +40,10 @@ pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> O
 		{
 			Err(_) => None,
 			Ok(session) => {
-				let (appData, requests) = refreshGameAchievements(appData, session, id);
+				let result = refreshGameAchievements(appData, session, id);
 				info!("[GOG] Refreshed achievements for game id {}", id);
 				
-				Some(DataOperationResult
-				{
-					appData,
-					requests,
-				})
+				Some(result)
 			}
 		}
 		
@@ -55,18 +51,14 @@ pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> O
 		{
 			Err(_) => None,
 			Ok(session) => {
-				let (appData, requests) = refreshGameList(appData, session, page);
+				let result = refreshGameList(appData, session, page);
 				info!("[GOG] Refreshed game list page {}", match page
 				{
 					None => 1,
 					Some(p) => p,
 				});
 				
-				Some(DataOperationResult
-				{
-					appData,
-					requests,
-				})
+				Some(result)
 			}
 		}
 		
@@ -74,18 +66,10 @@ pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> O
 		{
 			Err(_) => None,
 			Ok(session) => {
-				let (appData, avatarRequest) = refreshUserInfo(appData, session);
+				let result = refreshUserInfo(appData, session);
 				info!("[GOG] Refreshed user info");
 				
-				Some(DataOperationResult
-				{
-					appData,
-					requests: match avatarRequest
-					{
-						None => vec![],
-						Some(request) => vec![request],
-					},
-				})
+				Some(result)
 			}
 		}
 		
@@ -101,7 +85,7 @@ pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> O
 	};
 }
 
-fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u64) -> (AppData, Vec<RequestData>)
+fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u64) -> DataOperationResult
 {
 	let mut requests = vec![];
 	if let Ok(payload) = GogApi::getAchievements(
@@ -116,7 +100,7 @@ fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u6
 		let mut achievements = vec![];
 		for metadata in payload.items
 		{
-			requests.push(RequestData
+			requests.push(DataRequest
 			{
 				destination: Some(FileLocation
 				{
@@ -129,7 +113,7 @@ fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u6
 				..Default::default()
 			});
 			
-			requests.push(RequestData
+			requests.push(DataRequest
 			{
 				destination: Some(FileLocation
 				{
@@ -147,7 +131,11 @@ fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u6
 		appData.user.gog.updateGameAchievements(gameId, achievements);
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests
+	};
 }
 
 fn refreshSession() -> Result<()>
@@ -174,7 +162,7 @@ fn refreshSession() -> Result<()>
 	return Ok(());
 }
 
-fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, Option<RequestData>)
+fn refreshUserInfo(mut appData: AppData, session: GogSession) -> DataOperationResult
 {
 	let mut request = None;
 	if let Ok(userInfo) = GogApi::getUserInfo(&session)
@@ -182,7 +170,7 @@ fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, Optio
 		let avatarUrl = userInfo.avatar.large.clone();
 		appData.user.gog.updateUserInfo(userInfo);
 		
-		request = Some(RequestData
+		request = Some(DataRequest
 		{
 			destination: Some(FileLocation
 			{
@@ -195,10 +183,18 @@ fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, Optio
 		});
 	}
 	
-	return (appData, request);
+	return DataOperationResult
+	{
+		appData,
+		requests: match request
+		{
+			None => vec![],
+			Some(request) => vec![request],
+		},
+	};
 }
 
-fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>) -> (AppData, Vec<RequestData>)
+fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>) -> DataOperationResult
 {
 	let mut requests = vec![];
 	
@@ -219,7 +215,7 @@ fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>)
 		
 		for product in payload.products
 		{
-			requests.push(RequestData
+			requests.push(DataRequest
 			{
 				destination: Some(GogApi::constructGameIconLocation(product.id)),
 				operation: DataOperation::CacheImage,
@@ -229,7 +225,11 @@ fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>)
 		}
 	}
 	
-	return (appData, requests);
+	return DataOperationResult
+	{
+		appData,
+		requests,
+	};
 }
 
 pub fn openBrowserForAuthorization()
