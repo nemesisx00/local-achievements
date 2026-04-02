@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+use crate::battlenet::data::region::Region;
+
 /**
 The data necessary to access the Steam Web API.
 */
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct BattleNetSettings
 {
+	/// The user's preferred region for accessing the API
+	pub defaultRegion: Region,
 	/// The port to use when constructing the Redirect URI
 	pub redirectPort: u64,
 }
@@ -16,6 +20,7 @@ impl Default for BattleNetSettings
 	{
 		return Self
 		{
+			defaultRegion: Default::default(),
 			redirectPort: 8080,
 		};
 	}

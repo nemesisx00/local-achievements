@@ -1,27 +1,60 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::EnumString;
+use strum_macros::{AsRefStr, EnumIter};
 
-#[derive(Debug, Default, Copy, Clone, Deserialize, EnumString, PartialEq, Serialize)]
+#[derive(AsRefStr, Debug, Default, Copy, Clone, Deserialize, EnumIter, Eq, Hash, PartialEq, Serialize)]
 pub enum Region
 {
-	#[strum(serialize = "China", serialize = "cn")]
 	China,
-	#[strum(serialize = "Europe", serialize = "eu")]
 	Europe,
-	#[strum(serialize = "Korea", serialize = "kr")]
 	Korea,
 	LatAm,
 	Russia,
-	#[strum(serialize = "Taiwan", serialize = "tn")]
 	Taiwan,
 	#[default]
-	#[strum(serialize = "US", serialize = "us")]
 	US,
+}
+
+impl From<String> for Region
+{
+	fn from(value: String) -> Self
+	{
+		return match value.to_lowercase().as_str()
+		{
+			"china" => Self::China,
+			"cn" => Self::China,
+			"europe" => Self::Europe,
+			"eu" => Self::Europe,
+			"korea" => Self::Korea,
+			"kr" => Self::Korea,
+			"latam" => Self::LatAm,
+			"russia" => Self::Russia,
+			"taiwan" => Self::Taiwan,
+			"tn" => Self::Taiwan,
+			"us" => Self::US,
+			_ => Self::default(),
+		};
+	}
+}
+
+impl From<&String> for Region
+{
+	fn from(value: &String) -> Self
+	{
+		return value.clone().into();
+	}
+}
+
+impl From<&str> for Region
+{
+	fn from(value: &str) -> Self
+	{
+		return value.to_string().into();
+	}
 }
 
 impl Region
 {
-	pub fn from(regionId: u64, realmId: u64) -> Self
+	pub fn fromRegionRealm(regionId: u64, realmId: u64) -> Self
 	{
 		return match realmId
 		{
@@ -77,17 +110,16 @@ impl Region
 #[cfg(test)]
 mod tests
 {
-	use std::str::FromStr;
 	use super::*;
 	
-	fn testData() -> Vec<(String, Result<Region, strum::ParseError>)>
+	fn testData() -> Vec<(String, Region)>
 	{
 		return vec![
-			("Europe".to_string(), Ok(Region::Europe)),
-			("eu".to_string(), Ok(Region::Europe)),
-			("LatAm".to_string(), Ok(Region::LatAm)),
-			("China".to_string(), Ok(Region::China)),
-			("cn".to_string(), Ok(Region::China)),
+			("Europe".to_string(), Region::Europe),
+			("eu".to_string(), Region::Europe),
+			("LatAm".to_string(), Region::LatAm),
+			("China".to_string(), Region::China),
+			("cn".to_string(), Region::China),
 		];
 	}
 	
@@ -96,9 +128,9 @@ mod tests
 	{
 		for (value, expected) in testData()
 		{
-			assert_eq!(Region::from_str(value.as_str()), expected);
+			assert_eq!(Region::from(value), expected);
 		}
 		
-		assert!(Region::from_str("la").is_err());
+		assert_eq!(Region::from("la"), Region::US);
 	}
 }

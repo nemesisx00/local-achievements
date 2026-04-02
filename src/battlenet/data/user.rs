@@ -1,9 +1,10 @@
 use std::str::FromStr;
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::battlenet::platform::data::userinfo::UserInfo;
 use super::region::Region;
+use super::starcraft2::profile::profile::ProfileStarcraft2;
 
 /**
 Profile information for a Battle.Net user.
@@ -13,8 +14,8 @@ pub struct User
 {
 	pub accountId: u64,
 	pub battleTag: String,
-	pub profileId: String,
 	pub region: Region,
+	pub starcraft2: Option<ProfileStarcraft2>,
 }
 
 impl User
@@ -65,11 +66,11 @@ impl User
 				}
 				
 				if let Some((_, value)) = map.iter()
-					.find(|(k, _)| k.as_str() == "profileId")
+					.find(|(k, _)| k.as_str() == "starcraft2")
 				{
-					if let Value::String(inner) = value
+					if let Value::Object(inner) = value
 					{
-						user.profileId = inner.clone();
+						user.starcraft2 = ProfileStarcraft2::parseJsonMapLossy(inner);
 					}
 				}
 				
@@ -78,7 +79,7 @@ impl User
 				{
 					if let Value::String(inner) = value
 					{
-						user.region = Region::from_str(inner.as_str())?;
+						user.region = inner.into();
 					}
 				}
 			},
@@ -89,12 +90,10 @@ impl User
 		return Ok(user);
 	}
 	
-	pub fn update(&mut self, accountId: u64, battleTag: &String, profileId: &String, region: Region)
+	pub fn updateUserInfo(&mut self, userInfo: UserInfo)
 	{
-		self.accountId = accountId;
-		self.battleTag = battleTag.clone();
-		self.profileId = profileId.clone();
-		self.region = region;
+		self.accountId = userInfo.id;
+		self.battleTag = userInfo.battletag.clone();
 	}
 }
 
@@ -104,10 +103,10 @@ mod tests
 	use super::*;
 	
 	const PartialJson: &str = r#"{
-	"accountId": 9876543210,
+	"accountId": 5,
 	"battleTag": "The battle tag",
-	"profileId": "The profile id",
-	"region": "eu"
+	"region": "eu",
+	"starcraft2": null
 }"#;
 	
 	#[test]
@@ -117,11 +116,11 @@ mod tests
 		assert!(result.is_ok());
 		
 		let user = result.unwrap();
-		assert_eq!(user.accountId, 9876543210);
-		assert_eq!(user.battleTag, "The battle tag".to_string());
-		assert_eq!(user.profileId, "The profile id".to_string());
+		assert_eq!(user.accountId, 5);
+		assert_eq!(&user.battleTag, "The battle tag");
 		assert_eq!(user.region, Region::Europe);
 		assert_eq!(user.region.realmId(), 1);
 		assert_eq!(user.region.regionId(), 2);
+		assert!(user.starcraft2.is_none());
 	}
 }

@@ -1,9 +1,8 @@
-use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
-	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	InputMode, InputValidator, IntoElement, Size, TextAlign, TextStyleExt,
-	label, rect, spawn, use_hook, use_side_effect, use_state};
+use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input, InputMode, InputValidator, IntoElement, MenuItem, Select, SelectThemePartial, SelectThemePartialExt, Size, TextAlign, TextStyleExt, label, rect, spawn, use_hook, use_side_effect, use_state};
 use freya::radio::use_radio;
+use strum::IntoEnumIterator;
 use tracing::{info, warn};
+use crate::battlenet::data::region::Region;
 use crate::components::{InputModeHiddenChar, NumericInput, SettingsSwitch};
 use crate::data::AppData;
 use crate::data::radio::AppDataChannel;
@@ -27,8 +26,8 @@ impl Component for SettingsElement
 		let mut clientSecret = use_state(Default::default);
 		let inputModeClientId = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeClientSecret = use_state(|| InputMode::Hidden(InputModeHiddenChar));
+		let mut defaultRegion = use_state(|| appData.read().platform.battleNet.defaultRegion);
 		let redirectPort = use_state(|| appData.read().platform.battleNet.redirectPort);
-		let redirectUri = use_state(|| "http://127.0.0.1".to_string());
 		
 		use_hook(|| {
 			let auth = getBattleNetClientAuth().unwrap_or_default();
@@ -40,8 +39,11 @@ impl Component for SettingsElement
 			_ = setBattleNetClientId(clientId.read().clone());
 			_ = setBattleNetClientSecret(clientSecret.read().clone());
 			
-			if appData.read().platform.battleNet.redirectPort != redirectPort()
+			if appData.read().platform.battleNet.defaultRegion != defaultRegion()
+				|| appData.read().platform.battleNet.redirectPort != redirectPort()
+				
 			{
+				appData.write().platform.battleNet.defaultRegion = defaultRegion();
 				appData.write().platform.battleNet.redirectPort = redirectPort();
 				
 				spawn(async move {
@@ -167,7 +169,7 @@ impl Component for SettingsElement
 				rect()
 					.content(Content::Flex)
 					.direction(Direction::Horizontal)
-					.main_align(Alignment::Center)
+					.main_align(Alignment::Start)
 					.spacing(5.0)
 					.width(Size::percent(75.0))
 					
@@ -177,13 +179,21 @@ impl Component for SettingsElement
 							.min_width(Size::px(102.0))
 							.text_align(TextAlign::End)
 							.width(self.labelWidth.clone())
-							.text("Redirect URI")
+							.text("Default Region")
 					)
 					
 					.child(
-						Input::new(redirectUri)
-							.on_validate(move |validator: InputValidator| validator.set_valid(false))
-							.width(Size::flex(1.0))
+						Select::new()
+							.selected_item(defaultRegion().as_ref())
+							.children(
+								Region::iter().map(|ac| {
+									MenuItem::new()
+										.selected(ac == defaultRegion())
+										.on_press(move |_| defaultRegion.set(ac))
+										.child(ac.as_ref())
+										.into()
+								})
+							)
 					)
 			)
 			

@@ -74,7 +74,7 @@ impl BattleNetApi
 	/**
 	Retrieves the user's account ID and battle tag.
 	*/
-	pub async fn userInfo(&self, session: BattleNetSession) -> Result<UserInfo>
+	pub async fn getUserInfo(&self, session: BattleNetSession) -> Result<UserInfo>
 	{
 		let url = Url::from_str(format!("{}{}", Self::RootUriOauth, Self::UriUserInfo).as_str())?;
 		let userInfo = self.get::<UserInfo>(url, session).await?;

@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use reqwest::Url;
-use tracing::{error, info, warn};
 use crate::battlenet::BattleNetSession;
 use crate::battlenet::data::region::Region;
 use crate::battlenet::platform::data::starcraft2::account::PayloadPlayer;
@@ -16,6 +15,8 @@ pub struct Starcraft2;
 
 impl Starcraft2
 {
+	pub const AvatarPrefix: &str = "starcraft2";
+	
 	const RootUriApi: &str = ".api.blizzard.com";
 	const RootUriApiChina: &str = "gateway.battlenet.com.cn";
 	
@@ -24,17 +25,37 @@ impl Starcraft2
 	const UriProfileStatic: &str = "/sc2/static/profile/";
 	
 	/**
+	Returns the appropriate root URI for the API based on the given `region``.
+	*/
+	fn buildRootUri(region: Region) -> String
+	{
+		return match region
+		{
+			Region::China => format!(
+				"{}{}",
+				BattleNetApi::Https,
+				Self::RootUriApiChina
+			),
+			
+			_ => format!(
+				"{}{}{}",
+				BattleNetApi::Https,
+				region.shortString(),
+				Self::RootUriApi
+			),
+		};
+	}
+	
+	/**
 	Returns metadata for an individual's account.
 	
 	Metadata like the profile ID, region ID, and realm ID.
 	*/
-	pub async fn accountPlayer(api: &BattleNetApi, session: BattleNetSession, accountId: u64) -> Result<PayloadPlayer>
+	pub async fn accountPlayer(api: &BattleNetApi, session: BattleNetSession, region: Region, accountId: u64) -> Result<PayloadPlayer>
 	{
 		let url = Url::from_str(format!(
-			"{}{}{}{}{}",
-			BattleNetApi::Https,
-			Region::US.shortString(),
-			Self::RootUriApi,
+			"{}{}{}",
+			Self::buildRootUri(region),
 			Self::UriAccountPlayer,
 			accountId
 		).as_str())?;
@@ -51,10 +72,8 @@ impl Starcraft2
 	pub async fn profileProfile(api: &BattleNetApi, session: BattleNetSession, region: Region, profileId: u64) -> Result<PayloadProfile>
 	{
 		let url = Url::from_str(format!(
-			"{}{}{}{}/{}/{}/{}",
-			BattleNetApi::Https,
-			region.shortString(),
-			Self::RootUriApi,
+			"{}{}/{}/{}/{}",
+			Self::buildRootUri(region),
 			Self::UriProfileProfile,
 			region.regionId(),
 			region.realmId(),
@@ -71,10 +90,8 @@ impl Starcraft2
 	pub async fn profileStatic(api: &BattleNetApi, session: BattleNetSession, region: Region) -> Result<PayloadStatic>
 	{
 		let url = Url::from_str(format!(
-			"{}{}{}{}{}",
-			BattleNetApi::Https,
-			region.shortString(),
-			Self::RootUriApi,
+			"{}{}{}",
+			Self::buildRootUri(region),
 			Self::UriProfileStatic,
 			region.regionId()
 		).as_str())?;
