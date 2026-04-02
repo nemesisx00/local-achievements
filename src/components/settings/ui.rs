@@ -25,16 +25,23 @@ impl Component for UiSettings
 		let language = use_state(|| appData.read().app.settings.language.clone());
 		
 		use_side_effect(move || {
-			appData.write().app.settings.defaultActivePlatform = defaultActiveContent.read().clone();
-			appData.write().app.settings.language = language.read().clone();
+			let dac = defaultActiveContent.read().clone();
+			let lang = language.read().clone();
 			
-			spawn(async move {
-				match saveAppSettings(&appData.read().app.settings)
-				{
-					Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
-					Ok(_) => info!("[Local Achievements] Saved app settings"),
-				}
-			});
+			if appData.read().app.settings.defaultActivePlatform != dac
+				|| appData.read().app.settings.language != lang
+			{
+				appData.write().app.settings.defaultActivePlatform = dac;
+				appData.write().app.settings.language = lang;
+				
+				spawn(async move {
+					match saveAppSettings(&appData.read().app.settings)
+					{
+						Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
+						Ok(_) => info!("[Local Achievements] Saved app settings"),
+					}
+				});
+			}
 		});
 		
 		let labelWidth = self.labelWidth.clone();

@@ -25,16 +25,22 @@ impl Component for Rpcs3SettingsElement
 		let appDataDir = use_state(|| appData.read().platform.rpcs3.appDataDirectory.clone());
 		
 		use_side_effect(move || {
-			appData.write().platform.rpcs3.accountId = accountId();
-			appData.write().platform.rpcs3.appDataDirectory = appDataDir.read().clone();
+			let dir = appDataDir.read().clone();
 			
-			spawn(async move {
-				match saveSettings_Rpcs3(&appData.read().platform.rpcs3)
-				{
-					Err(e) => warn!("[RPCS3] Error saving settings: {:?}", e),
-					Ok(_) => info!("[RPCS3] Saved settings"),
-				}
-			});
+			if appData.read().platform.rpcs3.accountId != accountId()
+				|| appData.read().platform.rpcs3.appDataDirectory != dir
+			{
+				appData.write().platform.rpcs3.accountId = accountId();
+				appData.write().platform.rpcs3.appDataDirectory = dir;
+				
+				spawn(async move {
+					match saveSettings_Rpcs3(&appData.read().platform.rpcs3)
+					{
+						Err(e) => warn!("[RPCS3] Error saving settings: {:?}", e),
+						Ok(_) => info!("[RPCS3] Saved settings"),
+					}
+				});
+			}
 		});
 		
 		let labelWidth = self.labelWidth.clone();

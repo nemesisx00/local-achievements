@@ -15,16 +15,11 @@ impl Component for SteamSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut apiKey = use_state(String::default);
-		let mut id = use_state(String::default);
+		let mut apiKey = use_state(Default::default);
+		let mut id = use_state(Default::default);
 		
 		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeId = use_state(|| InputMode::Hidden(InputModeHiddenChar));
-		
-		use_side_effect(move || {
-			_ = setSteamApiKey(apiKey.read().clone());
-			_ = setSteamId(id.read().clone());
-		});
 		
 		use_hook(|| {
 			if let Ok(auth) = getSteamAuth()
@@ -32,6 +27,11 @@ impl Component for SteamSettingsElement
 				apiKey.set(auth.key().clone());
 				id.set(auth.id().clone());
 			}
+		});
+		
+		use_side_effect(move || {
+			_ = setSteamApiKey(apiKey.read().clone());
+			_ = setSteamId(id.read().clone());
 		});
 		
 		return rect()
