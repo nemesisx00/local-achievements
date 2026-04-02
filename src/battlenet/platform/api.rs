@@ -5,11 +5,10 @@ use reqwest::{Client, Url};
 use reqwest::header::AUTHORIZATION;
 use serde::de::DeserializeOwned;
 use tracing::info;
-use crate::battlenet::BattleNetAuth;
+use crate::battlenet::platform::data::settings::BattleNetSettings;
 use crate::battlenet::platform::data::userinfo::UserInfo;
 use crate::data::secure::{getBattleNetClientAuth, setBattleNetSession};
 use crate::net::AuthorizationManager;
-use super::data::auth::BattleNetSettings;
 use super::data::session::BattleNetSession;
 
 /**
