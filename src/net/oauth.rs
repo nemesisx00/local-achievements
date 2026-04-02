@@ -34,8 +34,11 @@ impl AuthorizationManager
 		<style>
 			body
 			{
+				align-content: center;
 				color: rgb(204, 204, 204);
 				background-color: rgb(35, 35, 35);
+				height: 100vh;
+				width: 100vw;
 			}
 			
 			h1 { text-align: center; }
@@ -215,7 +218,7 @@ impl AuthorizationManager
 					}
 					
 					let response = format!(
-						"HTTP/1.1 200 OK\r\n\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",
+						"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",
 						Self::SuccessHtml.len(),
 						Self::SuccessHtml
 					);
