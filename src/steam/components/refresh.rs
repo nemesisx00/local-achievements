@@ -93,7 +93,7 @@ pub async fn handleDataOperation(mut appData: AppData, operation: SteamOperation
 	};
 }
 
-pub async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData>)
+async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -137,7 +137,7 @@ pub async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<Request
 	return (appData, requests);
 }
 
-pub async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
+async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -188,7 +188,7 @@ if let Ok(payload) = api.getRecentlyPlayedGames().await
 }
 */
 
-pub async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
+async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -243,7 +243,7 @@ pub async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<R
 	return (appData, requests);
 }
 
-pub async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData
+async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData
 {
 	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
@@ -261,7 +261,7 @@ pub async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData
 	return appData;
 }
 
-pub async fn refreshGlobalPercentages(mut appData: AppData, id: u64) -> AppData
+async fn refreshGlobalPercentages(mut appData: AppData, id: u64) -> AppData
 {
 	if getSteamAuth().is_ok_and(|a| a.validate())
 	{

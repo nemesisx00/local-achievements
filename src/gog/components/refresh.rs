@@ -101,7 +101,7 @@ pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> O
 	};
 }
 
-pub fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u64) -> (AppData, Vec<RequestData>)
+fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u64) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	if let Ok(payload) = GogApi::getAchievements(
@@ -150,7 +150,7 @@ pub fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId
 	return (appData, requests);
 }
 
-pub fn refreshSession() -> Result<()>
+fn refreshSession() -> Result<()>
 {
 	let session = getGogSession()?;
 	if session.hasExpired()
@@ -174,7 +174,7 @@ pub fn refreshSession() -> Result<()>
 	return Ok(());
 }
 
-pub fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, Option<RequestData>)
+fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, Option<RequestData>)
 {
 	let mut request = None;
 	if let Ok(userInfo) = GogApi::getUserInfo(&session)
@@ -198,7 +198,7 @@ pub fn refreshUserInfo(mut appData: AppData, session: GogSession) -> (AppData, O
 	return (appData, request);
 }
 
-pub fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>) -> (AppData, Vec<RequestData>)
+fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	

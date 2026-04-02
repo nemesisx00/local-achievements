@@ -59,7 +59,7 @@ pub async fn handleDataOperation(appData: AppData, operation: RetroAchievementsO
 	};
 }
 
-pub fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
+fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	
@@ -94,7 +94,7 @@ pub fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 	return (appData, requests);
 }
 
-pub fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgressState)
+fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgressState)
 	-> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
@@ -147,7 +147,7 @@ pub fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsPro
 	return (appData, requests);
 }
 
-pub fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
+fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	
