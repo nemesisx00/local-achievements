@@ -1,11 +1,63 @@
-use tracing::warn;
+use tracing::{info, warn};
 use crate::constants::Icon_Locked;
 use crate::data::AppData;
 use crate::data::secure::getRetroAchievementsAuth;
-use crate::io::{FileName_GameIcon, Path_Avatars, Path_Games};
-use crate::net::limiter::request::{DataOperation, FileLocation, RequestData, RetroAchievementsOperation};
+use crate::io::{FileName_GameIcon, Path_Avatars, Path_Games,
+	saveUserData_RetroAchievements};
+use crate::net::limiter::request::{DataOperation, DataOperationResult,
+	FileLocation, RequestData, RetroAchievementsOperation};
 use crate::{join, png, pngAlt};
-use crate::retroachievements::{RetroAchievementsApi, RetroAchievementsProgressState, makeRelative};
+use crate::retroachievements::{RetroAchievementsApi,
+	RetroAchievementsProgressState, makeRelative};
+
+pub async fn handleDataOperation(appData: AppData, operation: RetroAchievementsOperation) -> Option<DataOperationResult>
+{
+	return match operation
+	{
+		RetroAchievementsOperation::GetGameInfo(id) => {
+			let (appData, requests) = refreshGameInfo(appData, id);
+			info!("[RetroAchievements] Refreshed game info for {}", id);
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		RetroAchievementsOperation::GetUserProfile => {
+			let (appData, requests) = refreshUserProfile(appData);
+			info!("[RetroAchievements] Refreshed user profile");
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		RetroAchievementsOperation::GetUserProgress(state) => {
+			let (appData, requests) = refreshUserProgress(appData, state.clone());
+			info!("[RetroAchievements] Refreshed user progress");
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		RetroAchievementsOperation::SaveToFile => {
+			match saveUserData_RetroAchievements(&appData.user.retroAchievements)
+			{
+				Err(e) => warn!("[RetroAchievements] Error saving user data: {:?}", e),
+				Ok(_) => info!("[RetroAchievements] Saved user data"),
+			}
+			
+			None
+		}
+	};
+}
 
 pub fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {

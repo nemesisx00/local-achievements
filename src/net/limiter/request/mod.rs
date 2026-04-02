@@ -1,15 +1,19 @@
+mod battlenet;
 mod event;
 mod location;
 mod gog;
 mod operation;
 mod retro;
 mod request;
+mod result;
 mod steam;
 
+pub use battlenet::BattleNetOperation;
 pub use event::RequestEvent;
 pub use gog::GogOperation;
 pub use location::FileLocation;
 pub use operation::DataOperation;
 pub use retro::RetroAchievementsOperation;
 pub use request::RequestData;
+pub use result::DataOperationResult;
 pub use steam::SteamOperation;

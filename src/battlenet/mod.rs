@@ -5,6 +5,7 @@ mod platform;
 pub use components::{
 	content::BattleNetContentElement,
 	profile::BattleNetUserProfile,
+	refresh::handleDataOperation,
 	settings::SettingsElement as BattleNetSettingsElement,
 };
 
@@ -14,6 +15,7 @@ pub use data::{
 };
 
 pub use platform::data::{
-	auth::{BattleNetAuth, BattleNetSettings},
+	auth::BattleNetAuth,
 	session::BattleNetSession,
+	settings::BattleNetSettings,
 };

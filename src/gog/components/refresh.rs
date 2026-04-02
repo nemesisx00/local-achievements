@@ -5,10 +5,10 @@ use crate::constants::Icon_Locked;
 use crate::data::secure::{getGogSession, removeGogSession, setGogSession};
 use crate::data::AppData;
 use crate::gog::{GogAchievement, GogApi, GogSession};
-use crate::io::{Path_Avatars, Path_Games};
+use crate::io::{Path_Avatars, Path_Games, saveUserData_Gog};
 use crate::{join, jpg, jpgAlt};
 use crate::net::limiter::request::{DataOperation, FileLocation, GogOperation,
-	RequestData};
+	DataOperationResult, RequestData};
 
 pub fn exchangeCode(url: String)
 {
@@ -23,6 +23,82 @@ pub fn exchangeCode(url: String)
 			},
 		}
 	}
+}
+
+pub async fn handleDataOperation(appData: AppData, operation: GogOperation) -> Option<DataOperationResult>
+{
+	return match operation
+	{
+		GogOperation::RefreshSession => {
+			_ = refreshSession();
+			info!("[GOG] Refreshed user session");
+			
+			None
+		}
+		
+		GogOperation::GetAchievements(id) => match getGogSession()
+		{
+			Err(_) => None,
+			Ok(session) => {
+				let (appData, requests) = refreshGameAchievements(appData, session, id);
+				info!("[GOG] Refreshed achievements for game id {}", id);
+				
+				Some(DataOperationResult
+				{
+					appData,
+					requests,
+				})
+			}
+		}
+		
+		GogOperation::GetFilteredProducts(page) => match getGogSession()
+		{
+			Err(_) => None,
+			Ok(session) => {
+				let (appData, requests) = refreshGameList(appData, session, page);
+				info!("[GOG] Refreshed game list page {}", match page
+				{
+					None => 1,
+					Some(p) => p,
+				});
+				
+				Some(DataOperationResult
+				{
+					appData,
+					requests,
+				})
+			}
+		}
+		
+		GogOperation::GetUserInfo => match getGogSession()
+		{
+			Err(_) => None,
+			Ok(session) => {
+				let (appData, avatarRequest) = refreshUserInfo(appData, session);
+				info!("[GOG] Refreshed user info");
+				
+				Some(DataOperationResult
+				{
+					appData,
+					requests: match avatarRequest
+					{
+						None => vec![],
+						Some(request) => vec![request],
+					},
+				})
+			}
+		}
+		
+		GogOperation::SaveToFile => {
+			match saveUserData_Gog(&appData.user.gog)
+			{
+				Err(e) => warn!("[GOG] Error saving user data: {:?}", e),
+				Ok(_) => info!("[GOG] Saved user data"),
+			}
+			
+			None
+		}
+	};
 }
 
 pub fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u64) -> (AppData, Vec<RequestData>)

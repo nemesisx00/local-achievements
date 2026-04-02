@@ -6,7 +6,7 @@ pub use components::{
 	content::GogContentElement,
 	profile::GogUserProfile,
 	settings::GogSettingsElement,
-	refresh
+	refresh::handleDataOperation,
 };
 
 pub use data::{

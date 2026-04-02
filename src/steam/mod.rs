@@ -5,7 +5,7 @@ mod platform;
 pub use components::{
 	content::SteamContent,
 	profile::SteamProfile,
-	refresh,
+	refresh::handleDataOperation,
 	settings::SteamSettingsElement,
 };
 

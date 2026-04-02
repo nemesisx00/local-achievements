@@ -116,6 +116,7 @@ impl RateLimiter
 		return request;
 	}
 	
+	#[allow(unused)]
 	pub async fn push(&self, request: RequestData)
 	{
 		let mut requests = self.requests.lock()
@@ -128,16 +129,19 @@ impl RateLimiter
 	
 	pub async fn pushAll(&self, requestList: Vec<RequestData>)
 	{
-		let mut requests = self.requests.lock()
-			.await;
-		
-		for request in requestList
+		if !requestList.is_empty()
 		{
-			requests.push_back(request);
+			let mut requests = self.requests.lock()
+				.await;
+			
+			for request in requestList
+			{
+				requests.push_back(request);
+			}
+			
+			requests.make_contiguous()
+				.sort();
 		}
-		
-		requests.make_contiguous()
-			.sort();
 	}
 	
 	pub async fn refundUse(&self)

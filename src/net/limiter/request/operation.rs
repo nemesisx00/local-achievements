@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use crate::net::limiter::request::RetroAchievementsOperation;
+use crate::net::limiter::request::{BattleNetOperation, RetroAchievementsOperation};
 
 use super::gog::GogOperation;
 use super::steam::SteamOperation;
@@ -7,6 +7,7 @@ use super::steam::SteamOperation;
 #[derive(Clone, Debug, Default, Eq, PartialEq, Ord)]
 pub enum DataOperation
 {
+	BattleNet(BattleNetOperation),
 	#[default]
 	CacheImage,
 	Gog(GogOperation),

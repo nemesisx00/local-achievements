@@ -5,7 +5,7 @@ mod platform;
 pub use components::{
 	content::RetroAchievementsContent,
 	profile::RetroAchievementsUserProfile,
-	refresh,
+	refresh::handleDataOperation,
 	settings::RetroAchievementsSettingsElement,
 };
 

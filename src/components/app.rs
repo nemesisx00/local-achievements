@@ -8,20 +8,18 @@ use freya::radio::{RadioStation, use_init_radio_station, use_radio,
 use freya::winit::dpi::PhysicalSize;
 use reqwest::Client;
 use tracing::{info, warn};
+use crate::battlenet::{self, BattleNetContentElement};
 use crate::components::ProfileState;
 use crate::components::nav::NavBar;
 use crate::components::settings::AppSettingsElement;
 use crate::constants::{AppTheme, BackgroundColor, DefaultHttpRequestRate,
 	TextColor};
 use crate::data::radio::{AppDataChannel, DataChannel};
-use crate::data::secure::getGogSession;
 use crate::data::{ActiveContent, AppData};
 use crate::gog::{self, GogContentElement};
-use crate::io::{imagePathExists, saveUserData_Gog,
-	saveUserData_RetroAchievements, saveUserData_Steam};
+use crate::io::imagePathExists;
 use crate::net::limiter::RateLimiter;
-use crate::net::limiter::request::{DataOperation, GogOperation, RequestEvent,
-	RetroAchievementsOperation, SteamOperation};
+use crate::net::limiter::request::{DataOperation, RequestEvent};
 use crate::retroachievements::{self, RetroAchievementsContent};
 use crate::rpcs3::Rpcs3ContentElement;
 use crate::steam::{self, SteamContent};
@@ -68,7 +66,7 @@ impl App for LocalAchievementsApp
 		
 		let activeContent: Option<Element> = match active
 		{
-			//ActiveContent::BattleNet => Some(BattleNetContentElement::new().into()),
+			ActiveContent::BattleNet => Some(BattleNetContentElement::new().into()),
 			//ActiveContent::EpicGamesStore => Some(EgsContentElement::new().into()),
 			ActiveContent::Gog => Some(GogContentElement::new().into()),
 			ActiveContent::RetroAchievements => Some(RetroAchievementsContent::new().into()),
@@ -125,127 +123,40 @@ impl App for LocalAchievementsApp
 									}
 								}
 								
-								DataOperation::Gog(operation) => match operation
-								{
-									GogOperation::RefreshSession => {
-										_ = gog::refresh::refreshSession();
-										info!("[GOG] Refreshed user session");
-									}
-									
-									GogOperation::GetAchievements(id) => if let Ok(session) = getGogSession()
+								DataOperation::BattleNet(operation) => {
+									let appData = battleNetData.read().clone();
+									if let Some(result) = battlenet::handleDataOperation(appData, operation).await
 									{
-										let (appData, requests) = gog::refresh::refreshGameAchievements(gogData.read().clone(), session, id);
-										gogData.write().user.gog = appData.user.gog;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[GOG] Refreshed achievements for game id {}", id);
-									}
-									
-									GogOperation::GetFilteredProducts(page) => if let Ok(session) = getGogSession()
-									{
-										let (appData, requests) = gog::refresh::refreshGameList(gogData.read().clone(), session, page);
-										gogData.write().user.gog = appData.user.gog;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[GOG] Refreshed game list page {}", match page
-										{
-											None => 1,
-											Some(p) => p,
-										});
-									}
-									
-									GogOperation::GetUserInfo => if let Ok(session) = getGogSession()
-									{
-										let (appData, avatarRequest) = gog::refresh::refreshUserInfo(gogData.read().clone(), session);
-										gogData.write().user.gog = appData.user.gog;
-										
-										if let Some(request) = avatarRequest
-										{
-											rateLimiter.read().push(request).await;
-										}
-										info!("[GOG] Refreshed user info");
-									}
-									
-									GogOperation::SaveToFile => match saveUserData_Gog(&gogData.read().user.gog)
-									{
-										Err(e) => warn!("[GOG] Error saving user data: {:?}", e),
-										Ok(_) => info!("[GOG] Saved user data"),
+										battleNetData.write().platform.battleNet = result.appData.platform.battleNet;
+										battleNetData.write().user.battleNet = result.appData.user.battleNet;
+										rateLimiter.read().pushAll(result.requests).await;
 									}
 								}
 								
-								DataOperation::RetroAchievements(operation) => match operation
-								{
-									RetroAchievementsOperation::GetGameInfo(id) => {
-										let (appData, requests) = retroachievements::refresh::refreshGameInfo(retroAchievementsData.read().clone(), id);
-										retroAchievementsData.write().user.retroAchievements = appData.user.retroAchievements;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[RetroAchievements] Refreshed game info for {}", id);
-									}
-									
-									RetroAchievementsOperation::GetUserProfile => {
-										let (appData, requests) = retroachievements::refresh::refreshUserProfile(retroAchievementsData.read().clone());
-										retroAchievementsData.write().user.retroAchievements = appData.user.retroAchievements;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[RetroAchievements] Refreshed user profile");
-									}
-									
-									RetroAchievementsOperation::GetUserProgress(state) => {
-										let (appData, requests) = retroachievements::refresh::refreshUserProgress(retroAchievementsData.read().clone(), state.clone());
-										retroAchievementsData.write().user.retroAchievements = appData.user.retroAchievements;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[RetroAchievements] Refreshed user progress");
-									}
-									
-									RetroAchievementsOperation::SaveToFile => match saveUserData_RetroAchievements(&retroAchievementsData.read().user.retroAchievements)
+								DataOperation::Gog(operation) => {
+									let appData = gogData.read().clone();
+									if let Some(result) = gog::handleDataOperation(appData, operation).await
 									{
-										Err(e) => warn!("[RetroAchievements] Error saving user data: {:?}", e),
-										Ok(_) => info!("[RetroAchievements] Saved user data"),
+										gogData.write().user.gog = result.appData.user.gog;
+										rateLimiter.read().pushAll(result.requests).await;
 									}
 								}
 								
-								DataOperation::Steam(operation) => match operation
-								{
-									SteamOperation::GetGameList => {
-										let (appData, requests) = steam::refresh::refreshGameList(steamData.read().clone()).await;
-										steamData.write().user.steam = appData.user.steam;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[Steam API] Refreshed game list");
-									}
-									
-									SteamOperation::GetGlobalPercentages(id) => {
-										let appData = steam::refresh::refreshGlobalPercentages(steamData.read().clone(), id).await;
-										steamData.write().user.steam = appData.user.steam;
-										info!("[Steam API] Refreshed global percentages for app id {}", id);
-									}
-									
-									SteamOperation::GetPlayerAchievements(id) => {
-										let appData = steam::refresh::refreshGameAchievements(steamData.read().clone(), id).await;
-										steamData.write().user.steam = appData.user.steam;
-										info!("[Steam API] Refreshed achievements for app id {}", id);
-									}
-									
-									SteamOperation::GetPlayerSummary => {
-										let (appData, requests) = steam::refresh::refreshPlayerSummary(steamData.read().clone()).await;
-										steamData.write().user.steam = appData.user.steam;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[Steam API] Refreshed player summary");
-									}
-									
-									SteamOperation::GetSchemaForGame(id)  => {
-										let (appData, requests) = steam::refresh::refreshGameSchema(steamData.read().clone(), id).await;
-										steamData.write().user.steam = appData.user.steam;
-										rateLimiter.read().pushAll(requests).await;
-										info!("[Steam API] Refreshed schema for app id {}", id);
-									}
-									
-									SteamOperation::SaveToFile => match saveUserData_Steam(&steamData.read().user.steam)
+								DataOperation::RetroAchievements(operation) => {
+									let appData = retroAchievementsData.read().clone();
+									if let Some(result) = retroachievements::handleDataOperation(appData, operation).await
 									{
-										Err(e) => warn!("[Steam] Error saving user data: {:?}", e),
-										Ok(_) => info!("[Steam] Saved user data"),
+										retroAchievementsData.write().user.retroAchievements = result.appData.user.retroAchievements;
+										rateLimiter.read().pushAll(result.requests).await;
 									}
-									
-									SteamOperation::SetGameLoaded(id, loaded) => if let Some(game) = steamData.write().user.steam.games.iter_mut()
-										.find(|g| g.id == id)
+								}
+								
+								DataOperation::Steam(operation) => {
+									let appData = steamData.read().clone();
+									if let Some(result) = steam::handleDataOperation(appData, operation).await
 									{
-										game.loaded = loaded;
+										steamData.write().user.steam = result.appData.user.steam;
+										rateLimiter.read().pushAll(result.requests).await;
 									}
 								}
 							}

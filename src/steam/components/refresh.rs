@@ -1,10 +1,97 @@
+use tracing::{info, warn};
 use crate::constants::Icon_Locked;
 use crate::data::AppData;
 use crate::data::secure::getSteamAuth;
-use crate::io::{FileName_GameIcon, Path_Games};
+use crate::io::{FileName_GameIcon, Path_Games, saveUserData_Steam};
 use crate::{join, jpg, jpgAlt};
-use crate::net::limiter::request::{DataOperation, FileLocation, RequestData};
+use crate::net::limiter::request::{DataOperation, DataOperationResult,
+	FileLocation, RequestData, SteamOperation};
 use crate::steam::SteamApi;
+
+pub async fn handleDataOperation(mut appData: AppData, operation: SteamOperation) -> Option<DataOperationResult>
+{
+	return match operation
+	{
+		SteamOperation::GetGameList => {
+			let (appData, requests) = refreshGameList(appData).await;
+			info!("[Steam API] Refreshed game list");
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		SteamOperation::GetGlobalPercentages(id) => {
+			let appData = refreshGlobalPercentages(appData, id).await;
+			info!("[Steam API] Refreshed global percentages for app id {}", id);
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests: vec![],
+			})
+		}
+		
+		SteamOperation::GetPlayerAchievements(id) => {
+			let appData = refreshGameAchievements(appData, id).await;
+			info!("[Steam API] Refreshed achievements for app id {}", id);
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests: vec![],
+			})
+		}
+		
+		SteamOperation::GetPlayerSummary => {
+			let (appData, requests) = refreshPlayerSummary(appData).await;
+			info!("[Steam API] Refreshed player summary");
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		SteamOperation::GetSchemaForGame(id)  => {
+			let (appData, requests) = refreshGameSchema(appData, id).await;
+			info!("[Steam API] Refreshed schema for app id {}", id);
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests,
+			})
+		}
+		
+		SteamOperation::SaveToFile => {
+			match saveUserData_Steam(&appData.user.steam)
+			{
+				Err(e) => warn!("[Steam] Error saving user data: {:?}", e),
+				Ok(_) => info!("[Steam] Saved user data"),
+			}
+			
+			None
+		}
+		
+		SteamOperation::SetGameLoaded(id, loaded) => {
+			if let Some(game) = appData.user.steam.games.iter_mut()
+				.find(|g| g.id == id)
+			{
+				game.loaded = loaded;
+			}
+			
+			Some(DataOperationResult
+			{
+				appData,
+				requests: vec![],
+			})
+		}
+	};
+}
 
 pub async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
