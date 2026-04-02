@@ -217,6 +217,7 @@ impl AuthorizationManager
 						}
 					}
 					
+					//TODO: Make this more robust. Success is assumed but there are a number of things that could go wrong.
 					let response = format!(
 						"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",
 						Self::SuccessHtml.len(),
