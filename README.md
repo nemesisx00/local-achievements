@@ -27,6 +27,7 @@ When Local Achievements releases, you will be able to download it from the Relea
 
 ## Supported Platforms
 
+- [ ] [Battle.Net](https://shop.battle.net/)
 - [ ] [Epic Games Store](https://store.epicgames.com)
 - [x] [GOG](https://gog.com)
 - [ ] [Playstation Network](https://www.playstation.com/playstation-network)
