@@ -45,7 +45,7 @@ impl RankData
 		{
 			if let Value::Number(number) = value
 			{
-				rankData.mode = number.to_owned().into();
+				rankData.mode = number.clone().into();
 			}
 		}
 		

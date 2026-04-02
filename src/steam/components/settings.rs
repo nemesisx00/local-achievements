@@ -1,11 +1,9 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
-	use_side_effect, use_state};
-use freya::radio::use_radio;
+	use_hook, use_side_effect, use_state};
 use crate::components::{InputModeHiddenChar, SettingsSwitch};
-use crate::data::AppData;
-use crate::data::radio::AppDataChannel;
+use crate::data::secure::{getSteamAuth, setSteamApiKey, setSteamId};
 
 #[derive(Clone, PartialEq)]
 pub struct SteamSettingsElement
@@ -17,17 +15,23 @@ impl Component for SteamSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
-		
-		let apiKey = use_state(|| appData.read().platform.steam.key.clone());
-		let id = use_state(|| appData.read().platform.steam.id.clone());
+		let mut apiKey = use_state(String::default);
+		let mut id = use_state(String::default);
 		
 		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeId = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		
 		use_side_effect(move || {
-			appData.write().platform.steam.id = id.read().clone();
-			appData.write().platform.steam.key = apiKey.read().clone();
+			_ = setSteamApiKey(apiKey.read().clone());
+			_ = setSteamId(id.read().clone());
+		});
+		
+		use_hook(|| {
+			if let Ok(auth) = getSteamAuth()
+			{
+				apiKey.set(auth.key().clone());
+				id.set(auth.id().clone());
+			}
 		});
 		
 		return rect()

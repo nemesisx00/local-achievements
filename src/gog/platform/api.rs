@@ -17,7 +17,6 @@ use crate::io::{FileName_GameIcon, Path_Games};
 use super::data::auth::*;
 use super::data::users::UserInfo;
 
-#[derive(Debug, Default)]
 pub struct GogApi;
 
 impl GogApi
@@ -202,7 +201,7 @@ impl GogApi
 		let authParams = AuthParameters
 		{
 			clientId: Self::ClientId.into(),
-			redirectUri: Self::RedirectUrl.to_owned(),
+			redirectUri: Self::RedirectUrl.into(),
 			..Default::default()
 		};
 		

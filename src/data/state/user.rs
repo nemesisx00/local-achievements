@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-//use crate::battlenet::BattleNetUser;
+use crate::battlenet::BattleNetUser;
 //use crate::egs::EgsUser;
 use crate::gog::GogUser;
 use crate::retroachievements::RetroAchievementsUser;
@@ -9,7 +9,7 @@ use crate::steam::SteamUser;
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct UserState
 {
-	//pub battleNet: BattleNetUser,
+	pub battleNet: BattleNetUser,
 	//pub egs: EgsUser,
 	pub gog: GogUser,
 	pub retroAchievements: RetroAchievementsUser,

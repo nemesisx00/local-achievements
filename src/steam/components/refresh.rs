@@ -1,5 +1,6 @@
 use crate::constants::Icon_Locked;
 use crate::data::AppData;
+use crate::data::secure::getSteamAuth;
 use crate::io::{FileName_GameIcon, Path_Games};
 use crate::{join, jpg, jpgAlt};
 use crate::net::limiter::request::{DataOperation, FileLocation, RequestData};
@@ -8,9 +9,9 @@ use crate::steam::SteamApi;
 pub async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
-	if appData.platform.steam.validate()
+	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
-		let api = SteamApi::from(appData.platform.steam.clone());
+		let api = SteamApi::default();
 		
 		if let Ok(payload) = api.getPlayerSummaries().await
 		{
@@ -52,9 +53,9 @@ pub async fn refreshPlayerSummary(mut appData: AppData) -> (AppData, Vec<Request
 pub async fn refreshGameList(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
-	if appData.platform.steam.validate()
+	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
-		let api = SteamApi::from(appData.platform.steam.clone());
+		let api = SteamApi::default();
 		if let Ok(payload) = api.getOwnedGames().await
 		{
 			appData.user.steam.processOwnedGames(payload);
@@ -103,9 +104,9 @@ if let Ok(payload) = api.getRecentlyPlayedGames().await
 pub async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
-	if appData.platform.steam.validate()
+	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
-		let api = SteamApi::from(appData.platform.steam.clone());
+		let api = SteamApi::default();
 		if let Ok(payload) = api.getSchemaForGame(id, &appData.app.settings.language).await
 		{
 			if let Some(game) = appData.user.steam.games.iter_mut()
@@ -157,9 +158,9 @@ pub async fn refreshGameSchema(mut appData: AppData, id: u64) -> (AppData, Vec<R
 
 pub async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData
 {
-	if appData.platform.steam.validate()
+	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
-		let api = SteamApi::from(appData.platform.steam.clone());
+		let api = SteamApi::default();
 		if let Ok(payload) = api.getPlayerAchievements(id, &appData.app.settings.language).await
 		{
 			if let Some(game) = appData.user.steam.games.iter_mut()
@@ -175,9 +176,9 @@ pub async fn refreshGameAchievements(mut appData: AppData, id: u64) -> AppData
 
 pub async fn refreshGlobalPercentages(mut appData: AppData, id: u64) -> AppData
 {
-	if appData.platform.steam.validate()
+	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
-		let api = SteamApi::from(appData.platform.steam.clone());
+		let api = SteamApi::default();
 		if let Ok(payload) = api.getGlobalPercentages(id).await
 		{
 			if let Some(game) = appData.user.steam.games.iter_mut()

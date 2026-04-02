@@ -138,7 +138,6 @@ pub fn NavBar() -> impl IntoElement
 						)
 				)
 				
-				/*
 				.child(
 					Button::new()
 						.width(Size::percent(100.0))
@@ -146,6 +145,7 @@ pub fn NavBar() -> impl IntoElement
 						.on_press(move |_| selected.set(ActiveContent::BattleNet))
 				)
 				
+				/*
 				.child(
 					Button::new()
 						.width(Size::percent(100.0))

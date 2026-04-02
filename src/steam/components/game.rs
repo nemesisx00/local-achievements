@@ -135,7 +135,7 @@ impl Component for GameElement
 				.maybe_child(game.hasAchievements.then(||
 					VirtualScrollView::new_controlled(move |i, _| {
 							let chievo = &achievements[i];
-							AchievementElement::new(gameId, chievo.id.to_owned()).into()
+							AchievementElement::new(gameId, chievo.id.clone()).into()
 						},
 						scrollController
 					)

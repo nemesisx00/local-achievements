@@ -6,14 +6,14 @@ use directories::ProjectDirs;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use crate::constants::{SecretsKeyFileName, SecretsVaultFileName};
-//use crate::battlenet::{BattleNetAuth, BattleNetUser};
+use crate::battlenet::{BattleNetSettings, BattleNetUser};
 use crate::data::AppSettings;
 //use crate::egs::{EgsSettings, EgsUser};
 use crate::gog::GogUser;
 use crate::net::limiter::request::FileLocation;
-use crate::retroachievements::{RetroAchievementsAuth, RetroAchievementsUser};
+use crate::retroachievements::RetroAchievementsUser;
 use crate::rpcs3::{Rpcs3Settings, Rpcs3User};
-use crate::steam::{SteamAuth, SteamUser};
+use crate::steam::SteamUser;
 
 const Application: &str = "local-achievements";
 const Organization: &str = "";
@@ -147,40 +147,14 @@ pub fn loadAppSettings() -> Result<AppSettings>
 }
 
 /**
-Read the Battle.Net API authorization data from file.
+Read the Battle.Net settings data from file.
 */
-/*
-pub fn loadAuthData_BattleNet() -> Result<BattleNetAuth>
+pub fn loadSettings_BattleNet() -> Result<BattleNetSettings>
 {
 	return match getConfigDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, BattleNetAuth::FileName.into()),
-	};
-}
-*/
-
-/**
-Read the RetroAchievements API authorization data from file.
-*/
-pub fn loadAuthData_RetroAchievements() -> Result<RetroAchievementsAuth>
-{
-	return match getConfigDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, RetroAchievementsAuth::FileName.into()),
-	};
-}
-
-/**
-Read the Steam API authorization data from file.
-*/
-pub fn loadAuthData_Steam() -> Result<SteamAuth>
-{
-	return match getConfigDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, SteamAuth::FileName.into()),
+		Some(dir) => readDataFromFile(dir, BattleNetSettings::FileName.into()),
 	};
 }
 
@@ -213,7 +187,6 @@ pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
 /**
 Read the Battle.Net user data from file.
 */
-/*
 pub fn loadUserData_BattleNet() -> Result<BattleNetUser>
 {
 	return match getDataDir(false)
@@ -222,12 +195,10 @@ pub fn loadUserData_BattleNet() -> Result<BattleNetUser>
 		Some(dir) => readDataFromFile(dir, BattleNetUser::FileName.into()),
 	};
 }
-*/
 
 /**
 Read the Battle.Net user data from file.
 */
-/*
 pub fn loadUserData_BattleNet_lossy() -> Result<BattleNetUser>
 {
 	return match getDataDir(false)
@@ -239,7 +210,6 @@ pub fn loadUserData_BattleNet_lossy() -> Result<BattleNetUser>
 		},
 	};
 }
-*/
 
 /**
 Read the Epic Games Store user data from file.
@@ -446,44 +416,6 @@ pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
 }
 
 /**
-Write the Battle.Net API authorization data to file.
-*/
-/*
-pub fn saveAuthData_BattleNet(auth: &BattleNetAuth) -> Result<()>
-{
-	return match getConfigDir(true)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, BattleNetAuth::FileName.into(), auth),
-	};
-}
-*/
-
-/**
-Write the RetroAchievements API authorization data to file.
-*/
-pub fn saveAuthData_RetroAchievements(auth: &RetroAchievementsAuth) -> Result<()>
-{
-	return match getConfigDir(true)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, RetroAchievementsAuth::FileName.into(), auth),
-	};
-}
-
-/**
-Write the Steam API authorization data to file.
-*/
-pub fn saveAuthData_Steam(auth: &SteamAuth) -> Result<()>
-{
-	return match getConfigDir(true)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, SteamAuth::FileName.into(), auth),
-	};
-}
-
-/**
 Save an image to file in the cache directory specific to this application.
 */
 pub fn saveImageToCache(
@@ -525,6 +457,18 @@ pub fn saveImageToCache(
 }
 
 /**
+Write the Battle.Net settings data to file.
+*/
+pub fn saveSettings_BattleNet(auth: &BattleNetSettings) -> Result<()>
+{
+	return match getConfigDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, BattleNetSettings::FileName.into(), auth),
+	};
+}
+
+/**
 Write the Epic Games Store settings data to file.
 */
 /*
@@ -550,7 +494,6 @@ pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
 	};
 }
 
-/*
 pub fn saveUserData_BattleNet(user: &BattleNetUser) -> Result<()>
 {
 	return match getDataDir(true)
@@ -559,7 +502,6 @@ pub fn saveUserData_BattleNet(user: &BattleNetUser) -> Result<()>
 		Some(dir) => writeDataToFile(dir, BattleNetUser::FileName.into(), user),
 	};
 }
-*/
 
 /*
 pub fn saveUserData_EpicGamesStore(user: &EgsUser) -> Result<()>

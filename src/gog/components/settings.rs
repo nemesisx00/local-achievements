@@ -41,8 +41,12 @@ impl Component for GogSettingsElement
 					
 					.child(
 						Button::new()
-							.on_press(move |_| clearSession())
-							.child(label().text("Clear Session"))
+							.on_press(move |_| match removeGogSession()
+							{
+								Err(e) => warn!("[GOG] Error removing session data: {:?}", e),
+								Ok(_) => info!("[GOG] Session data removed"),
+							})
+							.child("Clear Session")
 					)
 			);
 	}
@@ -63,14 +67,5 @@ impl GogSettingsElement
 	{
 		self.labelWidth = width.into();
 		return self;
-	}
-}
-
-fn clearSession()
-{
-	match removeGogSession()
-	{
-		Err(e) => warn!("[GOG] Error removing session data file: {:?}", e),
-		Ok(_) => info!("[GOG] Session data file removed"),
 	}
 }

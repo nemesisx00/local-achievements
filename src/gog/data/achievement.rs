@@ -139,7 +139,7 @@ impl GogAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.key = inner.to_owned();
+				achievement.key = inner.clone();
 			}
 		}
 		
@@ -148,7 +148,7 @@ impl GogAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.name = inner.to_owned();
+				achievement.name = inner.clone();
 			}
 		}
 		
@@ -178,7 +178,7 @@ impl GogAchievement
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 	

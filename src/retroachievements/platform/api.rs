@@ -4,25 +4,11 @@ use std::path::Path;
 use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
 use serde::de::DeserializeOwned;
+use crate::data::secure::getRetroAchievementsAuth;
 use super::{Payload_GetGameInfo, Payload_GetUserCompletionProgress,
 	Payload_GetUserProfile, RetroAchievementsAuth};
 
-#[derive(Clone, Debug)]
-pub struct RetroAchievementsApi
-{
-	pub auth: RetroAchievementsAuth,
-}
-
-impl From<RetroAchievementsAuth> for RetroAchievementsApi
-{
-	fn from(value: RetroAchievementsAuth) -> Self
-	{
-		return Self
-		{
-			auth: value,
-		};
-	}
-}
+pub struct RetroAchievementsApi;
 
 impl RetroAchievementsApi
 {
@@ -133,22 +119,23 @@ impl RetroAchievementsApi
 	DateEarnedHardcore | String ; optional
 	*/
 	#[allow(unused)]
-	pub fn getGameInfo(&self, ulid: &String, gameId: u64) -> Result<Payload_GetGameInfo>
+	pub fn getGameInfo(ulid: &String, gameId: u64) -> Result<Payload_GetGameInfo>
 	{
-		let mut parameters = self.generateParameterMap();
+		let auth = getRetroAchievementsAuth()?;
+		let mut parameters = Self::generateParameterMap(&auth);
 		parameters.remove(Self::Parameter_ApiUsername);
 		parameters.insert("u".into(), ulid.clone());
 		parameters.insert("g".into(), gameId.to_string());
 		parameters.insert("a".into(), "1".into());
 		
-		return Ok(self.get::<Payload_GetGameInfo>(
+		return Ok(Self::get::<Payload_GetGameInfo>(
 			&Self::Endpoint_GetGameInfo.into(),
 			&parameters
 		)
 			.context(format!(
 				"Error retrieving game info for {} from username {}",
 				gameId,
-				self.auth.username
+				auth.username()
 			))?);
 	}
 	
@@ -202,14 +189,15 @@ impl RetroAchievementsApi
 	HighestAwardKind | String
 	HighestAwardDate | Timestamp string
 	*/
-	pub fn getUserCompletionProgress(&self, ulid: Option<String>, offset: Option<u64>) -> Result<Payload_GetUserCompletionProgress>
+	pub fn getUserCompletionProgress(ulid: Option<String>, offset: Option<u64>) -> Result<Payload_GetUserCompletionProgress>
 	{
-		let mut parameters = self.generateParameterMap();
+		let auth = getRetroAchievementsAuth()?;
+		let mut parameters = Self::generateParameterMap(&auth);
 		parameters.remove(Self::Parameter_ApiUsername);
 		parameters.insert("u".into(), match ulid.clone()
 		{
 			Some(ulid) => ulid,
-			None => self.auth.username.to_owned(),
+			None => auth.username().clone(),
 		});
 		parameters.insert("c".into(), Self::GetUserGameCompletion_Count.to_string());
 		
@@ -218,13 +206,13 @@ impl RetroAchievementsApi
 			parameters.insert("o".into(), o.to_string());
 		}
 		
-		return Ok(self.get::<Payload_GetUserCompletionProgress>(
+		return Ok(Self::get::<Payload_GetUserCompletionProgress>(
 			&Self::Endpoint_GetUserGameCompletion.into(),
 			&parameters
 		)
 			.context(format!(
 				"Error retrieving user completion progress for username {} (ulid {})",
-				self.auth.username,
+				auth.username(),
 				ulid.unwrap_or_default(),
 			))?);
 	}
@@ -273,35 +261,36 @@ impl RetroAchievementsApi
 	UserWallActive | bool
 	Motto | String
 	*/
-	pub fn getUserProfile(&self, ulid: Option<String>) -> Result<Payload_GetUserProfile>
+	pub fn getUserProfile(ulid: Option<String>) -> Result<Payload_GetUserProfile>
 	{
-		let mut parameters = self.generateParameterMap();
+		let auth = getRetroAchievementsAuth()?;
+		let mut parameters = Self::generateParameterMap(&auth);
 		parameters.remove(Self::Parameter_ApiUsername);
 		parameters.insert("u".into(), match ulid
 		{
 			Some(ulid) => ulid,
-			None => self.auth.username.to_owned(),
+			None => auth.username().clone(),
 		});
 		
-		return Ok(self.get::<Payload_GetUserProfile>(
+		return Ok(Self::get::<Payload_GetUserProfile>(
 			&Self::Endpoint_GetUserProfile.into(),
 			&parameters
 		)
 			.context(format!(
 				"Error retrieving user profile for username {}",
-				self.auth.username
+				auth.username()
 			))?);
 	}
 	
-	pub fn buildMediaUrl(&self, endpoint: &str) -> Option<String>
+	pub fn buildMediaUrl(endpoint: &str) -> Option<String>
 	{
-		return self.buildUrl(Self::MediaUrl, endpoint);
+		return Self::buildUrl(Self::MediaUrl, endpoint);
 	}
 	
 	/**
 	Generate a default parameter map containing the most commonly used parameters.
 	*/
-	fn buildUrl(&self, base: &str, endpoint: &str) -> Option<String>
+	fn buildUrl(base: &str, endpoint: &str) -> Option<String>
 	{
 		return Some(
 			Path::new(base)
@@ -314,21 +303,21 @@ impl RetroAchievementsApi
 	/**
 	Generate a default parameter map containing the most commonly used parameters.
 	*/
-	fn generateParameterMap(&self) -> HashMap<String, String>
+	fn generateParameterMap(auth: &RetroAchievementsAuth) -> HashMap<String, String>
 	{
 		return HashMap::from([
-			(Self::Parameter_ApiKey.into(), self.auth.key.to_owned()),
-			(Self::Parameter_ApiUsername.into(), self.auth.username.to_owned()),
+			(Self::Parameter_ApiKey.into(), auth.key().clone()),
+			(Self::Parameter_ApiUsername.into(), auth.username().clone()),
 		]);
 	}
 	
 	/**
 	Execute an HTTP GET request.
 	*/
-	fn get<T>(&self, endpoint: &String, parameters: &HashMap<String, String>) -> Result<T>
+	fn get<T>(endpoint: &String, parameters: &HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
-		if let Some(url) = self.buildUrl(Self::BaseUrl, endpoint)
+		if let Some(url) = Self::buildUrl(Self::BaseUrl, endpoint)
 		{
 			let mut params = String::default();
 			for (k, v) in parameters

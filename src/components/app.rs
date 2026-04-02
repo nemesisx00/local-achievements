@@ -49,6 +49,7 @@ impl App for LocalAchievementsApp
 		let settingsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
+		let mut battleNetData = use_radio::<AppData, AppDataChannel>(AppDataChannel::BattleNet);
 		let mut gogData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Gog);
 		let mut retroAchievementsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
 		let mut steamData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);

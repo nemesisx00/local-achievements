@@ -32,15 +32,15 @@ impl From<TrophyConf> for Game
 	{
 		return Self
 		{
-			detail: value.titleDetail.to_owned(),
-			name: value.titleName.to_owned(),
-			npCommId: value.npcommid.to_owned(),
+			detail: value.titleDetail.clone(),
+			name: value.titleName.clone(),
+			npCommId: value.npcommid.clone(),
 			parentalLevel: value.parentalLevel.value as i64,
 			trophies: value.trophies.iter()
 				.cloned()
 				.map(|t| t.into())
 				.collect(),
-			trophySetVersion: value.trophysetVersion.to_owned(),
+			trophySetVersion: value.trophysetVersion.clone(),
 		};
 	}
 }
@@ -71,7 +71,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.detail = inner.to_owned();
+				game.detail = inner.clone();
 			}
 		}
 		
@@ -80,7 +80,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.name = inner.to_owned();
+				game.name = inner.clone();
 			}
 		}
 		
@@ -89,7 +89,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.npCommId = inner.to_owned();
+				game.npCommId = inner.clone();
 			}
 		}
 		
@@ -131,7 +131,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.trophySetVersion = inner.to_owned();
+				game.trophySetVersion = inner.clone();
 			}
 		}
 		
@@ -181,11 +181,11 @@ impl Game
 	
 	pub fn update(&mut self, game: &Self)
 	{
-		self.detail = game.detail.to_owned();
-		self.name = game.name.to_owned();
-		self.npCommId = game.npCommId.to_owned();
-		self.parentalLevel = game.parentalLevel.to_owned();
-		self.trophySetVersion = game.trophySetVersion.to_owned();
+		self.detail = game.detail.clone();
+		self.name = game.name.clone();
+		self.npCommId = game.npCommId.clone();
+		self.parentalLevel = game.parentalLevel.clone();
+		self.trophySetVersion = game.trophySetVersion.clone();
 		
 		for trophy in self.trophies.iter_mut()
 		{
@@ -200,7 +200,7 @@ impl Game
 		for trophy in game.trophies.iter()
 			.filter(|t| !this.trophies.contains(t))
 		{
-			self.trophies.push(trophy.to_owned());
+			self.trophies.push(trophy.clone());
 		}
 	}
 }

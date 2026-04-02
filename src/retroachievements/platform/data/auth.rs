@@ -1,29 +1,65 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::{Debug, Display, Formatter, Result};
 
 /**
 The combination of username and API key used to authenticate with the
 RetroAchievements API.
 */
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Default)]
 pub struct RetroAchievementsAuth
 {
 	/**
 	The case-sensitive 32 character alphanumeric key associated with the
 	user's account on the RetroAchievements.org website.
 	*/
-	pub key: String,
+	key: String,
 	
 	/// The user's exact username used to access the RetroAchievements.org website.
-	pub username: String,
+	username: String,
+}
+
+impl Debug for RetroAchievementsAuth
+{
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result
+	{
+		return write!(f, "RetroAchievementsAuth Redacted");
+	}
+}
+
+impl Display for RetroAchievementsAuth
+{
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result
+	{
+		return write!(f, "RetroAchievementsAuth Redacted");
+	}
 }
 
 impl RetroAchievementsAuth
 {
-	/// The filename to be used when this struct is read from, or stored to, file.
-	pub const FileName: &str = "ra-auth.json";
+	pub const ApiKeySecretKey: &str = "raApiKey";
+	pub const UsernameSecretKey: &str = "raUsername";
+	
 	/// The expected length of the RetroAchievements API key.
 	#[allow(unused)]
 	const KeyLength: u64 = 32;
+	
+	pub fn new(key: String, username: String) -> Self
+	{
+		return Self
+		{
+			key,
+			username,
+		};
+	}
+	
+	pub fn key(&self) -> &String
+	{
+		return &self.key;
+	}
+	
+	pub fn username(&self) -> &String
+	{
+		return &self.username;
+	}
 	
 	/**
 	Evaluates whether or not this instance is valid.
@@ -34,7 +70,6 @@ impl RetroAchievementsAuth
 	A valid instance is ready to be submitted as a part of requests to the
 	RetroAchievements API.
 	*/
-	#[allow(unused)]
 	pub fn isValid(&self) -> bool
 	{
 		return !String::is_empty(&self.username)
@@ -53,9 +88,9 @@ mod tests
 		let username = "Test".to_string();
 		let key = "12345678901234567890123456789012".to_string();
 		
-		assert!(RetroAchievementsAuth { key: key.to_owned(), username: username.to_owned() }.isValid());
-		assert!(!RetroAchievementsAuth { key: key.to_owned(), ..Default::default() }.isValid());
-		assert!(!RetroAchievementsAuth { username: username.to_owned(), ..Default::default() }.isValid());
+		assert!(RetroAchievementsAuth { key: key.clone(), username: username.clone() }.isValid());
+		assert!(!RetroAchievementsAuth { key: key.clone(), ..Default::default() }.isValid());
+		assert!(!RetroAchievementsAuth { username: username.clone(), ..Default::default() }.isValid());
 		assert!(!RetroAchievementsAuth::default().isValid());
 	}
 }

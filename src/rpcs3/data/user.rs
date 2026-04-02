@@ -154,7 +154,7 @@ impl Rpcs3User
 				{
 					if let Value::String(value) = value
 					{
-						user.name = value.to_owned();
+						user.name = value.clone();
 					}
 				}
 				
@@ -257,7 +257,7 @@ impl Rpcs3User
 		for game in games.iter()
 			.filter(|g| !gameIds.contains(&g.npCommId))
 		{
-			self.games.push(game.to_owned());
+			self.games.push(game.clone());
 		}
 	}
 }

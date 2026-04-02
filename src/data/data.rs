@@ -1,9 +1,7 @@
 use tracing::warn;
-use crate::Secrets;
 use crate::data::{AppState, PlatformState, UserState};
-use crate::gog::GogSession;
-use crate::io::{loadAppSettings, loadAuthData_RetroAchievements,
-	loadAuthData_Steam, loadSettings_Rpcs3, loadUserData_Gog,
+use crate::io::{loadAppSettings, loadSettings_BattleNet, loadSettings_Rpcs3,
+	loadUserData_BattleNet, loadUserData_BattleNet_lossy, loadUserData_Gog,
 	loadUserData_Gog_lossy, loadUserData_RetroAchievements,
 	loadUserData_RetroAchievements_lossy, loadUserData_Rpcs3,
 	loadUserData_Rpcs3_lossy, loadUserData_Steam, loadUserData_Steam_lossy};
@@ -27,7 +25,7 @@ impl Default for AppData
 			user: Default::default(),
 		}
 			.initializeAppSettings()
-			//.initializeBattleNet()
+			.initializeBattleNet()
 			.initializeGog()
 			.initializeRetroAchievements()
 			.initializeRpcs3()
@@ -47,20 +45,11 @@ impl AppData
 		return self;
 	}
 	
-	/*
-	fn initializeBattleNet(&mut self)
+	fn initializeBattleNet(mut self) -> Self
 	{
-		if let Ok(auth) = loadAuthData_BattleNet()
+		if let Ok(auth) = loadSettings_BattleNet()
 		{
-			self.platform.battleNetAuth = auth;
-		}
-		
-		if let Ok(session) = loadSession_BattleNet()
-		{
-			if session.validate()
-			{
-				self.platform.battleNetSession = Some(session);
-			}
+			self.platform.battleNet = auth;
 		}
 		
 		match loadUserData_BattleNet()
@@ -75,18 +64,12 @@ impl AppData
 			},
 			Ok(user) => self.user.battleNet = user,
 		}
+		
+		return self;
 	}
-	*/
 	
 	fn initializeGog(mut self) -> Self
 	{
-		/*
-		if let Ok(session) = loadSession_Gog()
-		{
-			self.platform.gog = Some(session);
-		}
-		*/
-		
 		match loadUserData_Gog()
 		{
 			Err(e) => {
@@ -105,11 +88,6 @@ impl AppData
 	
 	fn initializeRetroAchievements(mut self) -> Self
 	{
-		if let Ok(auth) = loadAuthData_RetroAchievements()
-		{
-			self.platform.retroAchievements = auth;
-		}
-		
 		match loadUserData_RetroAchievements()
 		{
 			Err(e) => {
@@ -151,11 +129,6 @@ impl AppData
 	
 	fn initializeSteam(mut self) -> Self
 	{
-		if let Ok(auth) = loadAuthData_Steam()
-		{
-			self.platform.steam = auth;
-		}
-		
 		match loadUserData_Steam()
 		{
 			Err(e) => {

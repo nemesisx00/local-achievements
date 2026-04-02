@@ -1,6 +1,7 @@
 use tracing::warn;
 use crate::constants::Icon_Locked;
 use crate::data::AppData;
+use crate::data::secure::getRetroAchievementsAuth;
 use crate::io::{FileName_GameIcon, Path_Avatars, Path_Games};
 use crate::net::limiter::request::{DataOperation, FileLocation, RequestData, RetroAchievementsOperation};
 use crate::{join, png, pngAlt};
@@ -10,11 +11,10 @@ pub fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 {
 	let mut requests = vec![];
 	
-	if appData.platform.retroAchievements.isValid()
+	if getRetroAchievementsAuth().is_ok_and(|a| a.isValid())
 	{
-		let api = RetroAchievementsApi::from(appData.platform.retroAchievements.clone());
 		let ulid = appData.user.retroAchievements.ulid.clone();
-		if let Ok(payload) = api.getUserProfile(ulid.clone())
+		if let Ok(payload) = RetroAchievementsApi::getUserProfile(ulid.clone())
 		{
 			appData.user.retroAchievements.processUserProfile(&payload);
 			
@@ -32,7 +32,7 @@ pub fn refreshUserProfile(mut appData: AppData) -> (AppData, Vec<RequestData>)
 						}),
 						
 						operation: DataOperation::CacheImage,
-						url: api.buildMediaUrl(&avatarPath)
+						url: RetroAchievementsApi::buildMediaUrl(&avatarPath)
 					});
 				}
 			}
@@ -47,10 +47,9 @@ pub fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsPro
 {
 	let mut requests = vec![];
 	
-	if appData.platform.retroAchievements.isValid()
+	if getRetroAchievementsAuth().is_ok_and(|a| a.isValid())
 	{
-		let api = RetroAchievementsApi::from(appData.platform.retroAchievements.clone());
-		match api.getUserCompletionProgress(appData.user.retroAchievements.ulid.clone(), Some(state.offset))
+		match RetroAchievementsApi::getUserCompletionProgress(appData.user.retroAchievements.ulid.clone(), Some(state.offset))
 		{
 			Err(e) => warn!("[RetroAchievements] Error retrieving user completion progress: {:?}", e),
 			
@@ -74,7 +73,7 @@ pub fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsPro
 				
 				for game in payload.Results
 				{
-					if let Some(url) = api.buildMediaUrl(&makeRelative(&game.ImageIcon))
+					if let Some(url) = RetroAchievementsApi::buildMediaUrl(&makeRelative(&game.ImageIcon))
 					{
 						requests.push(RequestData
 						{
@@ -100,17 +99,15 @@ pub fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestDa
 {
 	let mut requests = vec![];
 	
-	if appData.platform.retroAchievements.isValid()
+	if getRetroAchievementsAuth().is_ok_and(|a| a.isValid())
 	{
-		let api = RetroAchievementsApi::from(appData.platform.retroAchievements.clone());
-		
 		let ulid = match appData.user.retroAchievements.ulid.clone()
 		{
 			None => appData.user.retroAchievements.username.clone(),
 			Some(ulid) => ulid,
 		};
 		
-		match api.getGameInfo(&ulid, id)
+		match RetroAchievementsApi::getGameInfo(&ulid, id)
 		{
 			Err(e) => warn!("[RetroAchievements] Error getting game info for {}: {:?}", id, e),
 			
@@ -131,7 +128,7 @@ pub fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestDa
 					let sanitizedTitle = RetroAchievementsApi::sanitizeIconTitle(&achievement.Title);
 					
 					// Unlocked
-					if let Some(url) = api.buildMediaUrl(
+					if let Some(url) = RetroAchievementsApi::buildMediaUrl(
 						join!(
 							RetroAchievementsApi::BadgePath,
 							png!(achievement.BadgeName)
@@ -153,7 +150,7 @@ pub fn refreshGameInfo(mut appData: AppData, id: u64) -> (AppData, Vec<RequestDa
 					}
 					
 					// Locked
-					if let Some(url) = api.buildMediaUrl(
+					if let Some(url) = RetroAchievementsApi::buildMediaUrl(
 						join!(
 							RetroAchievementsApi::BadgePath,
 							pngAlt!(

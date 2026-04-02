@@ -1,11 +1,13 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt, label, rect,
-	use_side_effect, use_state};
+	spawn, use_side_effect, use_state};
 use freya::radio::use_radio;
 use strum::IntoEnumIterator;
+use tracing::{info, warn};
 use crate::data::radio::AppDataChannel;
 use crate::data::{ActiveContent, AppData};
+use crate::io::saveAppSettings;
 
 #[derive(Clone, PartialEq)]
 pub struct UiSettings
@@ -25,6 +27,14 @@ impl Component for UiSettings
 		use_side_effect(move || {
 			appData.write().app.settings.defaultActivePlatform = defaultActiveContent.read().clone();
 			appData.write().app.settings.language = language.read().clone();
+			
+			spawn(async move {
+				match saveAppSettings(&appData.read().app.settings)
+				{
+					Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
+					Ok(_) => info!("[Local Achievements] Saved app settings"),
+				}
+			});
 		});
 		
 		let labelWidth = self.labelWidth.clone();

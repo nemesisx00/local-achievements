@@ -14,7 +14,6 @@ use crate::rpcs3::platform::data::user::{DatFile, EntryType6};
 
 const DefaultAccountId: u64 = 1;
 
-#[derive(Clone, Debug)]
 pub struct Rpcs3Api
 {
 	pub accountId: u64,
@@ -40,7 +39,7 @@ impl From<Rpcs3Settings> for Rpcs3Api
 		return Self
 		{
 			accountId: value.accountId,
-			rootDir: value.appDataDirectory.to_owned(),
+			rootDir: value.appDataDirectory.clone(),
 		};
 	}
 }
@@ -124,13 +123,13 @@ impl Rpcs3Api
 			Ok(npCommIds) => {
 				for npCommId in npCommIds
 				{
-					match self.parseTrophyConf(npCommId.to_owned())
+					match self.parseTrophyConf(npCommId.clone())
 					{
 						Err(e) => warn!("[RPCS3] Error parsing the TROPHYCONF.SFM for {}: {:?}", npCommId, e),
 						Ok(trophyConf) => games.push(trophyConf.into()),
 					}
 					
-					match self.parseTrophies(npCommId.to_owned())
+					match self.parseTrophies(npCommId.clone())
 					{
 						Err(e) => warn!("[RPCS3] Error parsing the trophies for {}: {:?}", npCommId, e),
 						Ok(trophies) => {
@@ -225,8 +224,8 @@ impl Rpcs3Api
 	
 	pub fn parseTrophies(&self, npCommId: String) -> Result<Vec<(TrophyMetadata, EntryType6)>>
 	{
-		let datFile = self.parseDatFile(npCommId.to_owned())?;
-		let trophyConf = self.parseTrophyConf(npCommId.to_owned())?;
+		let datFile = self.parseDatFile(npCommId.clone())?;
+		let trophyConf = self.parseTrophyConf(npCommId.clone())?;
 		
 		let mut trophies = vec![];
 		
@@ -235,7 +234,7 @@ impl Rpcs3Api
 			if let Some(entry) = datFile.type6.iter()
 				.find(|entry| entry.trophyId == metadata.id)
 			{
-				trophies.push((metadata.to_owned(), entry.to_owned()));
+				trophies.push((metadata.clone(), entry.clone()));
 			}
 		}
 		
@@ -315,7 +314,7 @@ mod tests
 		let npCommId = env::var("RPCS3_TEST_NPCOMMID").unwrap();
 		
 		let api = Rpcs3Api { rootDir, accountId, };
-		let trophies = api.parseTrophies(npCommId.to_owned()).unwrap();
+		let trophies = api.parseTrophies(npCommId.clone()).unwrap();
 		
 		assert_ne!(trophies.len(), 0);
 		if let Some((metadata, type6)) = trophies.first()

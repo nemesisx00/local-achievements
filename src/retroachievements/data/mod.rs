@@ -12,7 +12,7 @@ Make an absolute path relative by removing the leading '/' if it exists.
 */
 pub fn makeRelative(value: &String) -> String
 {
-	let mut path = value.to_owned();
+	let mut path = value.clone();
 	return match path.starts_with("/")
 	{
 		false => path,

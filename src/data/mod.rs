@@ -16,7 +16,7 @@ pub use data::AppData;
 
 pub use settings::{
 	AppSettings,
-	DefaultNotificationDuration
+	//DefaultNotificationDuration
 };
 
 pub use state::{

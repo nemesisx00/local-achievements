@@ -1,11 +1,10 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
-	use_side_effect, use_state};
-use freya::radio::use_radio;
+	use_hook, use_side_effect, use_state};
 use crate::components::{InputModeHiddenChar, SettingsSwitch};
-use crate::data::AppData;
-use crate::data::radio::AppDataChannel;
+use crate::data::secure::{getRetroAchievementsAuth, setRetroAchievementsApiKey,
+	setRetroAchievementsUsername};
 
 #[derive(Clone, PartialEq)]
 pub struct RetroAchievementsSettingsElement
@@ -17,16 +16,22 @@ impl Component for RetroAchievementsSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
-		
-		let apiKey = use_state(|| appData.read().platform.retroAchievements.key.clone());
-		let username = use_state(|| appData.read().platform.retroAchievements.username.clone());
+		let mut apiKey = use_state(String::default);
+		let mut username = use_state(String::default);
 		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeUsername = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		
 		use_side_effect(move || {
-			appData.write().platform.retroAchievements.key = apiKey.read().clone();
-			appData.write().platform.retroAchievements.username = username.read().clone();
+			_ = setRetroAchievementsApiKey(apiKey.read().clone());
+			_ = setRetroAchievementsUsername(username.read().clone());
+		});
+		
+		use_hook(|| {
+			if let Ok(auth) = getRetroAchievementsAuth()
+			{
+				apiKey.set(auth.key().clone());
+				username.set(auth.username().clone());
+			}
 		});
 		
 		let labelWidth = self.labelWidth.clone();

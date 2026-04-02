@@ -246,7 +246,7 @@ impl Game
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 	

@@ -115,7 +115,7 @@ impl SteamAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.description = inner.to_owned();
+				achievement.description = inner.clone();
 			}
 		}
 		
@@ -126,7 +126,7 @@ impl SteamAchievement
 			{
 				if !inner.is_empty()
 				{
-					achievement.globalPercentage = Some(inner.to_owned());
+					achievement.globalPercentage = Some(inner.clone());
 				}
 			}
 		}
@@ -136,7 +136,7 @@ impl SteamAchievement
 		{
 			if let Value::Bool(inner) = value
 			{
-				achievement.hidden = inner.to_owned();
+				achievement.hidden = inner.clone();
 			}
 		}
 		
@@ -145,7 +145,7 @@ impl SteamAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.iconLockedUrl = inner.to_owned();
+				achievement.iconLockedUrl = inner.clone();
 			}
 		}
 		
@@ -154,7 +154,7 @@ impl SteamAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.iconUrl = inner.to_owned();
+				achievement.iconUrl = inner.clone();
 			}
 		}
 		
@@ -163,7 +163,7 @@ impl SteamAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.id = inner.to_owned();
+				achievement.id = inner.clone();
 			}
 		}
 		
@@ -172,7 +172,7 @@ impl SteamAchievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.name = inner.to_owned();
+				achievement.name = inner.clone();
 			}
 		}
 		
@@ -204,15 +204,15 @@ impl SteamAchievement
 	{
 		self.description = match &achievement.description
 		{
-			Some(d) => d.to_owned(),
+			Some(d) => d.clone(),
 			None => String::default(),
 		};
 		
 		self.hidden = achievement.hidden > 0;
-		self.iconLockedUrl = achievement.icongray.to_owned();
-		self.iconUrl = achievement.icon.to_owned();
-		self.id = achievement.name.to_owned();
-		self.name = achievement.displayName.to_owned();
+		self.iconLockedUrl = achievement.icongray.clone();
+		self.iconUrl = achievement.icon.clone();
+		self.id = achievement.name.clone();
+		self.name = achievement.displayName.clone();
 	}
 	
 	pub fn updateState(&mut self, achievement: &PlayerAchievement)

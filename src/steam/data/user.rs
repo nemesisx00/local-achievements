@@ -83,7 +83,7 @@ impl SteamUser
 					{
 						if !inner.is_empty()
 						{
-							user.avatar = Some(inner.to_owned());
+							user.avatar = Some(inner.clone());
 						}
 					}
 				}
@@ -93,7 +93,7 @@ impl SteamUser
 				{
 					if let Value::String(inner) = value
 					{
-						user.id = inner.to_owned();
+						user.id = inner.clone();
 					}
 				}
 				
@@ -102,7 +102,7 @@ impl SteamUser
 				{
 					if let Value::String(value) = value
 					{
-						user.name = value.to_owned();
+						user.name = value.clone();
 					}
 				}
 			},
@@ -159,8 +159,8 @@ impl SteamUser
 	
 	pub fn update(&mut self, id: &String, name: &String, avatar: Option<&String>)
 	{
-		self.id = id.to_owned();
-		self.name = name.to_owned();
+		self.id = id.clone();
+		self.name = name.clone();
 		self.avatar = avatar.cloned();
 	}
 }

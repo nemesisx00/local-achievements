@@ -1,11 +1,13 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	IntoElement, Size, TextAlign, TextStyleExt, label, rect, use_side_effect,
-	use_state};
+	IntoElement, Size, TextAlign, TextStyleExt, label, rect, spawn,
+	use_side_effect, use_state};
 use freya::radio::use_radio;
+use tracing::{info, warn};
 use crate::components::NumericInput;
 use crate::data::AppData;
 use crate::data::radio::AppDataChannel;
+use crate::io::saveSettings_Rpcs3;
 
 #[derive(Clone, PartialEq)]
 pub struct Rpcs3SettingsElement
@@ -25,6 +27,14 @@ impl Component for Rpcs3SettingsElement
 		use_side_effect(move || {
 			appData.write().platform.rpcs3.accountId = accountId();
 			appData.write().platform.rpcs3.appDataDirectory = appDataDir.read().clone();
+			
+			spawn(async move {
+				match saveSettings_Rpcs3(&appData.read().platform.rpcs3)
+				{
+					Err(e) => warn!("[RPCS3] Error saving settings: {:?}", e),
+					Ok(_) => info!("[RPCS3] Saved settings"),
+				}
+			});
 		});
 		
 		let labelWidth = self.labelWidth.clone();

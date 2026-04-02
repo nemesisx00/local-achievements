@@ -180,7 +180,7 @@ impl Game
 		{
 			if let Value::Number(number) = value
 			{
-				game.highestAward = Some(number.to_owned().into());
+				game.highestAward = Some(number.clone().into());
 			}
 		}
 		
@@ -191,7 +191,7 @@ impl Game
 			{
 				if !string.is_empty()
 				{
-					game.highestAwardedTimestamp = Some(string.to_owned());
+					game.highestAwardedTimestamp = Some(string.clone());
 				}
 			}
 		}
@@ -201,7 +201,7 @@ impl Game
 		{
 			if let Value::String(string) = value
 			{
-				game.icon = string.to_owned();
+				game.icon = string.clone();
 			}
 		}
 		
@@ -248,7 +248,7 @@ impl Game
 			{
 				game.mostRecentTimestamp = match string.is_empty()
 				{
-					false => Some(string.to_owned()),
+					false => Some(string.clone()),
 					true => None,
 				};
 			}
@@ -259,7 +259,7 @@ impl Game
 		{
 			if let Value::String(string) = value
 			{
-				game.name = string.to_owned();
+				game.name = string.clone();
 			}
 		}
 		
@@ -326,7 +326,7 @@ impl Game
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 	
@@ -334,7 +334,7 @@ impl Game
 	{
 		self.awardedCasual = game.NumAwarded;
 		self.awardedHardcore = game.NumAwardedHardcore;
-		self.highestAwardedTimestamp = game.HighestAwardDate.to_owned();
+		self.highestAwardedTimestamp = game.HighestAwardDate.clone();
 		
 		match &game.HighestAwardKind
 		{
@@ -345,15 +345,15 @@ impl Game
 		self.icon = makeRelative(&game.ImageIcon);
 		self.id = game.GameID;
 		self.total = game.MaxPossible;
-		self.mostRecentTimestamp = game.MostRecentAwardedDate.to_owned();
-		self.name = game.Title.to_owned();
-		self.system = game.to_owned().into();
+		self.mostRecentTimestamp = game.MostRecentAwardedDate.clone();
+		self.name = game.Title.clone();
+		self.system = game.clone().into();
 	}
 	
 	pub fn updateDetailed(&mut self, game: &Payload_GetGameInfo)
 	{
 		self.achievements = game.Achievements.iter()
-			.map(|(_, a)| a.to_owned().into())
+			.map(|(_, a)| a.clone().into())
 			.collect();
 		
 		self.awardedCasual = game.NumAwardedToUser;
@@ -368,11 +368,11 @@ impl Game
 			Some(hak) => AwardKind::parse(hak),
 		};
 		
-		self.highestAwardedTimestamp = game.HighestAwardDate.to_owned();
+		self.highestAwardedTimestamp = game.HighestAwardDate.clone();
 		self.icon = makeRelative(&game.ImageIcon);
 		self.id = game.ID;
-		self.name = game.Title.to_owned();
-		self.system = game.to_owned().into();
+		self.name = game.Title.clone();
+		self.system = game.clone().into();
 		self.total = game.NumAchievements;
 	}
 }

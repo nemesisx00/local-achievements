@@ -39,11 +39,11 @@ impl From<TrophyMetadata> for Trophy
 	{
 		return Self
 		{
-			detail: value.detail.to_owned(),
+			detail: value.detail.clone(),
 			grade: value.ttype.into(),
 			hidden: value.hidden == TrophyMetadata::HiddenTrue,
-			id: value.id.to_owned() as u64,
-			name: value.name.to_owned(),
+			id: value.id.clone() as u64,
+			name: value.name.clone(),
 			platinumRelevance: value.pid >= 0,
 			..Default::default()
 		};
@@ -84,7 +84,7 @@ impl Trophy
 		{
 			if let Value::String(inner) = value
 			{
-				trophy.detail = inner.to_owned();
+				trophy.detail = inner.clone();
 			}
 		}
 		
@@ -109,7 +109,7 @@ impl Trophy
 		{
 			if let Value::Bool(inner) = value
 			{
-				trophy.hidden = inner.to_owned();
+				trophy.hidden = inner.clone();
 			}
 		}
 		
@@ -130,7 +130,7 @@ impl Trophy
 		{
 			if let Value::String(inner) = value
 			{
-				trophy.name = inner.to_owned();
+				trophy.name = inner.clone();
 			}
 		}
 		
@@ -139,7 +139,7 @@ impl Trophy
 		{
 			if let Value::Bool(inner) = value
 			{
-				trophy.platinumRelevance = inner.to_owned();
+				trophy.platinumRelevance = inner.clone();
 			}
 		}
 		
@@ -148,7 +148,7 @@ impl Trophy
 		{
 			if let Value::Bool(inner) = value
 			{
-				trophy.unlocked = inner.to_owned();
+				trophy.unlocked = inner.clone();
 			}
 		}
 		
@@ -173,11 +173,11 @@ impl Trophy
 	
 	pub fn update(&mut self, other: &Self)
 	{
-		self.detail = other.detail.to_owned();
+		self.detail = other.detail.clone();
 		self.grade = other.grade;
 		self.hidden = other.hidden;
 		self.id = other.id;
-		self.name = other.name.to_owned();
+		self.name = other.name.clone();
 		self.platinumRelevance = other.platinumRelevance;
 		self.unlocked = other.unlocked;
 		self.unlockedTimestamp = other.unlockedTimestamp;

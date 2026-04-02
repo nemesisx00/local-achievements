@@ -149,7 +149,7 @@ impl Achievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.description = inner.to_owned();
+				achievement.description = inner.clone();
 			}
 		}
 		
@@ -172,7 +172,7 @@ impl Achievement
 			{
 				if !inner.is_empty()
 				{
-					achievement.earnedTimestampCasual = Some(inner.to_owned());
+					achievement.earnedTimestampCasual = Some(inner.clone());
 				}
 			}
 		}
@@ -184,7 +184,7 @@ impl Achievement
 			{
 				if !inner.is_empty()
 				{
-					achievement.earnedTimestampHardcore = Some(inner.to_owned());
+					achievement.earnedTimestampHardcore = Some(inner.clone());
 				}
 			}
 		}
@@ -206,7 +206,7 @@ impl Achievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.icon = inner.to_owned();
+				achievement.icon = inner.clone();
 			}
 		}
 		
@@ -215,7 +215,7 @@ impl Achievement
 		{
 			if let Value::String(inner) = value
 			{
-				achievement.name = inner.to_owned();
+				achievement.name = inner.clone();
 			}
 		}
 		
@@ -256,7 +256,7 @@ impl Achievement
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 	
@@ -288,13 +288,13 @@ impl Achievement
 	{
 		self.awardedCasual = achievement.NumAwarded;
 		self.awardedHardcore = achievement.NumAwardedHardcore;
-		self.description = achievement.Description.to_owned();
+		self.description = achievement.Description.clone();
 		self.displayOrder = achievement.DisplayOrder;
-		self.earnedTimestampHardcore = achievement.DateEarnedHardcore.to_owned();
-		self.earnedTimestampCasual = achievement.DateEarned.to_owned();
+		self.earnedTimestampHardcore = achievement.DateEarnedHardcore.clone();
+		self.earnedTimestampCasual = achievement.DateEarned.clone();
 		self.icon = makeRelative(&achievement.BadgeName);
 		self.id = achievement.ID;
-		self.name = achievement.Title.to_owned();
+		self.name = achievement.Title.clone();
 		self.points = achievement.Points;
 	}
 }

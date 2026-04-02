@@ -1,9 +1,9 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use super::auth::TokenResponse;
 
-#[derive(Clone, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct GogSession
 {
 	accessToken: String,
@@ -22,18 +22,26 @@ impl Debug for GogSession
 	}
 }
 
+impl Display for GogSession
+{
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
+	{
+		return write!(f, "GogSession Redacted");
+	}
+}
+
 impl From<TokenResponse> for GogSession
 {
 	fn from(value: TokenResponse) -> Self
 	{
 		return Self
 		{
-			accessToken: value.access_token.to_owned(),
-			expiresIn: value.expires_in.to_owned(),
-			refreshToken: value.refresh_token.to_owned(),
-			sessionId: value.session_id.to_owned(),
+			accessToken: value.access_token.clone(),
+			expiresIn: value.expires_in.clone(),
+			refreshToken: value.refresh_token.clone(),
+			sessionId: value.session_id.clone(),
 			timestamp: Utc::now(),
-			userId: value.user_id.to_owned(),
+			userId: value.user_id.clone(),
 		};
 	}
 }

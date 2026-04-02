@@ -1,16 +1,13 @@
-use freya::prelude::{ChildrenExt, Component, ContainerExt, ContainerSizeExt,
+use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
+	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Gaps, InputMode, IntoElement,
-	ScrollView, Size, State, Switch, rect, spawn, use_side_effect};
-use freya::radio::use_radio;
-use tracing::{info, warn};
+	ScrollView, Size, State, StyleExt, Switch, rect};
+use crate::battlenet::BattleNetSettingsElement;
 use crate::components::settings::local::LocalInfo;
 use crate::components::settings::notifications::NotificationSettings;
 use crate::components::settings::ui::UiSettings;
-use crate::data::radio::AppDataChannel;
-use crate::data::{AppData, AppSettings, PlatformState};
+use crate::constants::BorderColor;
 use crate::gog::GogSettingsElement;
-use crate::io::{saveAppSettings,// saveAuthData_BattleNet,
-	saveAuthData_RetroAchievements, saveAuthData_Steam, saveSettings_Rpcs3};
 use crate::retroachievements::RetroAchievementsSettingsElement;
 use crate::rpcs3::Rpcs3SettingsElement;
 use crate::steam::SteamSettingsElement;
@@ -27,13 +24,6 @@ impl Component for AppSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
-		
-		use_side_effect(move || saveChanges(
-			appData.read().app.settings.clone(),
-			appData.read().platform.clone()
-		));
-		
 		return rect()
 			.direction(Direction::Vertical)
 			.width(Size::Fill)
@@ -42,12 +32,19 @@ impl Component for AppSettingsElement
 				ScrollView::new()
 					.spacing(15.0)
 					.child(UiSettings::new())
+					.child(separatorElement())
 					.child(NotificationSettings::new())
-					//.child(BattleNetSettingsElement::new())
+					.child(separatorElement())
+					.child(BattleNetSettingsElement::new())
+					.child(separatorElement())
 					.child(GogSettingsElement::new())
+					.child(separatorElement())
 					.child(RetroAchievementsSettingsElement::new())
+					.child(separatorElement())
 					.child(Rpcs3SettingsElement::new())
+					.child(separatorElement())
 					.child(SteamSettingsElement::new())
+					.child(separatorElement())
 					.child(LocalInfo::new())
 			);
 	}
@@ -85,40 +82,32 @@ pub fn SettingsSwitch(mut inputMode: State<InputMode>) -> impl IntoElement
 				})
 		);
 }
-	
-fn saveChanges(app: AppSettings, platform: PlatformState)
+
+fn separatorElement() -> impl IntoElement
 {
-	spawn(async move {
-		match saveAppSettings(&app)
-		{
-			Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
-			Ok(_) => info!("[Local Achievements] Saved app settings"),
-		}
+	return rect()
+		.cross_align(Alignment::Center)
+		.direction(Direction::Horizontal)
+		.height(Size::px(1.0))
+		.main_align(Alignment::Center)
+		//.margin(Gaps::new_symmetric(25.0, 0.0))
+		.width(Size::Fill)
 		
-		/*
-		match saveAuthData_BattleNet(&platform.battleNetAuth)
-		{
-			Err(e) => warn!("[Battle.Net] Error saving authentication settings: {:?}", e),
-			Ok(_) => info!("[Battle.Net] Saved authentication settings"),
-		}
-		*/
-		
-		match saveAuthData_RetroAchievements(&platform.retroAchievements)
-		{
-			Err(e) => warn!("[RetroAchievements] Error saving authentication settings: {:?}", e),
-			Ok(_) => info!("[RetroAchievements] Saved authentication settings"),
-		}
-		
-		match saveSettings_Rpcs3(&platform.rpcs3)
-		{
-			Err(e) => warn!("[RPCS3] Error saving settings: {:?}", e),
-			Ok(_) => info!("[RPCS3] Saved settings"),
-		}
-		
-		match saveAuthData_Steam(&platform.steam)
-		{
-			Err(e) => warn!("[Steam] Error saving authentication settings: {:?}", e),
-			Ok(_) => info!("[Steam] Saved authentication settings"),
-		}
-	});
+		.child(
+			rect()
+				.border(Some(
+					Border::new()
+						.alignment(BorderAlignment::Center)
+						.fill(BorderColor)
+						.width(BorderWidth
+						{
+							top: 0.0,
+							right: 0.0,
+							bottom: 1.0,
+							left: 0.0,
+						})
+				))
+				.height(Size::px(1.0))
+				.width(Size::percent(40.0))
+		);
 }

@@ -20,7 +20,7 @@ impl From<GameMetadata> for System
 		return Self
 		{
 			id: value.ConsoleID,
-			name: value.ConsoleName.to_owned(),
+			name: value.ConsoleName.clone(),
 		};
 	}
 }
@@ -32,7 +32,7 @@ impl From<Payload_GetGameInfo> for System
 		return Self
 		{
 			id: value.ConsoleID,
-			name: value.ConsoleName.to_owned(),
+			name: value.ConsoleName.clone(),
 		};
 	}
 }
@@ -68,7 +68,7 @@ impl System
 		{
 			if let Value::String(string) = value
 			{
-				system.name = string.to_owned();
+				system.name = string.clone();
 			}
 		}
 		
@@ -89,7 +89,7 @@ impl System
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 }

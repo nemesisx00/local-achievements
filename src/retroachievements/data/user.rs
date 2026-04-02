@@ -82,7 +82,7 @@ impl RetroAchievementsUser
 				{
 					if let Value::String(value) = value
 					{
-						user.avatar = Some(value.to_owned());
+						user.avatar = Some(value.clone());
 					}
 				}
 				
@@ -109,7 +109,7 @@ impl RetroAchievementsUser
 				{
 					if let Value::String(value) = value
 					{
-						user.ulid = Some(value.to_owned());
+						user.ulid = Some(value.clone());
 					}
 				}
 				
@@ -118,7 +118,7 @@ impl RetroAchievementsUser
 				{
 					if let Value::String(value) = value
 					{
-						user.username = value.to_owned();
+						user.username = value.clone();
 					}
 				}
 				
@@ -200,7 +200,7 @@ impl RetroAchievementsUser
 			match self.games.iter_mut()
 				.find(|g| g.id == metadata.GameID)
 			{
-				None => self.games.push(metadata.to_owned().into()),
+				None => self.games.push(metadata.clone().into()),
 				Some(game) => game.update(&metadata),
 			}
 		}
@@ -219,11 +219,11 @@ impl RetroAchievementsUser
 		
 		self.ulid = match payload.ULID.is_empty()
 		{
-			false => Some(payload.ULID.to_owned()),
+			false => Some(payload.ULID.clone()),
 			true => None,
 		};
 		
-		self.username = payload.User.to_owned();
+		self.username = payload.User.clone();
 	}
 }
 

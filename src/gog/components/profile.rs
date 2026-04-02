@@ -77,13 +77,8 @@ pub fn GogUserProfile() -> impl IntoElement
 		}
 	});
 	
-	
-	
-	let validSession = match getGogSession()
-	{
-		Err(_) => false,
-		Ok(session) => !session.hasExpired(),
-	};
+	let validSession = getGogSession()
+		.is_ok_and(|s| !s.hasExpired());
 	
 	return rect()
 		.direction(Direction::Horizontal)

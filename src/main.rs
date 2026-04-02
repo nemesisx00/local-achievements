@@ -6,7 +6,7 @@ and tracking your achievements across multiple platforms in one unified UI.
 //Disable the additional command prompt window when running the application on Windows
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-//mod battlenet;
+mod battlenet;
 mod components;
 mod data;
 //mod egs;

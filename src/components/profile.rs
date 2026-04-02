@@ -3,6 +3,7 @@ use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
 	IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt, TextAlign,
 	TextStyleExt, label, rect, use_state};
 use freya::radio::use_radio;
+use crate::battlenet::BattleNetUserProfile;
 use crate::constants::{BorderColor, ButtonBackgroundColor};
 use crate::data::radio::DataChannel;
 use crate::gog::GogUserProfile;
@@ -71,12 +72,12 @@ impl Component for ProfileElement
 			.child(
 				ScrollView::new()
 					.show_scrollbar(visible())
-					/*
+					
 					.child(profileLabelElement("Battle.Net"))
 					.child(BattleNetUserProfile())
 					
 					.child(separatorElement())
-					*/
+					
 					.child(profileLabelElement("GOG"))
 					.child(GogUserProfile())
 					

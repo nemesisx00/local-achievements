@@ -164,7 +164,7 @@ impl Game
 		{
 			if let Value::Bool(inner) = value
 			{
-				game.hasAchievements = inner.to_owned();
+				game.hasAchievements = inner.clone();
 			}
 		}
 		
@@ -185,7 +185,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.iconHash = inner.to_owned();
+				game.iconHash = inner.clone();
 			}
 		}
 		
@@ -206,7 +206,7 @@ impl Game
 		{
 			if let Value::Bool(inner) = value
 			{
-				game.loaded = inner.to_owned();
+				game.loaded = inner.clone();
 			}
 		}
 		
@@ -215,7 +215,7 @@ impl Game
 		{
 			if let Value::String(inner) = value
 			{
-				game.name = inner.to_owned();
+				game.name = inner.clone();
 			}
 		}
 		
@@ -267,16 +267,16 @@ impl Game
 				format!("{}, {}", name, the.trim())
 			},
 			
-			false => self.name.to_owned(),
+			false => self.name.clone(),
 		};
 	}
 	
 	pub fn update(&mut self, info: &GameInfo)
 	{
 		self.id = info.appid;
-		self.iconHash = info.img_icon_url.to_owned();
+		self.iconHash = info.img_icon_url.clone();
 		self.lastPlayed = info.rtime_last_played;
-		self.name = info.name.to_owned();
+		self.name = info.name.clone();
 		self.playtime.update(info);
 	}
 	
@@ -290,7 +290,7 @@ impl Game
 				achievement.globalPercentage = match gp.percent.is_empty()
 				{
 					true => None,
-					false => Some(gp.percent.to_owned()),
+					false => Some(gp.percent.clone()),
 				};
 			}
 		}

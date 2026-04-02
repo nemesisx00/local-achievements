@@ -5,6 +5,7 @@ use anyhow::{anyhow, Context, Result};
 use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
+use crate::data::secure::getSteamAuth;
 use crate::io::Path_Avatars;
 use crate::net::limiter::request::FileLocation;
 use super::{Payload_GetGlobalPercentages, Payload_GetOwnedGames,
@@ -12,20 +13,17 @@ use super::{Payload_GetGlobalPercentages, Payload_GetOwnedGames,
 	Payload_GetRecentlyPlayedGames, Payload_GetSchemaForGame};
 use super::data::auth::SteamAuth;
 
-#[derive(Clone, Debug)]
 pub struct SteamApi
 {
-	pub auth: SteamAuth,
-	pub client: Client,
+	client: Client,
 }
 
-impl From<SteamAuth> for SteamApi
+impl Default for SteamApi
 {
-	fn from(value: SteamAuth) -> Self
+	fn default() -> Self
 	{
 		return Self
 		{
-			auth: value,
 			client: Client::builder()
 				.https_only(true)
 				.build()
@@ -144,9 +142,10 @@ impl SteamApi
 	*/
 	pub async fn getGlobalPercentages(&self, appId: u64) -> Result<Payload_GetGlobalPercentages>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
-			let mut parameters = self.generateParameterMap();
+			let mut parameters = self.generateParameterMap(&auth);
 			parameters.remove(Self::Parameter_Key);
 			parameters.remove(Self::Parameter_SteamId);
 			parameters.insert(Self::Parameter_GameId.into(), appId.to_string());
@@ -211,9 +210,10 @@ impl SteamApi
 	*/
 	pub async fn getOwnedGames(&self) -> Result<Payload_GetOwnedGames>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
-			let mut parameters = self.generateParameterMap();
+			let mut parameters = self.generateParameterMap(&auth);
 			parameters.insert(Self::Parameter_IncludeAppInfo.into(), Self::Value_True.into());
 			parameters.insert(Self::Parameter_IncludePlayedFreeGames.into(), Self::Value_True.into());
 			
@@ -225,7 +225,7 @@ impl SteamApi
 				return Ok(self.get::<Payload_GetOwnedGames>(&url, &parameters).await
 					.context(format!(
 						"Error retrieving list of owned games from Steam Web API for Steam ID {}",
-						self.auth.id
+						auth.id()
 					))?);
 			}
 		}
@@ -270,11 +270,12 @@ impl SteamApi
 	*/
 	pub async fn getPlayerAchievements(&self, appId: u64, language: &String) -> Result<Payload_GetPlayerAchievements>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
-			let mut parameters = self.generateParameterMap();
+			let mut parameters = self.generateParameterMap(&auth);
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language.to_owned());
+			parameters.insert(Self::Parameter_Language.into(), language.clone());
 			
 			if let Some(url) = self.buildUrl(
 				Self::Service_UserStats,
@@ -359,11 +360,12 @@ impl SteamApi
 	*/
 	pub async fn getPlayerSummaries(&self) -> Result<Payload_GetPlayerSummaries>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
-			let mut parameters = self.generateParameterMap();
+			let mut parameters = self.generateParameterMap(&auth);
 			parameters.remove(Self::Parameter_SteamId);
-			parameters.insert(Self::Parameter_SteamIds.into(), self.auth.id.to_owned());
+			parameters.insert(Self::Parameter_SteamIds.into(), auth.id().clone());
 			
 			if let Some(url) = self.buildUrl(
 				Self::Service_User,
@@ -373,7 +375,7 @@ impl SteamApi
 				return Ok(self.get::<Payload_GetPlayerSummaries>(&url, &parameters).await
 					.context(format!(
 						"Error retrieving player summary from Steam Web API for Steam ID {}",
-						self.auth.id
+						auth.id()
 					))?);
 			}
 		}
@@ -420,17 +422,18 @@ impl SteamApi
 	#[allow(unused)]
 	pub async fn getRecentlyPlayedGames(&self) -> Result<Payload_GetRecentlyPlayedGames>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
 			if let Some(url) = self.buildUrl(
 				Self::Service_Player,
 				Self::Endpoint_GetRecentlyPlayedGames
 			)
 			{
-				return Ok(self.get::<Payload_GetRecentlyPlayedGames>(&url, &self.generateParameterMap()).await
+				return Ok(self.get::<Payload_GetRecentlyPlayedGames>(&url, &self.generateParameterMap(&auth)).await
 					.context(format!(
 						"Error retrieving recently played games from Steam Web API for Steam ID {}",
-						self.auth.id
+						auth.id()
 					))?)
 			}
 		}
@@ -478,12 +481,13 @@ impl SteamApi
 	*/
 	pub async fn getSchemaForGame(&self, appId: u64, language: &String) -> Result<Payload_GetSchemaForGame>
 	{
-		if self.auth.validate()
+		let auth = getSteamAuth()?;
+		if auth.validate()
 		{
-			let mut parameters = self.generateParameterMap();
+			let mut parameters = self.generateParameterMap(&auth);
 			parameters.remove(Self::Parameter_SteamId);
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language.to_owned());
+			parameters.insert(Self::Parameter_Language.into(), language.clone());
 			
 			if let Some(url) = self.buildUrl(
 				Self::Service_UserStats,
@@ -520,11 +524,11 @@ impl SteamApi
 	/**
 	Generate a default parameter map containing the most commonly used parameters.
 	*/
-	fn generateParameterMap(&self) -> HashMap<String, String>
+	fn generateParameterMap(&self, auth: &SteamAuth) -> HashMap<String, String>
 	{
 		return HashMap::from([
-			(Self::Parameter_Key.into(), self.auth.key.to_owned()),
-			(Self::Parameter_SteamId.into(), self.auth.id.to_owned()),
+			(Self::Parameter_Key.into(), auth.key().clone()),
+			(Self::Parameter_SteamId.into(), auth.id().clone()),
 			(Self::Parameter_Format.into(), Self::Format_Json.into()),
 		]);
 	}
