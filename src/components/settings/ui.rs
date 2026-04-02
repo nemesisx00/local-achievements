@@ -44,8 +44,6 @@ impl Component for UiSettings
 			}
 		});
 		
-		let labelWidth = self.labelWidth.clone();
-		
 		return rect()
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
@@ -74,7 +72,7 @@ impl Component for UiSettings
 							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
 							.min_width(Size::px(102.0))
 							.text_align(TextAlign::End)
-							.width(labelWidth.clone())
+							.width(self.labelWidth.clone())
 							.text("Starting Tab")
 					)
 					
@@ -114,7 +112,7 @@ impl Component for UiSettings
 							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
 							.min_width(Size::px(102.0))
 							.text_align(TextAlign::End)
-							.width(labelWidth.clone())
+							.width(self.labelWidth.clone())
 							.text("Language")
 					)
 					
