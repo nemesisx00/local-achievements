@@ -11,6 +11,7 @@ use crate::io::{Path_Avatars, getImagePath};
 use crate::net::limiter::RateLimiter;
 use crate::net::limiter::request::{FileLocation, RequestEvent, SteamOperation};
 use crate::steam::platform::api::SteamApi;
+use crate::util::filePathExists;
 
 pub fn SteamProfile() -> impl IntoElement
 {
@@ -34,7 +35,7 @@ pub fn SteamProfile() -> impl IntoElement
 		.spacing(10.0)
 		.width(Size::flex(1.0))
 		
-		.maybe_child(avatarPath.is_some().then(||
+		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
 				.width(Size::px(64.0))
 		))

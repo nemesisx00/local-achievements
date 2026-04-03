@@ -10,6 +10,7 @@ use freya::radio::{IntoWritable, use_radio};
 use crate::net::limiter::RateLimiter;
 use crate::net::limiter::request::{FileLocation, RequestEvent,
 	RetroAchievementsOperation};
+use crate::util::filePathExists;
 use crate::{join, png};
 use crate::data::radio::{AppDataChannel, DataChannel, GameIdChannel};
 use crate::components::IconButton;
@@ -107,7 +108,7 @@ impl Component for GameElement
 							.onPress(move |_| **selectedGameId.write() = None)
 					)
 					
-					.maybe_child(iconPath.is_some().then(||
+					.maybe_child(filePathExists(&iconPath).then(||
 						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 							.width(Size::px(64.0))
 					))

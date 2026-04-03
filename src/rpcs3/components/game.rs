@@ -13,6 +13,7 @@ use crate::join;
 use crate::io::{Path_Games, getImagePath};
 use crate::net::limiter::request::FileLocation;
 use crate::rpcs3::platform::api::Rpcs3Api;
+use crate::util::filePathExists;
 use super::trophy::TrophyElement;
 
 #[derive(Clone, PartialEq)]
@@ -76,7 +77,7 @@ impl Component for GameElement
 							.onPress(move |_| **selectedGameId.write() = None)
 					)
 					
-					.maybe_child(iconPath.is_some().then(||
+					.maybe_child(filePathExists(&iconPath).then(||
 						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 							.height(Size::px(64.0))
 					))

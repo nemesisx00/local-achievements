@@ -16,6 +16,7 @@ use crate::io::{Path_Games, getImagePath};
 use crate::net::limiter::request::FileLocation;
 use crate::retroachievements::RetroAchievementsMode;
 use crate::retroachievements::platform::api::RetroAchievementsApi;
+use crate::util::filePathExists;
 use crate::{join, png, pngAlt};
 
 #[derive(Clone, PartialEq)]
@@ -76,6 +77,8 @@ impl Component for AchievementElement
 		let percentCasualString = format!("{:.2}", percentCasual);
 		let percentHardcoreString = format!("{:.2}", percentHardcore);
 		
+		let showIcon = filePathExists(&iconPath);
+		
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
@@ -107,11 +110,11 @@ impl Component for AchievementElement
 							.spacing(10.0)
 							.width(Size::Fill)
 							
-							.maybe_child(iconPath.is_none().then(||
+							.maybe_child((!showIcon).then(||
 								CircularLoader::new()
 							))
 							
-							.maybe_child(iconPath.is_some().then(||
+							.maybe_child(showIcon.then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 									.width(Size::px(64.0))
 							))

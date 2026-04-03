@@ -10,6 +10,7 @@ use crate::data::radio::AppDataChannel;
 use crate::gog::GogApi;
 use crate::io::{Path_Games, getImagePath};
 use crate::net::limiter::request::FileLocation;
+use crate::util::filePathExists;
 use crate::{join, jpg, jpgAlt};
 
 #[derive(Clone, PartialEq)]
@@ -45,6 +46,8 @@ impl Component for AchievementElement
 		let timestamp = achievement.formatEarnedTimestamp()
 			.unwrap_or_default();
 		
+		let showIcon = filePathExists(&iconPath);
+		
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
@@ -76,13 +79,13 @@ impl Component for AchievementElement
 							.spacing(10.0)
 							.width(Size::Fill)
 							
-							.maybe_child(iconPath.is_none().then(||
+							.maybe_child((!showIcon).then(||
 								rect()
 									.height(Size::px(64.0))
 									.width(Size::px(64.0))
 							))
 							
-							.maybe_child(iconPath.is_some().then(||
+							.maybe_child(showIcon.then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 									.width(Size::px(64.0))
 							))

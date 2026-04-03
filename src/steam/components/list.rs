@@ -9,6 +9,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 use freya::radio::use_radio;
 use crate::data::radio::{AppDataChannel, GameIdChannel};
 use crate::net::limiter::request::FileLocation;
+use crate::util::filePathExists;
 use crate::{join, jpg};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
 		RetroAchievementsProgressColorBackground, SteamContrast};
@@ -168,8 +169,8 @@ impl Component for GameListNode
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
 							
-							.maybe_child(iconPath.is_some()
-								.then(|| rect()
+							.maybe_child(filePathExists(&iconPath).then(||
+								rect()
 									.cross_align(Alignment::Center)
 									.direction(Direction::Vertical)
 									.height(Size::px(64.0))

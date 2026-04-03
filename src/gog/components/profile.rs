@@ -19,6 +19,7 @@ use crate::gog::GogApi;
 use crate::io::{Path_Avatars, getImagePath};
 use crate::net::limiter::RateLimiter;
 use crate::net::limiter::request::{FileLocation, GogOperation, RequestEvent};
+use crate::util::filePathExists;
 
 pub fn GogUserProfile() -> impl IntoElement
 {
@@ -86,7 +87,7 @@ pub fn GogUserProfile() -> impl IntoElement
 		.spacing(10.0)
 		.width(Size::Fill)
 		
-		.maybe_child(avatarPath.is_some().then(||
+		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
 				.width(Size::px(64.0))
 		))

@@ -17,6 +17,7 @@ use crate::join;
 use crate::io::{Path_Games, getImagePath};
 use crate::net::limiter::request::FileLocation;
 use crate::rpcs3::platform::api::Rpcs3Api;
+use crate::util::filePathExists;
 
 #[derive(Clone, PartialEq)]
 pub struct GameList;
@@ -171,7 +172,7 @@ impl Component for GameListNode
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
 							
-							.maybe_child(iconPath.is_some().then(||
+							.maybe_child(filePathExists(&iconPath).then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 									.width(Size::px(80.0))
 							))

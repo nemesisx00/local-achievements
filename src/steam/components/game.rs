@@ -12,6 +12,7 @@ use crate::data::radio::{AppDataChannel, DataChannel, GameIdChannel};
 use crate::net::limiter::RateLimiter;
 use crate::net::limiter::request::{FileLocation, RequestEvent, SteamOperation};
 use crate::steam::components::achievement::AchievementElement;
+use crate::util::filePathExists;
 use crate::{join, jpg};
 use crate::io::{FileName_GameIcon, Path_Games, getImagePath};
 use crate::steam::platform::api::SteamApi;
@@ -78,7 +79,7 @@ impl Component for GameElement
 								.onPress(move |_| **selectedGameId.write() = None)
 						)
 						
-						.maybe_child(iconPath.is_some().then(||
+						.maybe_child(filePathExists(&iconPath).then(||
 							ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 								.width(Size::px(64.0))
 						))

@@ -1,3 +1,5 @@
+use std::fs::exists;
+
 use anyhow::{Context, Result};
 use reqwest::Client;
 use crate::io::saveImageToCache;
@@ -22,6 +24,13 @@ pub async fn cacheImage(
 		.context(format!("Error saving image to file from url: {}", url))?;
 	
 	return Ok(());
+}
+
+pub fn filePathExists(path: &Option<String>) -> bool
+{
+	return path.clone()
+		.is_some_and(|p| exists(p)
+			.is_ok_and(|b| b));
 }
 
 pub fn truncateF32(value: impl Into<f32>, decimalPlaces: impl Into<i32>) -> f32

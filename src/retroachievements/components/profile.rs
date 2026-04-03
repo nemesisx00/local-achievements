@@ -14,6 +14,7 @@ use crate::components::IconButton;
 use crate::data::AppData;
 use crate::io::{Path_Avatars, getImagePath};
 use crate::retroachievements::platform::api::RetroAchievementsApi;
+use crate::util::filePathExists;
 
 pub fn RetroAchievementsUserProfile() -> impl IntoElement
 {
@@ -66,7 +67,7 @@ pub fn RetroAchievementsUserProfile() -> impl IntoElement
 		.spacing(10.0)
 		.width(Size::Fill)
 		
-		.maybe_child(avatarPath.is_some().then(||
+		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
 				.width(Size::px(64.0))
 		))

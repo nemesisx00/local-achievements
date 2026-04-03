@@ -15,6 +15,7 @@ use crate::constants::{BorderColor, ButtonBackgroundColor,
 use crate::data::AppData;
 use crate::data::radio::{AppDataChannel, GameIdChannel};
 use crate::net::limiter::request::FileLocation;
+use crate::util::filePathExists;
 use crate::{join, png};
 use crate::io::{FileName_GameIcon, Path_Games, getImagePath};
 use crate::retroachievements::RetroAchievementsMode;
@@ -175,7 +176,7 @@ impl Component for GameListNode
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
 							
-							.maybe_child(iconPath.is_some().then(||
+							.maybe_child(filePathExists(&iconPath).then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 									.width(Size::px(64.0))
 							))

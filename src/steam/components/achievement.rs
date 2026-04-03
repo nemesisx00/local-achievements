@@ -8,6 +8,7 @@ use freya::radio::use_radio;
 use crate::data::AppData;
 use crate::data::radio::AppDataChannel;
 use crate::net::limiter::request::FileLocation;
+use crate::util::filePathExists;
 use crate::{join, jpg, jpgAlt};
 use crate::constants::{BorderColor, Icon_Locked};
 use crate::io::{Path_Games, getImagePath};
@@ -50,6 +51,8 @@ impl Component for AchievementElement
 			Some(gp) => format!("{}% of players have this achievement", gp),
 		};
 		
+		let showIcon = filePathExists(&iconPath);
+		
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
@@ -73,11 +76,11 @@ impl Component for AchievementElement
 					.padding(Gaps::new_symmetric(10.0, 10.0))
 					.width(Size::percent(50.0))
 					
-					.maybe_child(iconPath.is_none().then(||
+					.maybe_child((!showIcon).then(||
 						CircularLoader::new()
 					))
 					
-					.maybe_child(iconPath.is_some().then(||
+					.maybe_child(showIcon.then(||
 						rect()
 							.cross_align(Alignment::Center)
 							.main_align(Alignment::Center)

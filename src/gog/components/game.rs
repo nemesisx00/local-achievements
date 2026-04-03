@@ -9,6 +9,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 use freya::radio::{IntoWritable, use_radio};
 use crate::net::limiter::RateLimiter;
 use crate::net::limiter::request::{FileLocation, GogOperation, RequestEvent};
+use crate::util::filePathExists;
 use crate::{join, jpg};
 use crate::data::radio::{AppDataChannel, DataChannel, GameIdChannel};
 use crate::components::refresh::confirm::ConfirmRefresh;
@@ -109,7 +110,7 @@ impl Component for GameElement
 							.onPress(move |_| **selectedGameId.write() = None)
 					)
 					
-					.maybe_child(iconPath.is_some().then(||
+					.maybe_child(filePathExists(&iconPath).then(||
 						ImageViewer::new(PathBuf::from(iconPath.unwrap_or_default()))
 							.height(Size::px(64.0))
 					))

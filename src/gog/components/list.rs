@@ -8,6 +8,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	label, rect, use_scroll_controller, use_state};
 use freya::radio::use_radio;
 use crate::net::limiter::request::FileLocation;
+use crate::util::filePathExists;
 use crate::{join, jpg};
 use crate::data::radio::{AppDataChannel, GameIdChannel};
 use crate::constants::{BorderColor, ButtonBackgroundColor,
@@ -119,6 +120,8 @@ impl Component for GameListNode
 		let progressString = format!("{:.2}%", progress);
 		let name = game.name.clone();
 		
+		let showIcon = filePathExists(&iconPath);
+		
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
@@ -172,13 +175,13 @@ impl Component for GameListNode
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
 							
-							.maybe_child(iconPath.is_none().then(||
+							.maybe_child((!showIcon).then(||
 								rect()
 									.height(Size::px(64.0))
 									.width(Size::px(64.0))
 							))
 							
-							.maybe_child(iconPath.is_some().then(||
+							.maybe_child(showIcon.then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap_or_default()))
 									.height(Size::px(64.0))
 							))
