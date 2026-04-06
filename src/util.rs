@@ -1,6 +1,8 @@
 use std::fs::exists;
+use std::io::Cursor;
 
 use anyhow::{Context, Result};
+use image::ImageReader;
 use reqwest::Client;
 use crate::io::saveImageToCache;
 use crate::net::limiter::request::FileLocation;
@@ -19,6 +21,13 @@ pub async fn cacheImage(
 			.context(format!("Error retrieving image at url: {}", url))?
 		.bytes().await
 			.context(format!("Error converting the image response into an instance of Bytes for url: {}", url))?;
+	
+	// Validate that the response is actually an image
+	let _image = ImageReader::new(Cursor::new(response.as_ref()))
+		.with_guessed_format()
+			.context("Error guessing image format based on response")?
+		.decode()
+			.context("Error decoding response as an image")?;
 	
 	saveImageToCache(destination, response.as_ref())
 		.context(format!("Error saving image to file from url: {}", url))?;

@@ -2463,6 +2463,7 @@ dependencies = [
  "chrono",
  "directories",
  "freya",
+ "image",
  "oauth2",
  "path-slash",
  "regex",
