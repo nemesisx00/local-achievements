@@ -87,6 +87,7 @@ impl Component for AchievementElement
 							
 							.child(
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+									.height(Size::px(64.0))
 									.width(Size::px(64.0))
 							)
 					))

@@ -177,6 +177,7 @@ impl Component for GameListNode
 									.main_align(Alignment::Center)
 									.child(
 										ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+											.height(Size::px(48.0))
 											.width(Size::px(48.0))
 									)
 							))
