@@ -12,6 +12,7 @@ use crate::data::radio::DataChannel;
 pub struct OAuth2Overlay
 {
 	cancelled: Writable<bool>,
+	done: Writable<bool>,
 	platformName: Option<String>,
 }
 
@@ -21,7 +22,7 @@ impl Component for OAuth2Overlay
 	{
 		let windowSize = use_radio::<PhysicalSize<u32>, DataChannel>(DataChannel::WindowSize);
 		
-		let mut cancelledState = use_state(bool::default);
+		let mut cancelledState = use_state(|| self.cancelled.peek().clone());
 		
 		use_side_effect({
 			let mut cancelled = self.cancelled.clone();
@@ -41,6 +42,16 @@ impl Component for OAuth2Overlay
 			None => "Use the opened browser tab to log in to your account".to_string(),
 			Some(name) => format!("Use the opened browser tab to log in to your {} account", name),
 		};
+		
+		// TODO: Figure out a way to reliably detect the "state" of the authorization process and update the UI accordingly
+		let buttonText = "Done";
+		/*
+		let buttonText = match self.done.read().clone()
+		{
+			false => "Cancel",
+			true => "Done",
+		};
+		*/
 		
 		return rect()
 			.position(Position::new_global()
@@ -111,7 +122,7 @@ impl Component for OAuth2Overlay
 								Button::new()
 									.on_press(move |_| cancelledState.set(true))
 									.width(Size::flex(0.5))
-									.child("Cancel")
+									.child(buttonText)
 							)
 					)
 			);
@@ -122,11 +133,13 @@ impl Component for OAuth2Overlay
 impl OAuth2Overlay
 {
 	pub fn new(
-		cancelled: Writable<bool>
+		cancelled: Writable<bool>,
+		done: Writable<bool>,
 	) -> Self
 	{
 		return Self {
 			cancelled,
+			done,
 			platformName: None,
 		};
 	}
