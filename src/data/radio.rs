@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use freya::radio::RadioChannel;
 use freya::winit::dpi::PhysicalSize;
+use crate::battlenet::BattleNetGames;
 use crate::components::ProfileState;
 use crate::data::ActiveContent;
 use crate::data::data::AppData;
@@ -51,5 +52,6 @@ pub enum GameIdChannel
 	Steam,
 }
 
-impl RadioChannel<Option<u64>> for GameIdChannel {}
+impl RadioChannel<Option<BattleNetGames>> for GameIdChannel {}
 impl RadioChannel<Option<String>> for GameIdChannel {}
+impl RadioChannel<Option<u64>> for GameIdChannel {}

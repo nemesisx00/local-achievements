@@ -9,13 +9,13 @@ use crate::battlenet::platform::data::starcraft2::profile::profile::PayloadProfi
 use super::api::BattleNetApi;
 
 /**
-Contains all implemented endpoints which retrieve StarCraft 2 data.
+Contains all implemented endpoints which retrieve StarCraft II data.
 */
 pub struct Starcraft2;
 
 impl Starcraft2
 {
-	pub const AvatarPrefix: &str = "starcraft2";
+	pub const GamePrefix: &str = "starcraft2";
 	
 	const RootUriApi: &str = ".api.blizzard.com";
 	const RootUriApiChina: &str = "gateway.battlenet.com.cn";

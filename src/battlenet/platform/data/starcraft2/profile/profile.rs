@@ -4,7 +4,7 @@ use serde::Deserialize;
 pub struct PayloadProfile
 {
 	pub summary: Summary,
-	pub snapshot: Snapshot,
+	pub snapshot: ProfileSnapshot,
 	pub career: Career,
 	pub swarmLevels: SwarmLevels,
 	pub campaign: Campaign,
@@ -79,7 +79,7 @@ pub struct CriteriaEarned
 pub struct EarnedAchievement
 {
 	pub achievementId: String,
-	pub completionDate: u64,
+	pub completionDate: f64,
 	pub numCompletedAchievementsInSeries: u64,
 	pub totalAchievementsInSeries: u64,
 	pub isComplete: bool,
@@ -97,7 +97,7 @@ pub struct EarnedReward
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-pub struct Snapshot
+pub struct ProfileSnapshot
 {
 	pub seasonSnapshot: SnapshotSeason,
 	pub totalRankedSeasonGamesPlayed: u64,

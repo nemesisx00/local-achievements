@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use crate::battlenet::platform::data::starcraft2::profile::metadata::CategoryMetadata;
+use crate::battlenet::platform::data::starcraft2::profile::profile::EarnedAchievement;
 use super::achievement::Sc2Achievement;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
 pub struct Sc2Category
 {
 	pub achievements: Vec<Sc2Achievement>,
@@ -30,6 +32,14 @@ impl From<CategoryMetadata> for Sc2Category
 	}
 }
 
+impl PartialOrd for Sc2Category
+{
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering>
+	{
+		return self.displayOrder.partial_cmp(&other.displayOrder);
+	}
+}
+
 impl Sc2Category
 {
 	pub fn addAchievement(&mut self, categoryId: &String, achievement: Sc2Achievement)
@@ -39,7 +49,7 @@ impl Sc2Category
 			self.achievements.push(achievement);
 		}
 		else if let Some(parent) = self.children.iter_mut()
-			.find(|c| c.containsId(&categoryId.to_string()))
+			.find(|c| c.containsStringId(&categoryId.to_string()))
 		{
 			parent.addAchievement(categoryId, achievement);
 		}
@@ -58,7 +68,7 @@ impl Sc2Category
 			self.children.push(child);
 		}
 		else if let Some(parent) = self.children.iter_mut()
-			.find(|c| c.containsId(parentId))
+			.find(|c| c.containsStringId(parentId))
 		{
 			parent.addChild(parentId, child);
 		}
@@ -91,10 +101,154 @@ impl Sc2Category
 	Check if the given `id` exists, within this instance or one of its
 	children.
 	*/
-	pub fn containsId(&self, id: &String) -> bool
+	pub fn containsAchievementId(&self, id: &String) -> bool
+	{
+		return self.achievements.iter()
+				.any(|a| &a.id.to_string() == id)
+			|| self.children.iter()
+				.any(|c| c.containsAchievementId(id));
+	}
+	
+	/**
+	Check if the given `id` exists, within this instance or one of its
+	children.
+	*/
+	pub fn containsId(&self, id: u64) -> bool
+	{
+		return self.id == id
+			|| self.children.iter()
+				.any(|c| c.containsId(id));
+	}
+	
+	/**
+	Check if the given `id` exists, within this instance or one of its
+	children.
+	*/
+	pub fn containsStringId(&self, id: &String) -> bool
 	{
 		return &self.id.to_string() == id
-			|| self.children.iter().any(|c| c.containsId(id));
+			|| self.children.iter()
+				.any(|c| c.containsStringId(id));
+	}
+	
+	/**
+	Get a category by id.
+	
+	Searches through all child categories as well.
+	*/
+	pub fn get(&self, id: u64) -> Option<Self>
+	{
+		return match self.id == id
+		{
+			false => match self.children.iter()
+				.find(|c| c.containsId(id))
+			{
+				None => None,
+				Some(child) => child.get(id),
+			},
+			true => Some(self.clone()),
+		}
+	}
+	
+	pub fn parseJsonMapLossy(map: &Map<String, Value>) -> Option<Self>
+	{
+		let mut category = Self::default();
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "achievements")
+		{
+			if let Value::Array(inner) = value
+			{
+				let mut achievements = vec![];
+				
+				for value in inner
+				{
+					if let Value::Object(achievementValues) = value
+					{
+						if let Some(achievement) = Sc2Achievement::parseJsonMapLossy(achievementValues)
+						{
+							achievements.push(achievement);
+						}
+						
+					}
+				}
+				
+				category.achievements = achievements;
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "children")
+		{
+			if let Value::Array(inner) = value
+			{
+				let mut children = vec![];
+				
+				for value in inner
+				{
+					if let Value::Object(categoryValues) = value
+					{
+						if let Some(category) = Self::parseJsonMapLossy(categoryValues)
+						{
+							children.push(category);
+						}
+					}
+				}
+				
+				category.children = children;
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "displayOrder")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					category.displayOrder = number;
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "id")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					category.id = number;
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "name")
+		{
+			if let Value::String(inner) = value
+			{
+				category.name = inner.clone();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "points")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					category.points = number;
+				}
+			}
+		}
+		
+		return match category.id > 0
+		{
+			false => None,
+			true => Some(category),
+		};
 	}
 	
 	/**
@@ -118,7 +272,7 @@ impl Sc2Category
 			
 			// For now, prune any leftovers that don't have an existing parent category
 			if leftovers.iter().all(|m| categories.iter()
-				.find(|c|c.containsId(&m.parentCategoryId.clone().unwrap_or_default()))
+				.find(|c|c.containsStringId(&m.parentCategoryId.clone().unwrap_or_default()))
 				.is_none()
 			)
 			{
@@ -146,7 +300,7 @@ impl Sc2Category
 				categories.push(Self::from(metaCategory));
 			}
 			else if let Some(parent) = categories.iter_mut()
-				.find(|c| c.containsId(&metaCategory.parentCategoryId.clone().unwrap_or_default()))
+				.find(|c| c.containsStringId(&metaCategory.parentCategoryId.clone().unwrap_or_default()))
 			{
 				let category = Self::from(metaCategory.clone());
 				parent.addChild(&metaCategory.parentCategoryId.clone().unwrap_or_default(), category);
@@ -167,6 +321,46 @@ impl Sc2Category
 				self.achievements.len(),
 				|acc, cat| acc + cat.totalAchievements()
 			);
+	}
+	
+	pub fn update(&mut self, other: &Self)
+	{
+		for achievement in other.achievements.iter()
+		{
+			match self.achievements.iter_mut()
+				.find(|a| a.id == achievement.id)
+			{
+				None => self.achievements.push(achievement.clone()),
+				Some(a) => a.update(achievement),
+			}
+		}
+		
+		for child in other.children.iter()
+		{
+			match self.children.iter_mut()
+				.find(|c| c.id == child.id)
+			{
+				None => self.children.push(child.clone()),
+				Some(c) => c.update(&child),
+			}
+		}
+		
+		self.displayOrder = other.displayOrder;
+		self.id = other.id;
+		self.name = other.name.clone();
+		self.points = other.points;
+	}
+	
+	pub fn updateEarned(&mut self, earned: EarnedAchievement)
+	{
+		match self.achievements.iter_mut()
+			.find(|a| a.id.to_string() == earned.achievementId)
+		{
+			None => self.children.iter_mut()
+				.filter(|c| c.containsAchievementId(&earned.achievementId))
+				.for_each(|c| c.updateEarned(earned.clone())),
+			Some(a) => a.updateEarned(earned),
+		}
 	}
 }
 
@@ -263,7 +457,7 @@ mod tests
 		assert_eq!(categories.len(), 2);
 		
 		// Categories with a specified parent id and whose parent does not exist are pruned
-		assert!(categories.iter().all(|c| !c.containsId(&"92".into())));
+		assert!(categories.iter().all(|c| !c.containsStringId(&"92".into())));
 		
 		let parent = categories.iter().find(|c| c.id == 12).unwrap();
 		assert_eq!(&parent.name, "First Top Level Parent");

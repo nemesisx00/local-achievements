@@ -1,18 +1,24 @@
 use std::collections::HashMap;
 use chrono::{DateTime, Utc};
+use chrono::serde::ts_seconds_option;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use crate::battlenet::platform::data::starcraft2::profile::metadata::AchievementMetadata;
 use crate::battlenet::platform::data::starcraft2::profile::profile::EarnedAchievement;
+use super::criteria::Sc2Criteria;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Ord, Serialize)]
 pub struct Sc2Achievement
 {
+	pub criteria: Vec<Sc2Criteria>,
 	pub description: String,
 	pub displayOrder: u64,
 	pub id: u64,
 	pub name: String,
 	pub points: u64,
 	pub unlocked: bool,
+	
+    #[serde(with = "ts_seconds_option")]
 	pub unlockedTimestamp: Option<DateTime<Utc>>,
 }
 
@@ -35,8 +41,124 @@ impl From<AchievementMetadata> for Sc2Achievement
 	}
 }
 
+impl PartialOrd for Sc2Achievement
+{
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering>
+	{
+		return self.displayOrder.partial_cmp(&other.displayOrder);
+	}
+}
+
 impl Sc2Achievement
 {
+	pub fn parseJsonMapLossy(map: &Map<String, Value>) -> Option<Self>
+	{
+		let mut achievement = Self::default();
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "achievements")
+		{
+			if let Value::Array(inner) = value
+			{
+				let mut criteriaList = vec![];
+				
+				for value in inner
+				{
+					if let Value::Object(criteriaValues) = value
+					{
+						if let Some(criteria) = Sc2Criteria::parseJsonMapLossy(criteriaValues)
+						{
+							criteriaList.push(criteria);
+						}
+					}
+				}
+				
+				achievement.criteria = criteriaList;
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "description")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.description = inner.clone();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "displayOrder")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					achievement.displayOrder = number;
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "id")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					achievement.id = number;
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "name")
+		{
+			if let Value::String(inner) = value
+			{
+				achievement.name = inner.clone();
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "points")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_u64()
+				{
+					achievement.points = number;
+				}
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "unlocked")
+		{
+			if let Value::Bool(inner) = value
+			{
+				achievement.unlocked = *inner;
+			}
+		}
+		
+		if let Some((_, value)) = map.iter()
+			.find(|(key, _)| key.as_str() == "unlockedTimestamp")
+		{
+			if let Value::Number(inner) = value
+			{
+				if let Some(number) = inner.as_i64()
+				{
+					achievement.unlockedTimestamp = DateTime::from_timestamp(number, 0);
+				}
+			}
+		}
+		
+		return match achievement.id > 0
+		{
+			false => None,
+			true => Some(achievement),
+		};
+	}
+	
 	/**
 	Process the achievements metadata returned by the Profile/Static endpoint.
 	
@@ -57,19 +179,36 @@ impl Sc2Achievement
 		return map;
 	}
 	
-	pub fn update(&mut self, value: EarnedAchievement)
+	pub fn update(&mut self, other: &Sc2Achievement)
+	{
+		self.description = other.description.clone();
+		self.displayOrder = other.displayOrder;
+		self.id = other.id;
+		self.name = other.name.clone();
+		self.points = other.points;
+		self.unlocked = other.unlocked;
+		self.unlockedTimestamp = other.unlockedTimestamp.clone();
+	}
+	
+	pub fn updateEarned(&mut self, value: EarnedAchievement)
 	{
 		self.unlocked = value.isComplete;
 		self.unlockedTimestamp = DateTime::from_timestamp(value.completionDate as i64, 0);
+	}
+	
+	pub fn updateStatic(&mut self, other: AchievementMetadata)
+	{
+		self.description = other.description.clone();
+		self.displayOrder = other.uiOrderHint;
+		self.name = other.title.clone();
+		self.points = other.points;
 	}
 }
 
 #[cfg(test)]
 mod tests
 {
-	use std::str::FromStr;
-
-use super::*;
+	use super::*;
 	
 	const JsonPayload: &str = r#"
 [
@@ -181,7 +320,7 @@ use super::*;
 		assert!(!achievement.unlocked);
 		assert_eq!(achievement.unlockedTimestamp, None);
 		
-		achievement.update(metadata.unwrap());
+		achievement.updateEarned(metadata.unwrap());
 		assert!(achievement.unlocked);
 		assert_eq!(achievement.unlockedTimestamp.unwrap().naive_utc(), dateTime);
 	}

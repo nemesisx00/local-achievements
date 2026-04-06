@@ -5,6 +5,7 @@ use reqwest::{Client, Url};
 use reqwest::header::AUTHORIZATION;
 use serde::de::DeserializeOwned;
 use tracing::info;
+use crate::battlenet::data::region::Region;
 use crate::battlenet::platform::data::settings::BattleNetSettings;
 use crate::battlenet::platform::data::userinfo::UserInfo;
 use crate::data::secure::{getBattleNetClientAuth, setBattleNetSession};
@@ -12,7 +13,7 @@ use crate::net::AuthorizationManager;
 use super::data::session::BattleNetSession;
 
 /**
-Implementation of the main Battle.Net containing authorization endpoints.
+Implementation of the main Battle.Net API containing authorization endpoints.
 */
 #[derive(Debug, Default)]
 pub struct BattleNetApi
@@ -25,12 +26,16 @@ impl BattleNetApi
 {
 	pub const Platform: &str = "BattleNet";
 	
+	pub const AchievementPrefix: &str = "achievement";
+	pub const _RewardPrefix: &str = "reward";
+	
 	const AuthResponseType: &str = "code";
 	const AuthScope: &str = "openid";
 	
 	pub const Https: &str = "https://";
-	const RootUriOauth: &str = "https://oauth.battle.net";
-	const RootUriOauthChina: &str = "https://oauth.battle.net.cn";
+	
+	const RootUriOAuth: &str = "https://oauth.battle.net";
+	const RootUriOAuthChina: &str = "https://oauth.battle.net.cn";
 	
 	const UriAuthorization: &str = "/authorize";
 	const UriToken: &str = "/token";
@@ -45,15 +50,16 @@ impl BattleNetApi
 		};
 	}
 	
-	pub async fn authorize(&self) -> Result<()>
+	pub async fn authorize(&self, region: Region) -> Result<()>
 	{
 		let auth = getBattleNetClientAuth()?;
+		let rootUri = self.buildRootUri(region);
 		
 		let mut authManager = AuthorizationManager::new(
 			auth.clientId().clone(),
 			auth.clientSecret().clone(),
-			format!("{}{}", Self::RootUriOauth, Self::UriAuthorization),
-			format!("{}{}", Self::RootUriOauth, Self::UriToken),
+			format!("{}{}", rootUri, Self::UriAuthorization),
+			format!("{}{}", rootUri, Self::UriToken),
 			Some(self.settings.redirectPort)
 		)?;
 		
@@ -71,12 +77,21 @@ impl BattleNetApi
 		};
 	}
 	
+	fn buildRootUri(&self, region: Region) -> &'static str
+	{
+		return match region
+		{
+			Region::China => Self::RootUriOAuthChina,
+			_ => Self::RootUriOAuth,
+		};
+	}
+	
 	/**
 	Retrieves the user's account ID and battle tag.
 	*/
-	pub async fn getUserInfo(&self, session: BattleNetSession) -> Result<UserInfo>
+	pub async fn getUserInfo(&self, session: BattleNetSession, region: Region) -> Result<UserInfo>
 	{
-		let url = Url::from_str(format!("{}{}", Self::RootUriOauth, Self::UriUserInfo).as_str())?;
+		let url = Url::from_str(format!("{}{}", self.buildRootUri(region), Self::UriUserInfo).as_str())?;
 		let userInfo = self.get::<UserInfo>(url, session).await?;
 		return Ok(userInfo);
 	}
@@ -102,14 +117,14 @@ impl BattleNetApi
 				let response = self.client.get(url)
 					.header(AUTHORIZATION, authHeader)
 					.send().await
-						.context("Error retrieving GOG API response")?
+						.context("[BattleNet] Error retrieving API response")?
 					.json::<T>().await
-						.context("Error parsing GOG API response as JSON")?;
+						.context("[BattleNet] Error parsing API response as JSON")?;
 				
 				Ok(response)
 			},
 			
-			false => Err(anyhow!("Battle.Net session expired!"))
+			false => Err(anyhow!("[BattleNet] Session expired!"))
 		};
 	}
 }
