@@ -102,7 +102,7 @@ async fn refreshPlayerSummary(mut appData: AppData) -> DataOperationResult
 					requests.push(DataRequest
 					{
 						destination: Some(avatarDestination),
-						operation: DataOperation::CacheImage,
+						operation: DataOperation::CacheImage(true),
 						url: Some(avatarUrl),
 					});
 				}
@@ -145,7 +145,7 @@ async fn refreshGameList(mut appData: AppData) -> DataOperationResult
 				requests.push(DataRequest
 				{
 					destination: Some(destination),
-					operation: DataOperation::CacheImage,
+					operation: DataOperation::CacheImage(false),
 					url: Some(url)
 				});
 			}
@@ -203,7 +203,7 @@ async fn refreshGameSchema(mut appData: AppData, id: u64) -> DataOperationResult
 							group: group.clone(),
 							platform: platform.clone(),
 						}),
-						operation: DataOperation::CacheImage,
+						operation: DataOperation::CacheImage(false),
 						url: Some(achievement.icon),
 					});
 					
@@ -216,7 +216,7 @@ async fn refreshGameSchema(mut appData: AppData, id: u64) -> DataOperationResult
 							group: group.clone(),
 							platform: platform.clone(),
 						}),
-						operation: DataOperation::CacheImage,
+						operation: DataOperation::CacheImage(false),
 						url: Some(achievement.icongray),
 					});
 				}

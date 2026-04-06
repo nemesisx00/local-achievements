@@ -108,7 +108,7 @@ fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u6
 					group: group.clone(),
 					platform: platform.clone(),
 				}),
-				operation: DataOperation::CacheImage,
+				operation: DataOperation::CacheImage(false),
 				url: Some(metadata.image_url_locked.clone()),
 				..Default::default()
 			});
@@ -121,7 +121,7 @@ fn refreshGameAchievements(mut appData: AppData, session: GogSession, gameId: u6
 					group: group.clone(),
 					platform: platform.clone(),
 				}),
-				operation: DataOperation::CacheImage,
+				operation: DataOperation::CacheImage(false),
 				url: Some(metadata.image_url_unlocked.clone()),
 			});
 			
@@ -178,7 +178,7 @@ fn refreshUserInfo(mut appData: AppData, session: GogSession) -> DataOperationRe
 				group: Path_Avatars.into(),
 				platform: GogApi::Platform.to_lowercase(),
 			}),
-			operation: DataOperation::CacheImage,
+			operation: DataOperation::CacheImage(true),
 			url: Some(avatarUrl),
 		});
 	}
@@ -218,7 +218,7 @@ fn refreshGameList(mut appData: AppData, session: GogSession, page: Option<u64>)
 			requests.push(DataRequest
 			{
 				destination: Some(GogApi::constructGameIconLocation(product.id)),
-				operation: DataOperation::CacheImage,
+				operation: DataOperation::CacheImage(false),
 				url: Some(GogApi::constructGameIconUrl(product.image.clone())),
 				..Default::default()
 			});

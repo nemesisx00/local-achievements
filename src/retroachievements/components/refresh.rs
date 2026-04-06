@@ -71,7 +71,7 @@ fn refreshUserProfile(mut appData: AppData) -> DataOperationResult
 							platform: RetroAchievementsApi::Platform.into(),
 						}),
 						
-						operation: DataOperation::CacheImage,
+						operation: DataOperation::CacheImage(true),
 						url: RetroAchievementsApi::buildMediaUrl(&avatarPath)
 					});
 				}
@@ -126,7 +126,7 @@ fn refreshUserProgress(mut appData: AppData, mut state: RetroAchievementsProgres
 								group: join!(Path_Games, game.GameID.to_string()),
 								platform: platform.clone(),
 							}),
-							operation: DataOperation::CacheImage,
+							operation: DataOperation::CacheImage(false),
 							url: Some(url),
 						});
 					}
@@ -191,7 +191,7 @@ fn refreshGameInfo(mut appData: AppData, id: u64) -> DataOperationResult
 								platform: platform.clone(),
 							}),
 							
-							operation: DataOperation::CacheImage,
+							operation: DataOperation::CacheImage(false),
 							url: Some(url),
 						});
 					}
@@ -216,7 +216,7 @@ fn refreshGameInfo(mut appData: AppData, id: u64) -> DataOperationResult
 								platform: platform.clone(),
 							}),
 							
-							operation: DataOperation::CacheImage,
+							operation: DataOperation::CacheImage(false),
 							url: Some(url),
 						});
 					}

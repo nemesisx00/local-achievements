@@ -103,7 +103,7 @@ async fn refreshSc2PlayerAccount(mut appData: AppData) -> DataOperationResult
 							group: Path_Avatars.into(),
 							platform: BattleNetApi::Platform.to_lowercase(),
 						}),
-						operation: DataOperation::CacheImage,
+						operation: DataOperation::CacheImage(true),
 						url: Some(avatarUrl)
 					});
 				}
@@ -172,7 +172,7 @@ async fn refreshSc2StaticProfile(mut appData: AppData) -> DataOperationResult
 								group: group.clone(),
 								platform: BattleNetApi::Platform.to_lowercase(),
 							}),
-							operation: DataOperation::CacheImage,
+							operation: DataOperation::CacheImage(false),
 							url: Some(achievement.imageUrl.clone())
 						});
 					}

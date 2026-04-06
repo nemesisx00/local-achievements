@@ -98,11 +98,11 @@ impl App for LocalAchievementsApp
 							
 							match request.operation
 							{
-								DataOperation::CacheImage => if let Some(destination) = request.destination
+								DataOperation::CacheImage(force) => if let Some(destination) = request.destination
 								{
 									if let Some(url) = request.url
 									{
-										if !imagePathExists(&destination)
+										if force || !imagePathExists(&destination)
 										{
 											let client = Client::builder()
 												.https_only(true)
