@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Button, ChildrenExt, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Direction, Gaps, ImageViewer,
-	IntoElement, Size, TextAlign, TextStyleExt, label, rect, spawn,
-	use_side_effect, use_state};
+	IntoElement, Size, TextAlign, TextStyleExt, WritableUtils, label, rect,
+	spawn, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use crate::battlenet::components::refresh::openBrowserForAuthorization;
 use crate::battlenet::platform::api::BattleNetApi;

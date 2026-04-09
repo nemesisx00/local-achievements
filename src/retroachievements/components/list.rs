@@ -5,7 +5,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Layer, LayerExt,
 	Platform, Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
 	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
-	VirtualScrollView, WinitPlatformExt, label, paragraph, rect,
+	VirtualScrollView, WinitPlatformExt, WritableUtils, label, paragraph, rect,
 	use_scroll_controller, use_state};
 use freya::radio::use_radio;
 use crate::constants::{BorderColor, ButtonBackgroundColor,

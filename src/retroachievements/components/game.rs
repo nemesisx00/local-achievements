@@ -4,7 +4,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, spawn, use_scroll_controller,
+	VirtualScrollView, WritableUtils, label, rect, spawn, use_scroll_controller,
 	use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use crate::net::limiter::RateLimiter;

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, ImageViewer, IntoElement, Size,
-	rect, spawn, use_state};
+	WritableUtils, rect, spawn, use_state};
 use freya::radio::use_radio;
 use crate::battlenet::BattleNetGames;
 use crate::battlenet::platform::api::BattleNetApi;

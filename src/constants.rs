@@ -1,5 +1,6 @@
 use freya::prelude::{ButtonLayoutThemePreference, Color, ColorsSheet,
-	CornerRadius, Preference, ProgressBarThemePreference, Theme, DARK_THEME};
+	CornerRadius, Gaps, Preference, ProgressBarThemePreference, Size, Theme,
+	dark_theme};
 
 pub const AppTitle: &str = "Local Achievements";
 #[allow(unused)]
@@ -45,30 +46,43 @@ pub const Icon_Locked: &str = "locked";
 
 pub const TheString: &str = "The ";
 
-pub const AppTheme: Theme = Theme
-{
-	name: "local-achievements",
-	button_layout: ButtonLayoutThemePreference
-	{
-		corner_radius: Preference::Specific(CornerRadius),
-		..DARK_THEME.button_layout
-	},
-	colors: ColorsSheet
+pub fn localAchievementsTheme() -> Theme {
+    let mut theme = dark_theme();
+	
+    theme.name = "localAchievements";
+	
+	theme.colors = ColorsSheet
 	{
 		background: ButtonBackgroundColor,
 		border: BorderColor,
 		border_focus: BorderColor,
 		hover: ButtonHoverColor,
 		text_primary: TextColor,
-		..DARK_THEME.colors
-	},
-	progressbar:  ProgressBarThemePreference
-	{
-		background: Preference::Specific(RetroAchievementsProgressColorBackground),
-		color: Preference::Specific(RetroAchievementsProgressColorCasual),
-		height: Preference::Specific(12.0),
-		progress_background: Preference::Specific(RetroAchievementsProgressColorCasual),
-		..DARK_THEME.progressbar
-	},
-	..DARK_THEME
-};
+		..dark_theme().colors
+	};
+	
+	theme.set(
+		"button_layout",
+		ButtonLayoutThemePreference
+		{
+			corner_radius: Preference::Specific(CornerRadius),
+			height: Preference::Specific(Size::auto()),
+			margin: Preference::Specific(Gaps::new_all(0.0)),
+			padding: Preference::Specific(Gaps::new_symmetric(5.0, 10.0)),
+			width: Preference::Specific(Size::auto()),
+		}
+	);
+	
+	theme.set(
+		"progressbar",
+		ProgressBarThemePreference
+		{
+			background: Preference::Specific(RetroAchievementsProgressColorBackground),
+			color: Preference::Specific(RetroAchievementsProgressColorCasual),
+			height: Preference::Specific(10.0),
+			progress_background: Preference::Specific(RetroAchievementsProgressColorCasual),
+		}
+	);
+	
+    return theme;
+}

@@ -1,7 +1,7 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
-	use_hook, use_side_effect, use_state};
+	InputMode, IntoElement, Size, TextAlign, TextStyleExt, WritableUtils, label,
+	rect, use_hook, use_side_effect, use_state};
 use crate::components::{InputModeHiddenChar, SettingsSwitch};
 use crate::data::secure::{getRetroAchievementsAuth, setRetroAchievementsApiKey,
 	setRetroAchievementsUsername};

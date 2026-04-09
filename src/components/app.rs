@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 use freya::prelude::{App, ChildrenExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Element, IntoElement, Platform,
-	StyleExt, WinitPlatformExt, rect, spawn, use_init_theme, use_side_effect,
-	use_state};
+	StyleExt, WinitPlatformExt, WritableUtils, rect, spawn, use_init_theme,
+	use_side_effect, use_state};
 use freya::radio::{RadioStation, use_init_radio_station, use_radio,
 	use_share_radio};
 use freya::winit::dpi::PhysicalSize;
@@ -12,8 +12,8 @@ use crate::battlenet::{self, BattleNetContentElement};
 use crate::components::ProfileState;
 use crate::components::nav::NavBar;
 use crate::components::settings::AppSettingsElement;
-use crate::constants::{AppTheme, BackgroundColor, DefaultHttpRequestRate,
-	TextColor};
+use crate::constants::{BackgroundColor, DefaultHttpRequestRate, TextColor,
+	localAchievementsTheme};
 use crate::data::radio::{AppDataChannel, DataChannel};
 use crate::data::{ActiveContent, AppData};
 use crate::egs::{self, EgsContentElement};
@@ -35,7 +35,7 @@ impl App for LocalAchievementsApp
 {
 	fn render(&self) -> impl IntoElement
 	{
-		use_init_theme(|| AppTheme);
+		use_init_theme(|| localAchievementsTheme());
 		use_share_radio(move || self.radioStation);
 		use_init_radio_station::<Option<ActiveContent>, DataChannel>(Default::default);
 		use_init_radio_station::<VecDeque<String>, DataChannel>(Default::default);

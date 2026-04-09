@@ -3,8 +3,8 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	BorderWidth, Button, ButtonLayoutThemePartialExt, ChildrenExt,
 	CircularLoader, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Direction, Element, Gaps, IntoElement, Layer, LayerExt, Position, Size,
-	StyleExt, TextAlign, TextStyleExt, label, rect, svg, use_side_effect,
-	use_state};
+	StyleExt, TextAlign, TextStyleExt, WritableUtils, label, rect, svg,
+	use_side_effect, use_state};
 use freya::radio::use_radio;
 use crate::components::profile::{ProfileElement, ProfileState};
 use crate::constants::{BackgroundColor, BorderColor, TextColor};

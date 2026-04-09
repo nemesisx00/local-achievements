@@ -1,7 +1,7 @@
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
-	use_hook, use_side_effect, use_state};
+	InputMode, IntoElement, Size, TextAlign, TextStyleExt, WritableUtils, label,
+	rect, use_hook, use_side_effect, use_state};
 use crate::components::{InputModeHiddenChar, SettingsSwitch};
 use crate::data::secure::{getSteamAuth, setSteamApiKey, setSteamId};
 
@@ -15,8 +15,8 @@ impl Component for SteamSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut apiKey = use_state(Default::default);
-		let mut id = use_state(Default::default);
+		let mut apiKey = use_state(String::default);
+		let mut id = use_state(String::default);
 		
 		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeId = use_state(|| InputMode::Hidden(InputModeHiddenChar));

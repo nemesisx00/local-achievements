@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Gaps, ImageViewer, IntoElement, Size,
-	TextAlign, TextStyleExt, label, rect, spawn, use_side_effect, use_state};
+	TextAlign, TextStyleExt, WritableUtils, label, rect, spawn, use_side_effect,
+	use_state};
 use freya::radio::{IntoWritable, use_radio};
 use crate::egs::EgsApi;
 use crate::png;

@@ -1,5 +1,5 @@
 use freya::prelude::{Component, Input, InputValidator, IntoElement, Size, State,
-	use_side_effect, use_state};
+	WritableUtils, use_side_effect, use_state};
 
 #[derive(Clone, PartialEq)]
 pub struct NumericInput

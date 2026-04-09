@@ -1,7 +1,7 @@
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Gaps, InputMode, IntoElement,
-	ScrollView, Size, State, StyleExt, Switch, rect};
+	ScrollView, Size, State, StyleExt, Switch, WritableUtils, rect};
 use crate::battlenet::BattleNetSettingsElement;
 use crate::components::settings::local::LocalInfo;
 use crate::components::settings::notifications::NotificationSettings;

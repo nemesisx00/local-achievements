@@ -1,7 +1,7 @@
 use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
 	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Gaps,
 	IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt, TextAlign,
-	TextStyleExt, label, rect, use_state};
+	TextStyleExt, WritableUtils, label, rect, use_state};
 use freya::radio::use_radio;
 use crate::battlenet::BattleNetUserProfile;
 use crate::constants::{BorderColor, ButtonBackgroundColor};

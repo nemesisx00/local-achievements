@@ -1,7 +1,7 @@
 use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,
-	label, rect, spawn, use_hook, use_side_effect, use_state};
+	WritableUtils, label, rect, spawn, use_hook, use_side_effect, use_state};
 use freya::radio::use_radio;
 use strum::IntoEnumIterator;
 use tracing::{info, warn};
@@ -25,8 +25,8 @@ impl Component for SettingsElement
 	{
 		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::BattleNet);
 		
-		let mut clientId = use_state(Default::default);
-		let mut clientSecret = use_state(Default::default);
+		let mut clientId = use_state(String::default);
+		let mut clientSecret = use_state(String::default);
 		let inputModeClientId = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeClientSecret = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let mut defaultRegion = use_state(|| appData.read().platform.battleNet.defaultRegion);

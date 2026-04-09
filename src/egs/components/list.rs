@@ -5,7 +5,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Platform,
 	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
 	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, WinitPlatformExt,
-	label, rect, use_scroll_controller, use_state};
+	WritableUtils, label, rect, use_scroll_controller, use_state};
 use freya::radio::use_radio;
 use crate::egs::EgsApi;
 use crate::net::limiter::request::FileLocation;
