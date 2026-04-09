@@ -86,6 +86,19 @@ impl Game
 {
 	const ReleaseDateFormat: &str = "%F %T%.6f%:z";
 	
+	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<GogAchievement>
+	{
+		let search = search.into().to_lowercase();
+		let mut achievements = self.achievements.iter()
+			.filter(|a| a.name.to_lowercase().contains(&search)
+				|| a.description.to_lowercase().contains(&search))
+			.cloned()
+			.collect::<Vec<_>>();
+		achievements.sort();
+		
+		return achievements;
+	}
+	
 	pub fn parseJsonMap(map: &Map<String, Value>) -> Option<Self>
 	{
 		let mut game = Self::default();
@@ -204,19 +217,6 @@ impl Game
 			0 => None,
 			_ => Some(game)
 		};
-	}
-	
-	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<GogAchievement>
-	{
-		let search = search.into().to_lowercase();
-		let mut achievements = self.achievements.iter()
-			.filter(|a| a.name.to_lowercase().contains(&search)
-				|| a.description.to_lowercase().contains(&search))
-			.cloned()
-			.collect::<Vec<_>>();
-		achievements.sort();
-		
-		return achievements;
 	}
 	
 	pub fn percentUnlocked(&self) -> f32
