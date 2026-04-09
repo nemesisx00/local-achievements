@@ -3,9 +3,12 @@
 use anyhow::Result;
 use crate::Secrets;
 use crate::battlenet::{BattleNetAuth, BattleNetSession};
+use crate::egs::EgsSettings;
 use crate::gog::GogSession;
 use crate::retroachievements::RetroAchievementsAuth;
 use crate::steam::SteamAuth;
+
+// ----- Get
 
 pub fn getBattleNetClientAuth() -> Result<BattleNetAuth>
 {
@@ -20,6 +23,13 @@ pub fn getBattleNetSession() -> Result<BattleNetSession>
 	let secrets = Secrets.blocking_lock();
 	let json = secrets.get(BattleNetSession::SecretKey)?;
 	return Ok(serde_json::from_str(&json)?);
+}
+
+pub fn getEpicGamesStoreAccountId() -> Result<String>
+{
+	let secrets = Secrets.blocking_lock();
+	let id = secrets.get(EgsSettings::AccountIdKey)?;
+	return Ok(id);
 }
 
 pub fn getGogSession() -> Result<GogSession>
@@ -45,7 +55,7 @@ pub fn getSteamAuth() -> Result<SteamAuth>
 	return Ok(SteamAuth::new(id, key));
 }
 
-
+// ----- Remove
 
 pub fn removeBattleNetClientId() -> Result<()>
 {
@@ -67,6 +77,14 @@ pub fn removeBattleNetSession() -> Result<()>
 {
 	let mut secrets = Secrets.blocking_lock();
 	secrets.remove(BattleNetSession::SecretKey)?;
+	_ = secrets.save()?;
+	return Ok(());
+}
+
+pub fn removeEpicGamesStoreAccountId() -> Result<()>
+{
+	let mut secrets = Secrets.blocking_lock();
+	secrets.remove(EgsSettings::AccountIdKey)?;
 	_ = secrets.save()?;
 	return Ok(());
 }
@@ -111,7 +129,7 @@ pub fn removeSteamApiKey() -> Result<()>
 	return Ok(());
 }
 
-
+// ----- Set
 
 pub fn setBattleNetClientId(id: String) -> Result<()>
 {
@@ -133,6 +151,14 @@ pub fn setBattleNetSession(session: BattleNetSession) -> Result<()>
 {
 	let mut secrets = Secrets.blocking_lock();
 	secrets.set(BattleNetSession::SecretKey, serde_json::to_string(&session)?);
+	_ = secrets.save()?;
+	return Ok(());
+}
+
+pub fn setEpicGamesStoreAccountId(id: String) -> Result<()>
+{
+	let mut secrets = Secrets.blocking_lock();
+	secrets.set(EgsSettings::AccountIdKey, id);
 	_ = secrets.save()?;
 	return Ok(());
 }

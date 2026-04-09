@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use crate::net::limiter::request::{BattleNetOperation, GogOperation, RetroAchievementsOperation, SteamOperation};
+use crate::net::limiter::request::{BattleNetOperation, EpicGamesStoreOperation, GogOperation, RetroAchievementsOperation, SteamOperation};
 use super::location::FileLocation;
 use super::operation::DataOperation;
 
@@ -31,6 +31,18 @@ impl From<BattleNetOperation> for DataRequest
 		return Self
 		{
 			operation: DataOperation::BattleNet(value),
+			..Default::default()
+		};
+	}
+}
+
+impl From<EpicGamesStoreOperation> for DataRequest
+{
+	fn from(value: EpicGamesStoreOperation) -> Self
+	{
+		return Self
+		{
+			operation: DataOperation::EpicGamesStore(value),
 			..Default::default()
 		};
 	}

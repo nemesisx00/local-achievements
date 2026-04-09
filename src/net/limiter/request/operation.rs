@@ -1,18 +1,24 @@
 use std::cmp::Ordering;
-use crate::net::limiter::request::{BattleNetOperation, RetroAchievementsOperation};
+use super::{BattleNetOperation, EpicGamesStoreOperation, GogOperation,
+	RetroAchievementsOperation, SteamOperation};
 
-use super::gog::GogOperation;
-use super::steam::SteamOperation;
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Ord)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord)]
 pub enum DataOperation
 {
 	BattleNet(BattleNetOperation),
-	#[default]
-	CacheImage,
+	CacheImage(bool),
+	EpicGamesStore(EpicGamesStoreOperation),
 	Gog(GogOperation),
 	RetroAchievements(RetroAchievementsOperation),
 	Steam(SteamOperation),
+}
+
+impl Default for DataOperation
+{
+	fn default() -> Self
+	{
+		return Self::CacheImage(false);
+	}
 }
 
 impl PartialOrd for DataOperation
@@ -21,15 +27,15 @@ impl PartialOrd for DataOperation
 	{
 		return match self
 		{
-			DataOperation::CacheImage => match other
+			DataOperation::CacheImage(_) => match other
 			{
-				DataOperation::CacheImage => Some(Ordering::Equal),
+				DataOperation::CacheImage(_) => Some(Ordering::Equal),
 				_ => Some(Ordering::Greater),
 			},
 			
 			_ => match other
 			{
-				DataOperation::CacheImage => Some(Ordering::Less),
+				DataOperation::CacheImage(_) => Some(Ordering::Less),
 				_ => Some(Ordering::Equal),
 			},
 		};

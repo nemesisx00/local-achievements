@@ -6,6 +6,7 @@ use freya::radio::use_radio;
 use crate::battlenet::BattleNetUserProfile;
 use crate::constants::{BorderColor, ButtonBackgroundColor};
 use crate::data::radio::DataChannel;
+use crate::egs::EgsUserProfile;
 use crate::gog::GogUserProfile;
 use crate::retroachievements::RetroAchievementsUserProfile;
 use crate::rpcs3::Rpcs3ProfileElement;
@@ -75,6 +76,11 @@ impl Component for ProfileElement
 					
 					.child(profileLabelElement("Battle.Net"))
 					.child(BattleNetUserProfile())
+					
+					.child(separatorElement())
+					
+					.child(profileLabelElement("Epic Games Store"))
+					.child(EgsUserProfile())
 					
 					.child(separatorElement())
 					

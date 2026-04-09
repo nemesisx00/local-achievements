@@ -1,4 +1,5 @@
 mod battlenet;
+mod egs;
 mod event;
 mod location;
 mod gog;
@@ -9,6 +10,7 @@ mod result;
 mod steam;
 
 pub use battlenet::BattleNetOperation;
+pub use egs::EpicGamesStoreOperation;
 pub use event::RequestEvent;
 pub use gog::GogOperation;
 pub use location::FileLocation;

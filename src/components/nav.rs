@@ -7,7 +7,7 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	use_state};
 use freya::radio::use_radio;
 use crate::components::profile::{ProfileElement, ProfileState};
-use crate::constants::{BorderColor, TextColor};
+use crate::constants::{BackgroundColor, BorderColor, TextColor};
 use crate::data::radio::{AppDataChannel, DataChannel};
 use crate::data::{ActiveContent, AppData};
 use crate::net::limiter::request::RequestEvent;
@@ -56,6 +56,7 @@ pub fn NavBar() -> impl IntoElement
 	use_side_effect(move || **activeContent.write() = Some(selected()));
 	
 	return rect()
+		.background(BackgroundColor)
 		.direction(Direction::Horizontal)
 		.height(Size::Fill)
 		.layer(Layer::Overlay)
@@ -145,14 +146,12 @@ pub fn NavBar() -> impl IntoElement
 						.on_press(move |_| selected.set(ActiveContent::BattleNet))
 				)
 				
-				/*
 				.child(
 					Button::new()
 						.width(Size::percent(100.0))
 						.child("EGS")
 						.on_press(move |_| selected.set(ActiveContent::EpicGamesStore))
 				)
-				*/
 				
 				.child(
 					Button::new()

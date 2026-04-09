@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use strum_macros::AsRefStr;
 use crate::battlenet::BattleNetSettings;
-//use crate::egs::EgsSettings;
 use crate::rpcs3::Rpcs3Settings;
 
 #[derive(AsRefStr, Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -24,6 +23,5 @@ pub enum GamePlatforms
 pub struct PlatformState
 {
 	pub battleNet: BattleNetSettings,
-	//pub egs: EgsSettings,
 	pub rpcs3: Rpcs3Settings,
 }

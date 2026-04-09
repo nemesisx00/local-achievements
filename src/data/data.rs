@@ -1,8 +1,9 @@
 use tracing::warn;
 use crate::data::{AppState, PlatformState, UserState};
-use crate::io::{loadAppSettings, loadSettings_BattleNet, loadSettings_Rpcs3,
-	loadUserData_BattleNet, loadUserData_BattleNet_lossy, loadUserData_Gog,
-	loadUserData_Gog_lossy, loadUserData_RetroAchievements,
+use crate::io::{loadAppSettings, loadSettings_BattleNet,
+	loadSettings_Rpcs3, loadUserData_BattleNet, loadUserData_BattleNet_lossy,
+	loadUserData_EpicGamesStore, loadUserData_EpicGamesStore_lossy,
+	loadUserData_Gog, loadUserData_Gog_lossy, loadUserData_RetroAchievements,
 	loadUserData_RetroAchievements_lossy, loadUserData_Rpcs3,
 	loadUserData_Rpcs3_lossy, loadUserData_Steam, loadUserData_Steam_lossy};
 
@@ -26,6 +27,7 @@ impl Default for AppData
 		}
 			.initializeAppSettings()
 			.initializeBattleNet()
+			.initializeEpicGamesStore()
 			.initializeGog()
 			.initializeRetroAchievements()
 			.initializeRpcs3()
@@ -63,6 +65,24 @@ impl AppData
 				}
 			},
 			Ok(user) => self.user.battleNet = user,
+		}
+		
+		return self;
+	}
+	
+	fn initializeEpicGamesStore(mut self) -> Self
+	{
+		match loadUserData_EpicGamesStore()
+		{
+			Err(e) => {
+				warn!("Failed loading Epic Games Store user data: {:?}", e);
+				warn!("Attempting Epic Games Store user data lossy load");
+				if let Ok(user) = loadUserData_EpicGamesStore_lossy()
+				{
+					self.user.egs = user;
+				}
+			},
+			Ok(user) => self.user.egs = user,
 		}
 		
 		return self;

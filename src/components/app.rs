@@ -16,6 +16,7 @@ use crate::constants::{AppTheme, BackgroundColor, DefaultHttpRequestRate,
 	TextColor};
 use crate::data::radio::{AppDataChannel, DataChannel};
 use crate::data::{ActiveContent, AppData};
+use crate::egs::{self, EgsContentElement};
 use crate::gog::{self, GogContentElement};
 use crate::io::imagePathExists;
 use crate::net::limiter::RateLimiter;
@@ -48,6 +49,7 @@ impl App for LocalAchievementsApp
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 		let mut battleNetData = use_radio::<AppData, AppDataChannel>(AppDataChannel::BattleNet);
+		let mut egsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::EpicGamesStore);
 		let mut gogData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Gog);
 		let mut retroAchievementsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
 		let mut steamData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
@@ -67,13 +69,12 @@ impl App for LocalAchievementsApp
 		let activeContent: Option<Element> = match active
 		{
 			ActiveContent::BattleNet => Some(BattleNetContentElement::new().into()),
-			//ActiveContent::EpicGamesStore => Some(EgsContentElement::new().into()),
+			ActiveContent::EpicGamesStore => Some(EgsContentElement::new().into()),
 			ActiveContent::Gog => Some(GogContentElement::new().into()),
 			ActiveContent::RetroAchievements => Some(RetroAchievementsContent::new().into()),
 			ActiveContent::Rpcs3 => Some(Rpcs3ContentElement::new().into()),
 			ActiveContent::Settings => Some(AppSettingsElement::new().into()),
 			ActiveContent::Steam => Some(SteamContent::new().into()),
-			_ => None,
 		};
 		
 		use_side_effect(move || {
@@ -129,6 +130,15 @@ impl App for LocalAchievementsApp
 									{
 										battleNetData.write().platform.battleNet = result.appData.platform.battleNet;
 										battleNetData.write().user.battleNet = result.appData.user.battleNet;
+										rateLimiter.read().pushAll(result.requests).await;
+									}
+								}
+								
+								DataOperation::EpicGamesStore(operation) => {
+									let appData = egsData.read().clone();
+									if let Some(result) = egs::handleDataOperation(appData, operation).await
+									{
+										egsData.write().user.egs = result.appData.user.egs;
 										rateLimiter.read().pushAll(result.requests).await;
 									}
 								}

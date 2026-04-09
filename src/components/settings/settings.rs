@@ -7,6 +7,7 @@ use crate::components::settings::local::LocalInfo;
 use crate::components::settings::notifications::NotificationSettings;
 use crate::components::settings::ui::UiSettings;
 use crate::constants::BorderColor;
+use crate::egs::EgsSettingsElement;
 use crate::gog::GogSettingsElement;
 use crate::retroachievements::RetroAchievementsSettingsElement;
 use crate::rpcs3::Rpcs3SettingsElement;
@@ -36,6 +37,8 @@ impl Component for AppSettingsElement
 					.child(NotificationSettings::new())
 					.child(separatorElement())
 					.child(BattleNetSettingsElement::new())
+					.child(separatorElement())
+					.child(EgsSettingsElement::new())
 					.child(separatorElement())
 					.child(GogSettingsElement::new())
 					.child(separatorElement())

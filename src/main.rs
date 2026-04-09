@@ -9,7 +9,7 @@ and tracking your achievements across multiple platforms in one unified UI.
 mod battlenet;
 mod components;
 mod data;
-//mod egs;
+mod egs;
 mod gog;
 mod io;
 mod macros;

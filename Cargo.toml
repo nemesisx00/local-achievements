@@ -24,6 +24,7 @@ strum = "0"
 strum_macros = "0"
 tokio = { version = "1", features = [ "rt", "rt-multi-thread", "sync" ] }
 ureq = { version = "3", features = [ "json" ] } # synchronous requests only
+urlencoding = "2"
 
 # Freya and dependencies
 freya = { version = "0.4.0-rc.16", features = [ "icons", "radio" ] }

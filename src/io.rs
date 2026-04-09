@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 use crate::constants::{SecretsKeyFileName, SecretsVaultFileName};
 use crate::battlenet::{BattleNetSettings, BattleNetUser};
 use crate::data::AppSettings;
-//use crate::egs::{EgsSettings, EgsUser};
+use crate::egs::EgsUser;
 use crate::gog::GogUser;
 use crate::net::limiter::request::FileLocation;
 use crate::retroachievements::RetroAchievementsUser;
@@ -159,20 +159,6 @@ pub fn loadSettings_BattleNet() -> Result<BattleNetSettings>
 }
 
 /**
-Read the Epic Games Store settings data from file.
-*/
-/*
-pub fn loadSettings_EpicGamesStore() -> Result<EgsSettings>
-{
-	return match getConfigDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => readDataFromFile(dir, EgsSettings::FileName.into()),
-	};
-}
-*/
-
-/**
 Read the RPCS3 settings data from file.
 */
 pub fn loadSettings_Rpcs3() -> Result<Rpcs3Settings>
@@ -214,7 +200,6 @@ pub fn loadUserData_BattleNet_lossy() -> Result<BattleNetUser>
 /**
 Read the Epic Games Store user data from file.
 */
-/*
 pub fn loadUserData_EpicGamesStore() -> Result<EgsUser>
 {
 	return match getDataDir(false)
@@ -223,12 +208,10 @@ pub fn loadUserData_EpicGamesStore() -> Result<EgsUser>
 		Some(dir) => readDataFromFile(dir, EgsUser::FileName.into()),
 	};
 }
-*/
 
 /**
 Read the Epic Games Store user data from file.
 */
-/*
 pub fn loadUserData_EpicGamesStore_lossy() -> Result<EgsUser>
 {
 	return match getDataDir(false)
@@ -240,7 +223,6 @@ pub fn loadUserData_EpicGamesStore_lossy() -> Result<EgsUser>
 		},
 	};
 }
-*/
 
 /**
 Read the GOG API user data from file.
@@ -469,20 +451,6 @@ pub fn saveSettings_BattleNet(auth: &BattleNetSettings) -> Result<()>
 }
 
 /**
-Write the Epic Games Store settings data to file.
-*/
-/*
-pub fn saveSettings_EpicGamesStore(settings: &EgsSettings) -> Result<()>
-{
-	return match getConfigDir(false)
-	{
-		None => Err(anyhow!(ErrorKind::NotFound)),
-		Some(dir) => writeDataToFile(dir, EgsSettings::FileName.into(), settings),
-	};
-}
-*/
-
-/**
 Write the RPCS3 settings data to file.
 */
 pub fn saveSettings_Rpcs3(settings: &Rpcs3Settings) -> Result<()>
@@ -503,7 +471,6 @@ pub fn saveUserData_BattleNet(user: &BattleNetUser) -> Result<()>
 	};
 }
 
-/*
 pub fn saveUserData_EpicGamesStore(user: &EgsUser) -> Result<()>
 {
 	return match getDataDir(true)
@@ -512,7 +479,6 @@ pub fn saveUserData_EpicGamesStore(user: &EgsUser) -> Result<()>
 		Some(dir) => writeDataToFile(dir, EgsUser::FileName.into(), user),
 	};
 }
-*/
 
 pub fn saveUserData_Gog(user: &GogUser) -> Result<()>
 {
