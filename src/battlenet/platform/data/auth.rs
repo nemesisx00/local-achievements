@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Display, Formatter};
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default)]
 pub struct BattleNetAuth
