@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Local Achievements
+Exec=local-achievements
+Icon=local-achievements
+Type=Application
+Categories=Games;
+X-AppImage-Version=0.5.0

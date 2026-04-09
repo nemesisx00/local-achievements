@@ -42,3 +42,8 @@ webbrowser = { version = "1", features = [ "hardened" ] }
 [lints.rust]
 non_snake_case = "allow"
 non_upper_case_globals = "allow"
+
+[package.metadata.appimage]
+assets = [ "assets" ]
+icon = "assets/icon.png"
+desktop_entry = "local-achievements.desktop"
