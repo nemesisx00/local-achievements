@@ -51,7 +51,7 @@ impl Component for GameList
 					.font_size(24.0)
 					.text_align(TextAlign::Center)
 					.width(Size::percent(100.0))
-					.text("GOG")
+					.text("Epic Games Store")
 			)
 			
 			.child(
