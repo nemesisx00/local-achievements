@@ -8,8 +8,8 @@ version = "0.5.0"
 
 [package.metadata.appimage]
 assets = [ "assets" ]
-icon = "assets/icon.png"
 desktop_entry = "local-achievements.desktop"
+icon = "assets/icon.png"
 
 [dependencies]
 battlenet = { workspace = true }
