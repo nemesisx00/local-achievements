@@ -2,10 +2,10 @@
 authors = ["Peter Lunneberg"]
 edition = "2024"
 name = "macros"
+publish = false
 version = "0.5.0"
 
 [dependencies]
 
-[lints.rust]
-non_snake_case = "allow"
-non_upper_case_globals = "allow"
+[lints]
+workspace = true

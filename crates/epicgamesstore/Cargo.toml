@@ -2,6 +2,7 @@
 authors = ["Peter Lunneberg"]
 edition = "2024"
 name = "epicgamesstore"
+publish = false
 version = "0.5.0"
 
 [dependencies]
@@ -21,6 +22,5 @@ tracing = { workspace = true }
 ureq = { workspace = true }
 urlencoding = "2"
 
-[lints.rust]
-non_snake_case = "allow"
-non_upper_case_globals = "allow"
+[lints]
+workspace = true

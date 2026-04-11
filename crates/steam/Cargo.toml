@@ -2,6 +2,7 @@
 authors = ["Peter Lunneberg"]
 edition = "2024"
 name = "steam"
+publish = false
 version = "0.5.0"
 
 [dependencies]
@@ -21,6 +22,5 @@ strum = { workspace = true }
 strum_macros = { workspace = true }
 tracing = { workspace = true }
 
-[lints.rust]
-non_snake_case = "allow"
-non_upper_case_globals = "allow"
+[lints]
+workspace = true
