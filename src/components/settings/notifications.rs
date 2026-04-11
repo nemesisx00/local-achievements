@@ -1,11 +1,11 @@
+use components::input::number::NumericInput;
+use data::enums::DataChannel;
+use data::settings::AppSettings;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps,
 	IntoElement, Size, TextAlign, TextStyleExt, label, rect, use_side_effect,
 	use_state};
 use freya::radio::use_radio;
-use crate::components::NumericInput;
-use crate::data::AppData;
-use crate::data::radio::AppDataChannel;
 
 #[derive(Clone, PartialEq)]
 pub struct NotificationSettings
@@ -17,11 +17,11 @@ impl Component for NotificationSettings
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
+		let mut appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		
-		let duration = use_state(|| appData.read().app.settings.notificationDuration);
+		let duration = use_state(|| appSettings.read().notificationDuration);
 		
-		use_side_effect(move || appData.write().app.settings.notificationDuration = duration());
+		use_side_effect(move || appSettings.write().notificationDuration = duration());
 		
 		let labelWidth = self.labelWidth.clone();
 		

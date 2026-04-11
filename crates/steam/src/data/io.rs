@@ -1,0 +1,56 @@
+use std::io::ErrorKind;
+use anyhow::{Result, anyhow};
+use data::io::{getDataDir, readDataFromFile, readRawDataFromFile,
+	writeDataToFile};
+use tracing::warn;
+use crate::data::user::SteamUser;
+
+/**
+Read the Steam API user data from file.
+*/
+fn loadUserData() -> Result<SteamUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, SteamUser::FileName.into()),
+	};
+}
+
+/**
+Read the Steam API user data from file.
+*/
+fn loadUserData_lossy() -> Result<SteamUser>
+{
+	return match getDataDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => {
+			let json = readRawDataFromFile(dir, SteamUser::FileName.into())?;
+			SteamUser::parseJsonLossy(json)
+		},
+	};
+}
+
+pub fn loadUserData_Steam() -> SteamUser
+{
+	return match loadUserData()
+	{
+		Err(e) => {
+			warn!("Failed loading Steam user data: {:?}", e);
+			warn!("Attempting Steam user data lossy load");
+			loadUserData_lossy()
+				.unwrap_or_default()
+		},
+		Ok(user) => user,
+	};
+}
+
+pub fn saveUserData(user: &SteamUser) -> Result<()>
+{
+	return match getDataDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, SteamUser::FileName.into(), user),
+	};
+}

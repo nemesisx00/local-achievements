@@ -1,0 +1,99 @@
+use std::str::FromStr;
+use anyhow::{anyhow, Result};
+use reqwest::Url;
+use crate::data::region::Region;
+use super::{BattleNetApi, BattleNetSession, PayloadPlayer, PayloadProfile,
+	PayloadStatic};
+
+/**
+Contains all implemented endpoints which retrieve StarCraft II data.
+*/
+pub struct Starcraft2;
+
+impl Starcraft2
+{
+	pub const GamePrefix: &str = "starcraft2";
+	
+	const RootUriApi: &str = ".api.blizzard.com";
+	const RootUriApiChina: &str = "gateway.battlenet.com.cn";
+	
+	const UriAccountPlayer: &str = "/sc2/player/";
+	const UriProfileProfile: &str = "/sc2/profile/";
+	const UriProfileStatic: &str = "/sc2/static/profile/";
+	
+	/**
+	Returns the appropriate root URI for the API based on the given `region``.
+	*/
+	fn buildRootUri(region: Region) -> String
+	{
+		return match region
+		{
+			Region::China => format!(
+				"{}{}",
+				BattleNetApi::Https,
+				Self::RootUriApiChina
+			),
+			
+			_ => format!(
+				"{}{}{}",
+				BattleNetApi::Https,
+				region.shortString(),
+				Self::RootUriApi
+			),
+		};
+	}
+	
+	/**
+	Returns metadata for an individual's account.
+	
+	Metadata like the profile ID, region ID, and realm ID.
+	*/
+	pub async fn accountPlayer(api: &BattleNetApi, session: BattleNetSession, region: Region, accountId: u64) -> Result<PayloadPlayer>
+	{
+		let url = Url::from_str(format!(
+			"{}{}{}",
+			Self::buildRootUri(region),
+			Self::UriAccountPlayer,
+			accountId
+		).as_str())?;
+		
+		let payloads = api.get::<Vec<PayloadPlayer>>(url, session).await?;
+		
+		return match payloads.first()
+		{
+			None => Err(anyhow!("Failed to retrieve player profile.")),
+			Some(payload) => Ok(payload.clone()),
+		};
+	}
+	
+	pub async fn profileProfile(api: &BattleNetApi, session: BattleNetSession, region: Region, profileId: u64) -> Result<PayloadProfile>
+	{
+		let url = Url::from_str(format!(
+			"{}{}/{}/{}/{}",
+			Self::buildRootUri(region),
+			Self::UriProfileProfile,
+			region.regionId(),
+			region.realmId(),
+			profileId
+		).as_str())?;
+		
+		let payload = api.get::<PayloadProfile>(url, session).await?;
+		return Ok(payload);
+	}
+	
+	/**
+	Returns all static SC2 profile data (achievements, categories, criteria, and rewards).
+	*/
+	pub async fn profileStatic(api: &BattleNetApi, session: BattleNetSession, region: Region) -> Result<PayloadStatic>
+	{
+		let url = Url::from_str(format!(
+			"{}{}{}",
+			Self::buildRootUri(region),
+			Self::UriProfileStatic,
+			region.regionId()
+		).as_str())?;
+		
+		let payload = api.get::<PayloadStatic>(url, session).await?;
+		return Ok(payload);
+	}
+}

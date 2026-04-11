@@ -497,6 +497,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "battlenet"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "oauth2",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tracing",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.72.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -811,6 +831,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "components"
+version = "0.5.0"
+dependencies = [
+ "data",
+ "freya",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -996,6 +1024,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
+name = "data"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "directories",
+ "freya",
+ "image",
+ "reqwest",
+ "securestore",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tokio",
+]
+
+[[package]]
 name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1143,6 +1188,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "epicgamesstore"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tracing",
+ "ureq",
+ "urlencoding",
 ]
 
 [[package]]
@@ -1857,6 +1922,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "gog"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_url_params",
+ "strum",
+ "strum_macros",
+ "tracing",
+ "ureq",
+ "webbrowser",
+]
+
+[[package]]
 name = "h2"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2500,31 +2588,24 @@ checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 name = "local-achievements"
 version = "0.5.0"
 dependencies = [
- "anyhow",
- "byteorder",
- "chrono",
- "directories",
+ "battlenet",
+ "components",
+ "data",
+ "epicgamesstore",
  "freya",
- "image",
- "oauth2",
- "path-slash",
- "regex",
+ "gog",
+ "macros",
+ "net",
  "reqwest",
- "saphyr",
- "securestore",
- "serde",
- "serde-xml-rs",
- "serde_json",
- "serde_url_params",
+ "retroachievements",
+ "rpcs3",
+ "steam",
  "strum",
  "strum_macros",
  "tokio",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
- "ureq",
- "urlencoding",
- "webbrowser",
 ]
 
 [[package]]
@@ -2556,6 +2637,10 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+
+[[package]]
+name = "macros"
+version = "0.5.0"
 
 [[package]]
 name = "malloc_buf"
@@ -2688,6 +2773,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys 0.3.1",
+]
+
+[[package]]
+name = "net"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "data",
+ "freya",
+ "oauth2",
+ "reqwest",
+ "tokio",
+ "tracing",
+ "webbrowser",
 ]
 
 [[package]]
@@ -3953,6 +4053,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "retroachievements"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "path-slash",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tracing",
+ "ureq",
+]
+
+[[package]]
 name = "rfd"
 version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4007,6 +4127,25 @@ checksum = "93411e420bcd1a75ddd1dc3caf18c23155eda2c090631a85af21ba19e97093b5"
 dependencies = [
  "smallvec",
  "str_indices",
+]
+
+[[package]]
+name = "rpcs3"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "byteorder",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "saphyr",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -4491,6 +4630,26 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "steam"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "components",
+ "data",
+ "freya",
+ "macros",
+ "net",
+ "path-slash",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tracing",
+]
 
 [[package]]
 name = "str_indices"

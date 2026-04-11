@@ -1,0 +1,26 @@
+[package]
+authors = ["Peter Lunneberg"]
+edition = "2024"
+name = "epicgamesstore"
+version = "0.5.0"
+
+[dependencies]
+components = { workspace = true }
+data = { workspace = true }
+macros = { workspace = true }
+net = { workspace = true }
+
+anyhow = { workspace = true }
+chrono = { workspace = true }
+freya = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
+tracing = { workspace = true }
+ureq = { workspace = true }
+urlencoding = "2"
+
+[lints.rust]
+non_snake_case = "allow"
+non_upper_case_globals = "allow"

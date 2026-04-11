@@ -1,42 +1,56 @@
 use std::collections::VecDeque;
+use battlenet::api::BattleNetSettings;
+use battlenet::components::content::BattleNetContentElement;
+use battlenet::components::refresh::handleBattleNetOperation;
+use battlenet::data::io::{loadSettings_BattleNet, loadUserData_BattleNet};
+use battlenet::data::user::BattleNetUser;
+use data::constants::{BackgroundColor, DefaultHttpRequestRate, TextColor};
+use data::enums::{ActiveContent, DataChannel, GamePlatforms};
+use data::io::{cacheImage, imagePathExists, loadAppSettings};
+use data::localAchievementsTheme;
+use data::settings::AppSettings;
+use epicgamesstore::components::content::EgsContentElement;
+use epicgamesstore::components::refresh::handleEgsOperation;
+use epicgamesstore::data::io::loadUserData_EpicGamesStore;
+use epicgamesstore::data::user::EgsUser;
 use freya::prelude::{App, ChildrenExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Element, IntoElement, Platform,
 	StyleExt, WinitPlatformExt, WritableUtils, rect, spawn, use_init_theme,
 	use_side_effect, use_state};
-use freya::radio::{RadioStation, use_init_radio_station, use_radio,
-	use_share_radio};
+use freya::radio::{Radio, use_init_radio_station, use_radio};
 use freya::winit::dpi::PhysicalSize;
+use gog::components::content::GogContentElement;
+use gog::components::refresh::handleGogOperation;
+use gog::data::io::loadUserData_Gog;
+use gog::data::user::GogUser;
+use net::{DataOperation, RateLimiter, RequestEvent};
 use reqwest::Client;
+use retroachievements::components::content::RetroAchievementsContent;
+use retroachievements::components::refresh::handleRetroAchievementsOperation;
+use retroachievements::data::io::loadUserData_RetroAchievements;
+use retroachievements::data::user::RetroAchievementsUser;
+use rpcs3::components::content::Rpcs3ContentElement;
+use rpcs3::data::io::{loadSettings_Rpcs3, loadUserData_Rpcs3};
+use rpcs3::data::settings::Rpcs3Settings;
+use rpcs3::data::user::Rpcs3User;
+use steam::components::content::SteamContent;
+use steam::components::refresh::handleSteamOperation;
+use steam::data::io::loadUserData_Steam;
+use steam::data::user::SteamUser;
 use tracing::{info, warn};
-use crate::battlenet::{self, BattleNetContentElement};
 use crate::components::ProfileState;
 use crate::components::nav::NavBar;
 use crate::components::settings::AppSettingsElement;
-use crate::constants::{BackgroundColor, DefaultHttpRequestRate, TextColor,
-	localAchievementsTheme};
-use crate::data::radio::{AppDataChannel, DataChannel};
-use crate::data::{ActiveContent, AppData};
-use crate::egs::{self, EgsContentElement};
-use crate::gog::{self, GogContentElement};
-use crate::io::imagePathExists;
-use crate::net::limiter::RateLimiter;
-use crate::net::limiter::request::{DataOperation, RequestEvent};
-use crate::retroachievements::{self, RetroAchievementsContent};
-use crate::rpcs3::Rpcs3ContentElement;
-use crate::steam::{self, SteamContent};
-use crate::util::cacheImage;
 
-pub struct LocalAchievementsApp
-{
-	radioStation: RadioStation<AppData, AppDataChannel>,
-}
+pub struct LocalAchievementsApp;
 
 impl App for LocalAchievementsApp
 {
 	fn render(&self) -> impl IntoElement
 	{
 		use_init_theme(|| localAchievementsTheme());
-		use_share_radio(move || self.radioStation);
+		
+		use_init_radio_station::<AppSettings, DataChannel>(|| loadAppSettings().unwrap_or_default());
 		use_init_radio_station::<Option<ActiveContent>, DataChannel>(Default::default);
 		use_init_radio_station::<VecDeque<String>, DataChannel>(Default::default);
 		use_init_radio_station::<ProfileState, DataChannel>(Default::default);
@@ -45,16 +59,27 @@ impl App for LocalAchievementsApp
 		use_init_radio_station::<RateLimiter, DataChannel>(|| RateLimiter::new(DefaultHttpRequestRate));
 		use_init_radio_station::<RequestEvent, DataChannel>(|| RequestEvent::Done);
 		
-		let settingsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
+		use_init_radio_station::<BattleNetSettings, GamePlatforms>(loadSettings_BattleNet);
+		use_init_radio_station::<BattleNetUser, GamePlatforms>(loadUserData_BattleNet);
+		use_init_radio_station::<EgsUser, GamePlatforms>(loadUserData_EpicGamesStore);
+		use_init_radio_station::<GogUser, GamePlatforms>(loadUserData_Gog);
+		use_init_radio_station::<RetroAchievementsUser, GamePlatforms>(loadUserData_RetroAchievements);
+		use_init_radio_station::<Rpcs3Settings, GamePlatforms>(loadSettings_Rpcs3);
+		use_init_radio_station::<Rpcs3User, GamePlatforms>(loadUserData_Rpcs3);
+		use_init_radio_station::<SteamUser, GamePlatforms>(loadUserData_Steam);
+		
+		let activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);
+		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
-		let mut battleNetData = use_radio::<AppData, AppDataChannel>(AppDataChannel::BattleNet);
-		let mut egsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::EpicGamesStore);
-		let mut gogData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Gog);
-		let mut retroAchievementsData = use_radio::<AppData, AppDataChannel>(AppDataChannel::RetroAchievements);
-		let mut steamData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Steam);
-		let activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);
 		let mut windowSize = use_radio::<PhysicalSize<u32>, DataChannel>(DataChannel::WindowSize);
+		
+		let bnetSettings = use_radio::<BattleNetSettings, GamePlatforms>(GamePlatforms::BattleNet);
+		let mut bnetUser = use_radio::<BattleNetUser, GamePlatforms>(GamePlatforms::BattleNet);
+		let mut egsUser = use_radio::<EgsUser, GamePlatforms>(GamePlatforms::EpicGamesStore);
+		let mut gogUser = use_radio::<GogUser, GamePlatforms>(GamePlatforms::Gog);
+		let mut retroAchievementsUser = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
+		let mut steamUser = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		
 		let mut limiterSpawned = use_state(bool::default);
 		
@@ -64,7 +89,7 @@ impl App for LocalAchievementsApp
 		);
 		
 		let active = activeContent.read().clone()
-			.unwrap_or(settingsData.read().app.settings.defaultActivePlatform);
+			.unwrap_or(appSettings.read().defaultActivePlatform);
 		
 		let activeContent: Option<Element> = match active
 		{
@@ -97,7 +122,7 @@ impl App for LocalAchievementsApp
 							//Update the request event with the current number of remaining requests, forces redraw of ui elements that rely on this value
 							**requestEvent.write() = RequestEvent::Processing(rateLimiter.read().len().await);
 							
-							match request.operation
+							match request.operation.clone()
 							{
 								DataOperation::CacheImage(force) => if let Some(destination) = request.destination
 								{
@@ -124,50 +149,56 @@ impl App for LocalAchievementsApp
 									}
 								}
 								
-								DataOperation::BattleNet(operation) => {
-									let appData = battleNetData.read().clone();
-									if let Some(result) = battlenet::handleDataOperation(appData, operation).await
-									{
-										battleNetData.write().platform.battleNet = result.appData.platform.battleNet;
-										battleNetData.write().user.battleNet = result.appData.user.battleNet;
-										rateLimiter.read().pushAll(result.requests).await;
-									}
+								DataOperation::Platform(platform, _) => match platform
+								{
+									GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
+									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+									_ => {}
 								}
 								
-								DataOperation::EpicGamesStore(operation) => {
-									let appData = egsData.read().clone();
-									if let Some(result) = egs::handleDataOperation(appData, operation).await
-									{
-										egsData.write().user.egs = result.appData.user.egs;
-										rateLimiter.read().pushAll(result.requests).await;
-									}
+								DataOperation::PlatformGameId(platform, _, _) => match platform
+								{
+									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+									_ => {}
 								}
 								
-								DataOperation::Gog(operation) => {
-									let appData = gogData.read().clone();
-									if let Some(result) = gog::handleDataOperation(appData, operation).await
-									{
-										gogData.write().user.gog = result.appData.user.gog;
-										rateLimiter.read().pushAll(result.requests).await;
-									}
+								DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
+								{
+									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+									_ => {}
 								}
 								
-								DataOperation::RetroAchievements(operation) => {
-									let appData = retroAchievementsData.read().clone();
-									if let Some(result) = retroachievements::handleDataOperation(appData, operation).await
-									{
-										retroAchievementsData.write().user.retroAchievements = result.appData.user.retroAchievements;
-										rateLimiter.read().pushAll(result.requests).await;
-									}
+								DataOperation::PlatformGameIdString(platform, _, _) => match platform
+								{
+									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+									_ => {}
 								}
 								
-								DataOperation::Steam(operation) => {
-									let appData = steamData.read().clone();
-									if let Some(result) = steam::handleDataOperation(appData, operation).await
-									{
-										steamData.write().user.steam = result.appData.user.steam;
-										rateLimiter.read().pushAll(result.requests).await;
-									}
+								DataOperation::PlatformOptionalInt(platform, _, _) => match platform
+								{
+									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+									_ => {}
+								}
+								
+								DataOperation::PlatformSaveToFile(platform) => match platform
+								{
+									GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
+									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+									_ => {}
+								}
+								
+								DataOperation::PlatformThreeInt(platform, _, _, _, _) => match platform
+								{
+									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+									_ => {}
 								}
 							}
 						}
@@ -198,13 +229,97 @@ impl App for LocalAchievementsApp
 
 impl LocalAchievementsApp
 {
-	pub fn new(
-		radioStation: RadioStation<AppData, AppDataChannel>,
-	) -> Self
+	pub fn new() -> Self
 	{
-		return Self
-		{
-			radioStation,
-		};
+		return Self {};
+	}
+}
+
+async fn processBattleNetResult(
+	operation: DataOperation,
+	userRadio: &mut Radio<BattleNetUser, GamePlatforms>,
+	settings: BattleNetSettings,
+	rateLimiter: &Radio<RateLimiter, DataChannel>
+)
+{
+	let user = userRadio.read().clone();
+	if let Some(result) = handleBattleNetOperation(
+		user,
+		settings,
+		operation
+	).await
+	{
+		**userRadio.write() = result.user.clone();
+		rateLimiter.read().pushAll(result.requests).await;
+	}
+}
+
+async fn processEgsResult(
+	operation: DataOperation,
+	userRadio: &mut Radio<EgsUser, GamePlatforms>,
+	rateLimiter: &Radio<RateLimiter, DataChannel>
+)
+{
+	let user = userRadio.read().clone();
+	if let Some(result) = handleEgsOperation(
+		user,
+		operation
+	).await
+	{
+		**userRadio.write() = result.user.clone();
+		rateLimiter.read().pushAll(result.requests).await;
+	}
+}
+
+async fn processGogResult(
+	operation: DataOperation,
+	userRadio: &mut Radio<GogUser, GamePlatforms>,
+	rateLimiter: &Radio<RateLimiter, DataChannel>
+)
+{
+	let user = userRadio.read().clone();
+	if let Some(result) = handleGogOperation(
+		user,
+		operation
+	).await
+	{
+		**userRadio.write() = result.user.clone();
+		rateLimiter.read().pushAll(result.requests).await;
+	}
+}
+
+async fn processRetroAchievementsResult(
+	operation: DataOperation,
+	userRadio: &mut Radio<RetroAchievementsUser, GamePlatforms>,
+	rateLimiter: &Radio<RateLimiter, DataChannel>
+)
+{
+	let user = userRadio.read().clone();
+	if let Some(result) = handleRetroAchievementsOperation(
+		user,
+		operation
+	).await
+	{
+		**userRadio.write() = result.user.clone();
+		rateLimiter.read().pushAll(result.requests).await;
+	}
+}
+
+async fn processSteamResult(
+	operation: DataOperation,
+	userRadio: &mut Radio<SteamUser, GamePlatforms>,
+	rateLimiter: &Radio<RateLimiter, DataChannel>,
+	language: String,
+)
+{
+	let user = userRadio.read().clone();
+	if let Some(result) = handleSteamOperation(
+		user,
+		operation,
+		language
+	).await
+	{
+		**userRadio.write() = result.user.clone();
+		rateLimiter.read().pushAll(result.requests).await;
 	}
 }

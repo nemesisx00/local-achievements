@@ -3,8 +3,4 @@ mod notifications;
 mod settings;
 mod ui;
 
-pub use settings::{
-	AppSettingsElement,
-	InputModeHiddenChar,
-	SettingsSwitch
-};
+pub use settings::AppSettingsElement;

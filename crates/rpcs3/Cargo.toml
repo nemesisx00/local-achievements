@@ -1,0 +1,25 @@
+[package]
+authors = ["Peter Lunneberg"]
+edition = "2024"
+name = "rpcs3"
+version = "0.5.0"
+
+[dependencies]
+components = { workspace = true }
+data = { workspace = true }
+macros = { workspace = true }
+net = { workspace = true }
+
+anyhow = { workspace = true }
+byteorder = "1"
+chrono = { workspace = true }
+freya = { workspace = true }
+saphyr = "0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde-xml-rs = { workspace = true }
+tracing = { workspace = true }
+
+[lints.rust]
+non_snake_case = "allow"
+non_upper_case_globals = "allow"
