@@ -1,7 +1,7 @@
 [package]
 authors = ["Peter Lunneberg"]
 edition = "2024"
-name = "battlenet"
+name = "reliquarian-steam"
 publish = false
 version = "0.5.0"
 
@@ -14,7 +14,7 @@ net = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true }
 freya = { workspace = true }
-oauth2 = { workspace = true }
+path-slash = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

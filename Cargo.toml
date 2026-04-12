@@ -38,29 +38,29 @@ workspace = true
 [workspace]
 resolver = "3"
 members = [
-	"crates/battlenet",
-	"crates/components",
-	"crates/data",
-	"crates/epicgamesstore",
-	"crates/gog",
-	"crates/macros",
-	"crates/net",
-	"crates/retroachievements",
-	"crates/rpcs3",
-	"crates/steam",
+	"crates/reliquarian-battlenet",
+	"crates/reliquarian-components",
+	"crates/reliquarian-data",
+	"crates/reliquarian-epicgamesstore",
+	"crates/reliquarian-gog",
+	"crates/reliquarian-macros",
+	"crates/reliquarian-net",
+	"crates/reliquarian-retroachievements",
+	"crates/reliquarian-rpcs3",
+	"crates/reliquarian-steam",
 ]
 
 [workspace.dependencies]
-battlenet = { path = "crates/battlenet", version = "0.5.0" }
-components = { path = "crates/components", version = "0.5.0" }
-data = { path = "crates/data", version = "0.5.0" }
-epicgamesstore = { path = "crates/epicgamesstore", version = "0.5.0" }
-gog = { path = "crates/gog", version = "0.5.0" }
-macros = { path = "crates/macros", version = "0.5.0" }
-net = { path = "crates/net", version = "0.5.0" }
-retroachievements = { path = "crates/retroachievements", version = "0.5.0" }
-rpcs3 = { path = "crates/rpcs3", version = "0.5.0" }
-steam = { path = "crates/steam", version = "0.5.0" }
+battlenet = { package="reliquarian-battlenet", path = "crates/reliquarian-battlenet", version = "0.5.0" }
+components = { package="reliquarian-components", path = "crates/reliquarian-components", version = "0.5.0" }
+data = { package="reliquarian-data", path = "crates/reliquarian-data", version = "0.5.0" }
+epicgamesstore = { package="reliquarian-epicgamesstore", path = "crates/reliquarian-epicgamesstore", version = "0.5.0" }
+gog = { package="reliquarian-gog", path = "crates/reliquarian-gog", version = "0.5.0" }
+macros = { package="reliquarian-macros", path = "crates/reliquarian-macros", version = "0.5.0" }
+net = { package="reliquarian-net", path = "crates/reliquarian-net", version = "0.5.0" }
+retroachievements = { package="reliquarian-retroachievements", path = "crates/reliquarian-retroachievements", version = "0.5.0" }
+rpcs3 = { package="reliquarian-rpcs3", path = "crates/reliquarian-rpcs3", version = "0.5.0" }
+steam = { package="reliquarian-steam", path = "crates/reliquarian-steam", version = "0.5.0" }
 
 anyhow = "1"
 chrono = { version = "0", features = [ "serde" ] }

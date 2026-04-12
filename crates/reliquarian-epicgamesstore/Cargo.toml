@@ -1,7 +1,7 @@
 [package]
 authors = ["Peter Lunneberg"]
 edition = "2024"
-name = "epicgamesstore"
+name = "reliquarian-epicgamesstore"
 publish = false
 version = "0.5.0"
 

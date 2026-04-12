@@ -1,22 +1,29 @@
 [package]
 authors = ["Peter Lunneberg"]
 edition = "2024"
-name = "data"
+name = "reliquarian-gog"
 publish = false
 version = "0.5.0"
 
 [dependencies]
+components = { workspace = true }
+data = { workspace = true }
+macros = { workspace = true }
+net = { workspace = true }
+
 anyhow = { workspace = true }
-directories = { workspace = true }
+chrono = { workspace = true }
 freya = { workspace = true }
-image = "0.25"
+regex = "1"
 reqwest = { workspace = true }
-securestore = "0.100.0"
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_url_params = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-tokio = { workspace = true }
+tracing = { workspace = true }
+ureq = { workspace = true }
+webbrowser = { workspace = true }
 
 [lints]
 workspace = true
