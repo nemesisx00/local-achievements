@@ -220,7 +220,6 @@ fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>) -
 		.spacing(5.0)
 		.width(Size::percent(100.0))
 		
-		
 		.maybe_child(loader)
 		.maybe_child(taskCounter)
 		
