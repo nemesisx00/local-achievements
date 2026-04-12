@@ -1,19 +1,20 @@
 use std::path::PathBuf;
 use components::button::icon::IconButton;
+use components::input::filter::AchievementsFilter;
 use data::constants::Path_Games;
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData,
+	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, use_scroll_controller, use_state};
-use freya::radio::use_radio;
+	VirtualScrollView, label, rect, use_memo, use_scroll_controller, use_state};
+use freya::radio::{IntoWritable, use_radio};
 use macros::join;
 use crate::data::user::Rpcs3User;
 use crate::api::api::Rpcs3Api;
-
 use super::trophy::TrophyElement;
 
 #[derive(Clone, PartialEq)]
@@ -30,14 +31,29 @@ impl Component for GameElement
 		let mut selectedGameId = use_radio::<Option<String>, GamePlatforms>(GamePlatforms::Rpcs3);
 		
 		let mut scrollConroller = use_scroll_controller(ScrollConfig::default);
+		
+		let caseSensitive = use_state(bool::default);
+		let locked = use_state(bool::default);
+		let nameOnly = use_state(bool::default);
 		let search = use_state(String::default);
 		
 		let game = user.read()
 			.getGame(self.npCommId.clone())
 			.unwrap_or_default();
 		
-		let trophies = game.filterTrophies(search.read().clone());
-		let trophiesLength = trophies.len();
+		let trophies = use_memo({
+			let game = game.clone();
+			move || {
+				game.filter(FilterCriteria
+				{
+					caseSensitive: caseSensitive(),
+					locked: locked(),
+					nameOnly: nameOnly(),
+					text: search.read().clone(),
+				})
+			}
+		});
+		let trophiesLength = trophies.read().len();
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -92,23 +108,20 @@ impl Component for GameElement
 			)
 			
 			.child(
-				rect()
-					.direction(Direction::Horizontal)
-					.main_align(Alignment::Center)
-					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+				AchievementsFilter::new(
+					caseSensitive.into_writable(),
+					locked.into_writable(),
+					nameOnly.into_writable(),
+					search.into_writable()
+				)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 					.width(Size::percent(50.0))
-					
-					.child(
-						Input::new(search)
-							.placeholder("Search by achievement name")
-							.width(Size::Fill)
-					)
 			)
 			
 			.child(
 				VirtualScrollView::new_controlled(
 					move |i, _| {
-						let trophy = &trophies[i];
+						let trophy = &trophies.read()[i];
 						return TrophyElement::new(
 							npCommId.clone(),
 							trophy.id

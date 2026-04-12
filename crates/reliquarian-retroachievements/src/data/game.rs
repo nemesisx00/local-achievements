@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use data::constants::TheString;
+use data::filter::{FilterCriteria, Filterable};
 use data::format::truncateF32;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -70,6 +71,56 @@ pub struct Game
 	/// The total number of achievements in the set.
 	#[serde(default)]
 	pub total: u64,
+}
+
+impl Filterable<Achievement> for Game
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Achievement>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let locked = filter.locked;
+		let nameOnly = filter.nameOnly;
+		
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut achievements = self.achievements.iter()
+			.filter(|a| match locked
+			{
+				false => true,
+				true => !a.unlocked(RetroAchievementsMode::Casual)
+					&& !a.unlocked(RetroAchievementsMode::Hardcore),
+			})
+			.filter(|a| match caseSensitive
+			{
+				false => match nameOnly
+				{
+					false => a.name.to_lowercase().contains(&search)
+						|| a.description.to_lowercase().contains(&search),
+					
+					true => a.name.to_lowercase().contains(&search),
+				}
+				
+				true => match nameOnly
+				{
+					false => a.name.contains(&search)
+						|| a.description.contains(&search),
+					
+					true => a.name.contains(&search),
+				}
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		achievements.sort();
+		
+		return achievements;
+	}
 }
 
 impl From<GameMetadata> for Game
@@ -288,19 +339,6 @@ impl Game
 			0 => None,
 			_ => Some(game)
 		};
-	}
-	
-	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<Achievement>
-	{
-		let search = search.into().to_lowercase();
-		let mut achievements = self.achievements.iter()
-			.filter(|a| a.name.to_lowercase().contains(&search)
-				|| a.description.to_lowercase().contains(&search))
-			.cloned()
-			.collect::<Vec<_>>();
-		achievements.sort();
-		
-		return achievements;
 	}
 	
 	pub fn percentUnlocked(&self, mode: RetroAchievementsMode) -> f32

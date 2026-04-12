@@ -24,12 +24,6 @@ impl PartialOrd for EgsAchievementStrings
 
 impl EgsAchievementStrings
 {
-	pub fn filterForText(&self, search: &String) -> bool
-	{
-		return self.name.to_lowercase().contains(search)
-			|| self.description.to_lowercase().contains(search);
-	}
-	
 	pub fn parseJsonMap(map: &Map<String, Value>) -> Self
 	{
 		let mut strings = Self::default();

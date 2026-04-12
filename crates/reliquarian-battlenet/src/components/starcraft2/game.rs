@@ -1,10 +1,12 @@
+use components::input::filter::AchievementsFilter;
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, Input, IntoElement, KeyboardEventData, ScrollConfig,
-	ScrollPosition, Size, VirtualScrollView, rect, use_scroll_controller,
-	use_state};
-use freya::radio::use_radio;
+	EventHandlersExt, Gaps, IntoElement, KeyboardEventData, ScrollConfig,
+	ScrollPosition, Size, VirtualScrollView, rect, use_memo,
+	use_scroll_controller, use_state};
+use freya::radio::{IntoWritable, use_radio};
 use crate::data::user::BattleNetUser;
 use super::achievement::sc2Achievement;
 use super::campaigns::sc2Campaigns;
@@ -28,15 +30,30 @@ impl Component for Sc2Element
 		let user = use_radio::<BattleNetUser, GamePlatforms>(GamePlatforms::BattleNet);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		
+		let caseSensitive = use_state(bool::default);
+		let locked = use_state(bool::default);
+		let nameOnly = use_state(bool::default);
 		let search = use_state(String::default);
 		
 		let profile = user.read().starcraft2
 			.clone()
 			.unwrap_or_default();
 		
-		let mut achievements = profile.getFilteredAchievements(search.read().clone());
-		achievements.sort();
-		let achievementsLength = achievements.len();
+		let achievements = use_memo({
+			let profile = profile.clone();
+			move || {
+				profile.filter(FilterCriteria
+				{
+					caseSensitive: caseSensitive(),
+					locked: locked(),
+					nameOnly: nameOnly(),
+					text: search.read().clone(),
+				})
+			}
+		});
+		
+		let achievementsLength = achievements.read().len();
 		
 		return rect()
 			.cross_align(Alignment::Center)
@@ -115,15 +132,19 @@ impl Component for Sc2Element
 							.width(Size::flex(0.5))
 							
 							.child(
-								Input::new(search)
-									.placeholder("Search by achievement title or description")
+								AchievementsFilter::new(
+									caseSensitive.into_writable(),
+									locked.into_writable(),
+									nameOnly.into_writable(),
+									search.into_writable()
+								)
 									.width(Size::percent(100.0))
 							)
 							
 							.child(
 								VirtualScrollView::new_controlled(
 									move |i, _| {
-										let id = achievements[i].id;
+										let id = achievements.read()[i].id;
 										sc2Achievement(id).into()
 									},
 									scrollController

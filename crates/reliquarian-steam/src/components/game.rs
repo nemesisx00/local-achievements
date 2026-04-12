@@ -1,15 +1,18 @@
 use std::path::PathBuf;
 use components::button::icon::IconButton;
+use components::input::filter::AchievementsFilter;
 use data::constants::{FileName_GameIcon, Path_Games};
 use data::enums::{DataChannel, GamePlatforms};
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData,
+	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, spawn, use_scroll_controller, use_state};
-use freya::radio::use_radio;
+	VirtualScrollView, label, rect, spawn, use_memo, use_scroll_controller,
+	use_state};
+use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
 use crate::api::SteamApi;
@@ -33,13 +36,28 @@ impl Component for GameElement
 		let mut selectedGameId = use_radio::<Option<u64>, GamePlatforms>(GamePlatforms::Steam);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		
+		let caseSensitive = use_state(bool::default);
+		let locked = use_state(bool::default);
+		let nameOnly = use_state(bool::default);
 		let search = use_state(String::default);
 		
 		let game = user.read().getGame(self.gameId)
 			.unwrap_or_default();
 		
-		let achievements = game.filterAchievements(search.read().clone());
-		let achievementsListLength = achievements.len();
+		let achievements = use_memo({
+			let game = game.clone();
+			move || {
+				game.filter(FilterCriteria
+				{
+					caseSensitive: caseSensitive(),
+					locked: locked(),
+					nameOnly: nameOnly(),
+					text: search.read().clone(),
+				})
+			}
+		});
+		let achievementsListLength = achievements.read().len();
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -113,17 +131,14 @@ impl Component for GameElement
 				)
 				
 				.child(
-					rect()
-						.direction(Direction::Horizontal)
-						.main_align(Alignment::Center)
-						.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+					AchievementsFilter::new(
+						caseSensitive.into_writable(),
+						locked.into_writable(),
+						nameOnly.into_writable(),
+						search.into_writable()
+					)
+						.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 						.width(Size::percent(50.0))
-						
-						.child(
-							Input::new(search)
-								.placeholder("Search by achievement name")
-								.width(Size::Fill)
-						)
 				)
 				
 				.maybe_child((!game.hasAchievements).then(||
@@ -135,7 +150,7 @@ impl Component for GameElement
 				
 				.maybe_child(game.hasAchievements.then(||
 					VirtualScrollView::new_controlled(move |i, _| {
-							let chievo = &achievements[i];
+							let chievo = &achievements.read()[i];
 							AchievementElement::new(gameId, chievo.id.clone()).into()
 						},
 						scrollController

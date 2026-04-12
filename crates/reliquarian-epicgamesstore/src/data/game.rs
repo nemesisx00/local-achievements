@@ -1,3 +1,4 @@
+use data::filter::{FilterCriteria, Filterable};
 use data::format::truncateF32;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -43,6 +44,75 @@ pub struct EgsGame
 	pub sandboxId: String,
 }
 
+impl Filterable<EgsAchievement> for EgsGame
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<EgsAchievement>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let locked = filter.locked;
+		let nameOnly = filter.nameOnly;
+		
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut achievements = self.achievements.iter()
+			.filter(|a| match locked
+			{
+				false => true,
+				true => !a.isUnlocked,
+			})
+			.filter(|a| match caseSensitive
+			{
+				false => match nameOnly
+				{
+					false => match a.isUnlocked
+					{
+						false => a.locked.name.to_lowercase().contains(&search)
+							|| a.locked.description.to_lowercase().contains(&search),
+						
+						true => a.unlocked.name.to_lowercase().contains(&search)
+							|| a.unlocked.description.to_lowercase().contains(&search),
+					}
+					
+					true => match a.isUnlocked
+					{
+						false => a.locked.name.to_lowercase().contains(&search),
+						true => a.unlocked.name.to_lowercase().contains(&search),
+					}
+				}
+				
+				true => match nameOnly
+				{
+					false => match a.isUnlocked
+					{
+						false => a.locked.name.contains(&search)
+							|| a.locked.description.contains(&search),
+						
+						true => a.unlocked.name.contains(&search)
+							|| a.unlocked.description.contains(&search),
+					}
+					
+					true => match a.isUnlocked
+					{
+						false => a.locked.name.contains(&search),
+						true => a.unlocked.name.contains(&search),
+					}
+				}
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		achievements.sort();
+		
+		return achievements;
+	}
+}
+
 impl From<AchievementSummary> for EgsGame
 {
 	fn from(value: AchievementSummary) -> Self
@@ -70,19 +140,6 @@ impl PartialOrd for EgsGame
 
 impl EgsGame
 {
-	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<EgsAchievement>
-	{
-		let search = search.into().to_lowercase();
-		let mut achievements = self.achievements.iter()
-			.filter(|a| a.locked.filterForText(&search)
-				|| a.unlocked.filterForText(&search))
-			.cloned()
-			.collect::<Vec<_>>();
-		achievements.sort();
-		
-		return achievements;
-	}
-	
 	pub fn parseJsonMap(map: &Map<String, Value>) -> Option<Self>
 	{
 		let mut game = Self::default();

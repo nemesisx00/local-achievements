@@ -1,16 +1,18 @@
 use std::path::PathBuf;
 use components::button::icon::IconButton;
+use components::input::filter::AchievementsFilter;
 use components::overlay::refresh::ConfirmRefresh;
 use data::constants::{FileName_GameIcon, Path_Games};
 use data::enums::{DataChannel, GamePlatforms};
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData,
+	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, WritableUtils, label, rect, spawn, use_scroll_controller,
-	use_side_effect, use_state};
+	VirtualScrollView, WritableUtils, label, rect, spawn, use_memo,
+	use_scroll_controller, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
@@ -37,15 +39,29 @@ impl Component for GameElement
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
 		
 		let mut cancelled = use_state(bool::default);
+		let caseSensitive = use_state(bool::default);
 		let mut confirmed = use_state(bool::default);
+		let locked = use_state(bool::default);
+		let nameOnly = use_state(bool::default);
 		let search = use_state(String::default);
 		let mut showConfirmationDialog = use_state(bool::default);
 		
 		let game = user.read().getGame(&self.sandboxId)
 			.unwrap_or_default();
 		
-		let achievements = game.filterAchievements(search.read().clone());
-		let achievementsListLength = achievements.len();
+		let achievements = use_memo({
+			let game = game.clone();
+			move || {
+				game.filter(FilterCriteria
+				{
+					caseSensitive: caseSensitive(),
+					locked: locked(),
+					nameOnly: nameOnly(),
+					text: search.read().clone(),
+				})
+			}
+		});
+		let achievementsListLength = achievements.read().len();
 		
 		let sandboxId = game.sandboxId.clone();
 		
@@ -134,24 +150,21 @@ impl Component for GameElement
 					)
 			)
 			
-			.maybe_child((game.achievementsCount > 0).then(||
-				rect()
-					.direction(Direction::Horizontal)
-					.main_align(Alignment::Center)
-					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+			.child(
+				AchievementsFilter::new(
+					caseSensitive.into_writable(),
+					locked.into_writable(),
+					nameOnly.into_writable(),
+					search.into_writable()
+				)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 					.width(Size::percent(50.0))
-					
-					.child(
-						Input::new(search)
-							.placeholder("Search by achievement name")
-							.width(Size::Fill)
-					)
-			))
+			)
 			
-			.maybe_child((game.achievementsCount > 0).then(||
+			.child(
 				VirtualScrollView::new_controlled(
 					move |i, _| {
-						let chievo = &achievements[i];
+						let chievo = &achievements.read()[i];
 						return AchievementElement::new(
 							game.sandboxId.clone(),
 							chievo.id.clone()
@@ -163,7 +176,7 @@ impl Component for GameElement
 					.item_size(105.0)
 					.length(achievementsListLength)
 					.scroll_with_arrows(true)
-			))
+			)
 			
 			.maybe_child(showConfirmationDialog().then(||
 				ConfirmRefresh::new(

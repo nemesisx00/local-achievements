@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use data::constants::TheString;
+use data::filter::{FilterCriteria, Filterable};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use crate::api::{GameInfo, Payload_GetGlobalPercentages,
@@ -43,6 +44,63 @@ pub struct Game
 	/// The amount of time played across platforms and offline.
 	#[serde(default)]
 	pub playtime: Playtime,
+}
+
+impl Filterable<SteamAchievement> for Game
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<SteamAchievement>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let locked = filter.locked;
+		let nameOnly = filter.nameOnly;
+		
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut achievements = self.achievements.iter()
+			.filter(|a| match locked
+			{
+				false => true,
+				true => !a.unlocked(),
+			})
+			.filter(|a| match caseSensitive
+			{
+				false => match nameOnly
+				{
+					false => a.name.to_lowercase().contains(&search)
+						|| a.description.to_lowercase().contains(&search),
+					true => a.name.to_lowercase().contains(&search),
+				},
+				
+				true => match nameOnly
+				{
+					false => a.name.contains(&search)
+						|| a.description.contains(&search),
+					true => a.name.contains(&search),
+				}
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		achievements.sort();
+		
+		return achievements;
+	}
+}
+
+impl From<GameInfo> for Game
+{
+	fn from(value: GameInfo) -> Self
+	{
+		let mut instance = Self::default();
+		instance.update(&value);
+		return instance;
+	}
 }
 
 impl PartialOrd for Game
@@ -119,16 +177,6 @@ impl PartialOrd for Game
 				Ordering::Less => Some(Ordering::Greater),
 			}
 		};
-	}
-}
-
-impl From<GameInfo> for Game
-{
-	fn from(value: GameInfo) -> Self
-	{
-		let mut instance = Self::default();
-		instance.update(&value);
-		return instance;
 	}
 }
 
@@ -233,20 +281,6 @@ impl Game
 			0 => None,
 			_ => Some(game),
 		};
-	}
-	
-	pub fn filterAchievements(&self, search: impl Into<String>) -> Vec<SteamAchievement>
-	{
-		let search = search.into().to_lowercase();
-		
-		let mut achievements = self.achievements.iter()
-			.cloned()
-			.filter(|a| a.name.to_lowercase().contains(&search)
-				|| a.description.to_lowercase().contains(&search))
-			.collect::<Vec<_>>();
-		achievements.sort();
-		
-		return achievements;
 	}
 	
 	pub fn percentUnlocked(&self) -> f64

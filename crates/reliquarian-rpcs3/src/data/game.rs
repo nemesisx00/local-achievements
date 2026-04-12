@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use data::filter::{FilterCriteria, Filterable};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use crate::api::data::conf::TrophyConf;
@@ -23,6 +24,55 @@ pub struct Game
 	
 	#[serde(default)]
 	pub trophySetVersion: String,
+}
+
+impl Filterable<Trophy> for Game
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Trophy>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let locked = filter.locked;
+		let nameOnly = filter.nameOnly;
+		
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut trophies = self.trophies.iter()
+			.filter(|a| match locked
+			{
+				false => true,
+				true => !a.unlocked,
+			})
+			.filter(|a| match caseSensitive
+			{
+				false => match nameOnly
+				{
+					false => a.name.to_lowercase().contains(&search)
+						|| a.detail.to_lowercase().contains(&search),
+					
+					true => a.name.to_lowercase().contains(&search),
+				}
+				
+				true => match nameOnly
+				{
+					false => a.name.contains(&search)
+						|| a.detail.contains(&search),
+					
+					true => a.name.contains(&search),
+				}
+			})
+			.cloned()
+			.collect::<Vec<Trophy>>();
+		
+		trophies.sort();
+		
+		return trophies;
+	}
 }
 
 impl From<TrophyConf> for Game
@@ -139,20 +189,6 @@ impl Game
 			false => Some(game),
 			true => None,
 		};
-	}
-	
-	pub fn filterTrophies(&self, search: impl Into<String>) -> Vec<Trophy>
-	{
-		let searchText = search.into().to_lowercase();
-		
-		let mut trophies = self.trophies.iter()
-			.filter(|t| t.name.to_lowercase().contains(&searchText)
-				|| t.detail.to_lowercase().contains(&searchText))
-			.cloned()
-			.collect::<Vec<Trophy>>();
-		trophies.sort();
-		
-		return trophies;
 	}
 	
 	pub fn percentUnlocked(&self) -> f32

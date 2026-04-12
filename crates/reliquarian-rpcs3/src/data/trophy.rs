@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use anyhow::{anyhow, Result};
 use chrono::{TimeZone, Utc, offset::LocalResult};
 use data::constants::Format_ChronoDateTime;
@@ -54,7 +55,16 @@ impl PartialOrd for Trophy
 {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering>
 	{
-		return self.id.partial_cmp(&other.id);
+		return match self.unlocked.partial_cmp(&other.unlocked)
+		{
+			None => self.id.partial_cmp(&other.id),
+			Some(c) => match c
+			{
+				Ordering::Equal => self.id.partial_cmp(&other.id),
+				Ordering::Greater => Some(Ordering::Less),
+				Ordering::Less => Some(Ordering::Greater),
+			}
+		};
 	}
 }
 

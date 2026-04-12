@@ -1,3 +1,4 @@
+use data::filter::{FilterCriteria, Filterable};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use crate::api::{PayloadPlayer, PayloadProfile, PayloadStatic};
@@ -25,6 +26,55 @@ pub struct ProfileStarcraft2
 	pub totalAchievementPoints: u64,
 }
 
+impl Filterable<Sc2Achievement> for ProfileStarcraft2
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Sc2Achievement>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let locked = filter.locked;
+		let nameOnly = filter.nameOnly;
+		
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut achievements = self.achievements.iter()
+			.filter(|a| match locked
+			{
+				false => true,
+				true => !a.unlocked,
+			})
+			.filter(|a| match caseSensitive
+			{
+				false => match nameOnly
+				{
+					false => a.name.to_lowercase().contains(&search)
+						|| a.description.to_lowercase().contains(&search),
+					
+					true => a.name.to_lowercase().contains(&search),
+				},
+				
+				true => match nameOnly
+				{
+					false => a.name.contains(&search)
+						|| a.description.contains(&search),
+					
+					true => a.name.contains(&search),
+				}
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		achievements.sort();
+		
+		return achievements;
+	}
+}
+
 impl From<PayloadPlayer> for ProfileStarcraft2
 {
 	fn from(value: PayloadPlayer) -> Self
@@ -48,16 +98,6 @@ impl ProfileStarcraft2
 		return self.achievements.iter()
 			.find(|a| a.id == id)
 			.cloned();
-	}
-	
-	pub fn getFilteredAchievements(&self, text: impl Into<String>) -> Vec<Sc2Achievement>
-	{
-		let searchText = text.into().to_lowercase();
-		return self.achievements.iter()
-			.filter(|a| a.name.to_lowercase().contains(&searchText)
-				|| a.description.to_lowercase().contains(&searchText))
-			.cloned()
-			.collect();
 	}
 	
 	pub fn parseJsonMapLossy(map: &Map<String, Value>) -> Option<Self>
