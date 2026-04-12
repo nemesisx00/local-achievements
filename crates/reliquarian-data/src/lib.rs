@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod enums;
+pub mod filter;
 pub mod format;
 pub mod io;
 pub mod settings;
