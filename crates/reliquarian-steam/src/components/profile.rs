@@ -47,6 +47,7 @@ pub fn SteamProfile() -> impl IntoElement
 		
 		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
+				.height(Size::px(64.0))
 				.width(Size::px(64.0))
 		))
 		
