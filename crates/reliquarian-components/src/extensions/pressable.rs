@@ -1,5 +1,6 @@
-use freya::{prelude::{CursorIcon, Event, EventHandler, EventHandlersExt, Label,
-	Platform, PressEventData, Rect, WinitPlatformExt}, radio::Writable};
+use freya::prelude::{CursorIcon, Event, EventHandler, EventHandlersExt, Label,
+	Platform, PressEventData, Rect, WinitPlatformExt};
+use freya::radio::Writable;
 
 pub trait PressableExt
 	where Self: EventHandlersExt,
