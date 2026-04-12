@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use components::extensions::PressableExt;
 use data::constants::{BorderColor, ButtonBackgroundColor, FileName_GameIcon,
 	Path_Games, RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorHardcore};
@@ -6,12 +7,12 @@ use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, CursorIcon, Direction, Event, EventHandlersExt, FontWeight,
-	Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Platform,
-	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
-	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, WinitPlatformExt,
-	WritableUtils, label, rect, use_scroll_controller, use_state};
-use freya::radio::use_radio;
+	CornerRadius, Direction, Event, EventHandlersExt, FontWeight, Gaps,
+	ImageViewer, Input, IntoElement, KeyboardEventData, ProgressBar,
+	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, StyleExt,
+	TextAlign, TextStyleExt, VirtualScrollView, label, rect,
+	use_scroll_controller, use_state};
+use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use crate::api::EgsApi;
 use crate::data::user::EgsUser;
@@ -96,7 +97,7 @@ impl Component for GameListNode
 		let user = use_radio::<EgsUser, GamePlatforms>(GamePlatforms::EpicGamesStore);
 		let mut selectedGameId = use_radio::<Option<String>, GamePlatforms>(GamePlatforms::EpicGamesStore);
 		
-		let mut hovering = use_state(|| false);
+		let hovering = use_state(|| false);
 		
 		let game = user.read().getGame(&self.sandboxId)
 			.unwrap_or_default();
@@ -144,28 +145,10 @@ impl Component for GameListNode
 					//.spacing(10.0)
 					.width(Size::percent(50.0))
 					
-					.on_press(move |_| {
-						Platform::get().with_window(None, move |window| {
-							window.set_cursor(CursorIcon::default());
-						});
-						**selectedGameId.write() = Some(game.sandboxId.clone());
-					})
-					
-					.on_pointer_enter(move |_| {
-						Platform::get().with_window(
-							None,
-							move |window| window.set_cursor(CursorIcon::Pointer)
-						);
-						hovering.set(true);
-					})
-					
-					.on_pointer_leave(move |_| {
-						Platform::get().with_window(
-							None,
-							move |window| window.set_cursor(CursorIcon::default())
-						);
-						hovering.set(false);
-					})
+					.pressableWithHover(
+						hovering.into_writable(),
+						move |_| **selectedGameId.write() = Some(game.sandboxId.clone())
+					)
 					
 					.child(
 						rect()

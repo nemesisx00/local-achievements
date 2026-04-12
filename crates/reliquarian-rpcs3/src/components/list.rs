@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use components::extensions::PressableExt;
 use data::constants::{BorderColor, ButtonBackgroundColor, Path_Games,
 	RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorHardcore};
@@ -6,13 +7,12 @@ use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, CursorIcon, Direction, Event, EventHandlersExt, Gaps,
-	ImageViewer, Input, IntoElement, KeyboardEventData, Platform, Position,
-	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
-	Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView,
-	WinitPlatformExt, WritableUtils, label, paragraph, rect,
-	use_scroll_controller, use_state};
-use freya::radio::use_radio;
+	CornerRadius, Direction, Event, EventHandlersExt, Gaps, ImageViewer, Input,
+	IntoElement, KeyboardEventData, Position, ProgressBar,
+	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
+	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
+	rect, use_scroll_controller, use_state};
+use freya::radio::{IntoWritable, use_radio};
 use macros::join;
 use crate::data::user::Rpcs3User;
 use crate::api::api::Rpcs3Api;
@@ -99,7 +99,7 @@ impl Component for GameListNode
 		let game = user.read().getGame(self.npCommId.clone())
 			.unwrap_or_default();
 		
-		let mut hovering = use_state(|| false);
+		let hovering = use_state(|| false);
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -141,29 +141,10 @@ impl Component for GameListNode
 					.spacing(10.0)
 					.width(Size::percent(50.0))
 					
-					.on_press(move |_| {
-						Platform::get().with_window(
-							None,
-							move |window| window.set_cursor(CursorIcon::default())
-						);
-						**selectedGameId.write() = Some(game.npCommId.clone());
-					})
-					
-					.on_pointer_enter(move |_| {
-						Platform::get().with_window(
-							None,
-							move |window| window.set_cursor(CursorIcon::Pointer)
-						);
-						hovering.set(true);
-					})
-					
-					.on_pointer_leave(move |_| {
-						Platform::get().with_window(
-							None,
-							move |window| window.set_cursor(CursorIcon::default())
-						);
-						hovering.set(false);
-					})
+					.pressableWithHover(
+						hovering.into_writable(),
+						move |_| **selectedGameId.write() = Some(game.npCommId.clone())
+					)
 					
 					.child(
 						rect()
