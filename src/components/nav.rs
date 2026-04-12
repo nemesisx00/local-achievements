@@ -1,25 +1,30 @@
 use std::path::PathBuf;
-
+use components::button::icon::IconButton;
+use data::constants::{BackgroundColor, BorderColor, TextColor};
+use data::enums::{ActiveContent, DataChannel};
+use data::settings::AppSettings;
 use freya::icons::lucide;
-use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment, BorderWidth, Button, ButtonLayoutThemePartialExt, ChildrenExt, CircularLoader, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Direction, Element, Event, EventHandler, Gaps, ImageViewer, IntoElement, Layer, LayerExt, Position, PressEventData, Size, StyleExt, TextAlign, TextStyleExt, WritableUtils, label, rect, svg, use_side_effect, use_state};
+use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
+	BorderWidth, Button, ButtonLayoutThemePartialExt, ChildrenExt,
+	CircularLoader, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Direction, Element, Event, EventHandler, Gaps, ImageViewer, IntoElement,
+	Layer, LayerExt, Position, PressEventData, Size, StyleExt, TextAlign,
+	TextStyleExt, WritableUtils, label, rect, use_side_effect, use_state};
 use freya::radio::use_radio;
-use crate::components::IconButton;
-use crate::components::profile::{ProfileElement, ProfileState};
-use crate::constants::{BackgroundColor, BorderColor, TextColor};
-use crate::data::radio::{AppDataChannel, DataChannel};
-use crate::data::{ActiveContent, AppData};
-use crate::net::limiter::request::RequestEvent;
+use net::RequestEvent;
+use crate::components::ProfileState;
+use crate::components::profile::ProfileElement;
 
 pub fn NavBar() -> impl IntoElement
 {
-	let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
-	let appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
-	let requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 	let mut activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);
+	let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
+	let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
+	let requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 	
 	let mut selected = use_state(|| match activeContent.read().clone()
 	{
-		None => appData.read().app.settings.defaultActivePlatform,
+		None => appSettings.read().defaultActivePlatform,
 		Some(ac) => ac,
 	});
 	

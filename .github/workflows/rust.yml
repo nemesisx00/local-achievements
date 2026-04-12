@@ -28,4 +28,4 @@ jobs:
                 sudo apt install libegl-dev libfontconfig-dev libfreetype-dev libgl-dev libgles-dev libwayland-dev
             
             - name: Run tests
-              run: cargo test --verbose
+              run: cargo test --verbose --workspace

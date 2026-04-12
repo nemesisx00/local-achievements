@@ -1,9 +1,9 @@
 use std::borrow::Cow;
+use data::io::{getCacheDir, getConfigDir, getDataDir};
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputValidator, IntoElement, Size, TextAlign, TextStyleExt, Writable, label,
 	rect, use_state};
-use crate::io::{getCacheDir, getConfigDir, getDataDir};
 
 #[derive(Clone, Default, PartialEq)]
 pub struct LocalInfo

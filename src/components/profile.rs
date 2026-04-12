@@ -1,16 +1,16 @@
+use battlenet::components::profile::BattleNetUserProfile;
+use data::constants::{BorderColor, ButtonBackgroundColor};
+use data::enums::DataChannel;
+use epicgamesstore::components::profile::EgsUserProfile;
 use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
-	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Gaps,
-	IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt, TextAlign,
-	TextStyleExt, WritableUtils, label, rect, use_state};
-use freya::radio::use_radio;
-use crate::battlenet::BattleNetUserProfile;
-use crate::constants::{BorderColor, ButtonBackgroundColor};
-use crate::data::radio::DataChannel;
-use crate::egs::EgsUserProfile;
-use crate::gog::GogUserProfile;
-use crate::retroachievements::RetroAchievementsUserProfile;
-use crate::rpcs3::Rpcs3ProfileElement;
-use crate::steam::SteamProfile;
+	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Direction, Gaps, IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt,
+	TextAlign, TextStyleExt, WritableUtils, label, rect, use_state};
+use freya::radio::{RadioChannel, use_radio};
+use gog::components::profile::GogUserProfile;
+use retroachievements::components::profile::RetroAchievementsUserProfile;
+use rpcs3::components::profile::Rpcs3ProfileElement;
+use steam::components::profile::SteamProfile;
 
 const AnimationDuration: u64 = 500;
 
@@ -23,6 +23,8 @@ pub enum ProfileState
 	Showing,
 	Shown,
 }
+
+impl RadioChannel<ProfileState> for DataChannel {}
 
 #[derive(Clone, PartialEq)]
 pub struct ProfileElement
@@ -66,41 +68,67 @@ impl Component for ProfileElement
 			.height(Size::Fill)
 			.layer(Layer::Overlay)
 			.padding(Gaps::new_all(15.0))
-			.spacing(10.0)
 			.width(Size::px(x))
 			
 			// Profiles
 			.child(
 				ScrollView::new()
 					.show_scrollbar(visible())
+					.spacing(10.0)
 					
-					.child(profileLabelElement("Battle.Net"))
-					.child(BattleNetUserProfile())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("Battle.Net"))
+							.child(BattleNetUserProfile())
+					)
 					
-					.child(separatorElement())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("Epic Games Store"))
+							.child(EgsUserProfile())
+					)
 					
-					.child(profileLabelElement("Epic Games Store"))
-					.child(EgsUserProfile())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("GOG"))
+							.child(GogUserProfile())
+					)
 					
-					.child(separatorElement())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("RetroAchievements"))
+							.child(RetroAchievementsUserProfile())
+					)
 					
-					.child(profileLabelElement("GOG"))
-					.child(GogUserProfile())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("RPCS3"))
+							.child(Rpcs3ProfileElement())
+					)
 					
-					.child(separatorElement())
-					
-					.child(profileLabelElement("RetroAchievements"))
-					.child(RetroAchievementsUserProfile())
-					
-					.child(separatorElement())
-					
-					.child(profileLabelElement("RPCS3"))
-					.child(Rpcs3ProfileElement())
-					
-					.child(separatorElement())
-					
-					.child(profileLabelElement("Steam"))
-					.child(SteamProfile())
+					.child(
+						rect()
+							.direction(Direction::Vertical)
+							.width(Size::percent(100.0))
+							
+							.child(profileLabelElement("Steam"))
+							.child(SteamProfile())
+					)
 			);
 	}
 }
@@ -138,24 +166,4 @@ fn profileLabelElement(text: impl Into<String>) -> impl IntoElement
 		.text_align(TextAlign::Center)
 		.width(Size::Fill)
 		.text(text.into());
-}
-
-fn separatorElement() -> impl IntoElement
-{
-	return rect()
-		.border(Some(
-			Border::new()
-				.alignment(BorderAlignment::Center)
-				.fill(BorderColor)
-				.width(BorderWidth
-				{
-					top: 0.0,
-					right: 0.0,
-					bottom: 1.0,
-					left: 0.0,
-				})
-		))
-		.height(Size::px(1.0))
-		.margin(Gaps::new_symmetric(25.0, 0.0))
-		.width(Size::Fill);
 }

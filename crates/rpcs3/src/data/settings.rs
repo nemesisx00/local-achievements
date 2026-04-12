@@ -1,0 +1,21 @@
+use data::enums::GamePlatforms;
+use freya::radio::RadioChannel;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct Rpcs3Settings
+{
+	#[serde(default)]
+	pub accountId: u64,
+	
+	/// The fully qualified path to the RPCS3 app data directory.
+	#[serde(default)]
+	pub appDataDirectory: String,
+}
+
+impl RadioChannel<Rpcs3Settings> for GamePlatforms {}
+
+impl Rpcs3Settings
+{
+	pub const FileName: &str = "rpcs3.json";
+}

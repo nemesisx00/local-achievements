@@ -1,0 +1,24 @@
+pub mod achievement;
+pub mod game;
+pub mod io;
+pub mod kind;
+pub mod mode;
+pub mod operation;
+pub mod progress;
+pub mod rank;
+pub mod result;
+pub mod system;
+pub mod user;
+
+/**
+Make an absolute path relative by removing the leading '/' if it exists.
+*/
+pub fn makeRelative(value: &String) -> String
+{
+	let mut path = value.clone();
+	return match path.starts_with("/")
+	{
+		false => path,
+		true => path.split_off(1),
+	};
+}

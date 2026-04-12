@@ -1,0 +1,14 @@
+[package]
+authors = ["Peter Lunneberg"]
+edition = "2024"
+name = "components"
+publish = false
+version = "0.5.0"
+
+[dependencies]
+data = { workspace = true }
+
+freya = { workspace = true }
+
+[lints]
+workspace = true

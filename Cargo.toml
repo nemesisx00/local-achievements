@@ -1,21 +1,71 @@
 [package]
 authors = ["Peter Lunneberg"]
 description = "A desktop application for collecting, storing, and tracking achievement data."
-edition = "2021"
+edition = "2024"
 name = "local-achievements"
 publish = false
 version = "0.5.0"
 
+[package.metadata.appimage]
+assets = [ "assets" ]
+desktop_entry = "local-achievements.desktop"
+icon = "assets/icon.png"
+
 [dependencies]
+battlenet = { workspace = true }
+components = { workspace = true }
+data = { workspace = true }
+epicgamesstore = { workspace = true }
+gog = { workspace = true }
+macros = { workspace = true }
+net = { workspace = true }
+retroachievements = { workspace = true }
+rpcs3 = { workspace = true }
+steam = { workspace = true }
+
+freya = { workspace = true }
+reqwest = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-appender = "0.2"
+tracing-subscriber = "0.3"
+
+[lints]
+workspace = true
+
+[workspace]
+resolver = "3"
+members = [
+	"crates/battlenet",
+	"crates/components",
+	"crates/data",
+	"crates/epicgamesstore",
+	"crates/gog",
+	"crates/macros",
+	"crates/net",
+	"crates/retroachievements",
+	"crates/rpcs3",
+	"crates/steam",
+]
+
+[workspace.dependencies]
+battlenet = { path = "crates/battlenet", version = "0.5.0" }
+components = { path = "crates/components", version = "0.5.0" }
+data = { path = "crates/data", version = "0.5.0" }
+epicgamesstore = { path = "crates/epicgamesstore", version = "0.5.0" }
+gog = { path = "crates/gog", version = "0.5.0" }
+macros = { path = "crates/macros", version = "0.5.0" }
+net = { path = "crates/net", version = "0.5.0" }
+retroachievements = { path = "crates/retroachievements", version = "0.5.0" }
+rpcs3 = { path = "crates/rpcs3", version = "0.5.0" }
+steam = { path = "crates/steam", version = "0.5.0" }
+
 anyhow = "1"
-byteorder = "1"
 chrono = { version = "0", features = [ "serde" ] }
 directories = "5"
-image = "0.25"
 path-slash = "0"
-regex = "1"
-reqwest = { version = "0.12.28", features = [ "json" ] } #Match version required by oauth2
-saphyr = "0"
 serde = "1"
 serde_json = "1"
 serde_url_params = "0"
@@ -23,27 +73,21 @@ serde-xml-rs = "0"
 strum = "0"
 strum_macros = "0"
 tokio = { version = "1", features = [ "rt", "rt-multi-thread", "sync" ] }
+
+# Network requess
+reqwest = { version = "0.12.28", features = [ "json" ] } #Match version required by oauth2
 ureq = { version = "3", features = [ "json" ] } # synchronous requests only
-urlencoding = "2"
 
 # Freya and dependencies
 freya = { version = "0.4.0-rc.17", features = [ "icons", "radio" ] }
 
 # Logging
 tracing = "0.1"
-tracing-appender = "0.2"
-tracing-subscriber = "0.3"
 
 # OAuth2 and authorization related
 oauth2 = "5"
-securestore = "0.100.0"
 webbrowser = { version = "1", features = [ "hardened" ] }
 
-[lints.rust]
+[workspace.lints.rust]
 non_snake_case = "allow"
 non_upper_case_globals = "allow"
-
-[package.metadata.appimage]
-assets = [ "assets" ]
-icon = "assets/icon.png"
-desktop_entry = "local-achievements.desktop"

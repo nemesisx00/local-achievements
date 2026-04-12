@@ -1,19 +1,16 @@
+use battlenet::components::settings::BattleNetSettingsElement;
+use data::constants::BorderColor;
+use epicgamesstore::components::settings::EgsSettingsElement;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
-	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
-	ContainerWithContentExt, Direction, Gaps, InputMode, IntoElement,
-	ScrollView, Size, State, StyleExt, Switch, WritableUtils, rect};
-use crate::battlenet::BattleNetSettingsElement;
+	ChildrenExt, Component, ContainerSizeExt, ContainerWithContentExt,
+	Direction, IntoElement, ScrollView, Size, StyleExt, rect};
+use gog::components::settings::GogSettingsElement;
+use retroachievements::components::settings::RetroAchievementsSettingsElement;
+use rpcs3::components::settings::Rpcs3SettingsElement;
+use steam::components::settings::SteamSettingsElement;
 use crate::components::settings::local::LocalInfo;
 use crate::components::settings::notifications::NotificationSettings;
 use crate::components::settings::ui::UiSettings;
-use crate::constants::BorderColor;
-use crate::egs::EgsSettingsElement;
-use crate::gog::GogSettingsElement;
-use crate::retroachievements::RetroAchievementsSettingsElement;
-use crate::rpcs3::Rpcs3SettingsElement;
-use crate::steam::SteamSettingsElement;
-
-pub const InputModeHiddenChar: char = '*';
 
 #[derive(Clone, Default, PartialEq)]
 pub struct AppSettingsElement
@@ -66,24 +63,6 @@ impl AppSettingsElement
 		self.labelWidth = Some(width.into());
 		return self;
 	}
-}
-
-pub fn SettingsSwitch(mut inputMode: State<InputMode>) -> impl IntoElement
-{
-	let value = inputMode.read().clone();
-	
-	return rect()
-		.margin(Gaps::new(4.0, 0.0, 0.0, 0.0))
-		.width(Size::FillMinimum)
-		.child(
-			Switch::new()
-				.toggled(value == InputMode::Shown)
-				.on_toggle(move |_| match value
-				{
-					InputMode::Shown => inputMode.set(InputMode::Hidden(InputModeHiddenChar)),
-					InputMode::Hidden(_) => inputMode.set(InputMode::Shown),
-				})
-		);
 }
 
 fn separatorElement() -> impl IntoElement

@@ -1,3 +1,6 @@
+use data::enums::{ActiveContent, DataChannel};
+use data::io::saveAppSettings;
+use data::settings::AppSettings;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt, WritableUtils,
@@ -5,9 +8,6 @@ use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 use freya::radio::use_radio;
 use strum::IntoEnumIterator;
 use tracing::{info, warn};
-use crate::data::radio::AppDataChannel;
-use crate::data::{ActiveContent, AppData};
-use crate::io::saveAppSettings;
 
 #[derive(Clone, PartialEq)]
 pub struct UiSettings
@@ -19,23 +19,23 @@ impl Component for UiSettings
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let mut appData = use_radio::<AppData, AppDataChannel>(AppDataChannel::Settings);
+		let mut appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		
-		let mut defaultActiveContent = use_state(|| appData.read().app.settings.defaultActivePlatform);
-		let language = use_state(|| appData.read().app.settings.language.clone());
+		let mut defaultActiveContent = use_state(|| appSettings.read().defaultActivePlatform);
+		let language = use_state(|| appSettings.read().language.clone());
 		
 		use_side_effect(move || {
 			let dac = defaultActiveContent.read().clone();
 			let lang = language.read().clone();
 			
-			if appData.read().app.settings.defaultActivePlatform != dac
-				|| appData.read().app.settings.language != lang
+			if appSettings.read().defaultActivePlatform != dac
+				|| appSettings.read().language != lang
 			{
-				appData.write().app.settings.defaultActivePlatform = dac;
-				appData.write().app.settings.language = lang;
+				appSettings.write().defaultActivePlatform = dac;
+				appSettings.write().language = lang;
 				
 				spawn(async move {
-					match saveAppSettings(&appData.read().app.settings)
+					match saveAppSettings(&appSettings.read())
 					{
 						Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
 						Ok(_) => info!("[Local Achievements] Saved app settings"),
