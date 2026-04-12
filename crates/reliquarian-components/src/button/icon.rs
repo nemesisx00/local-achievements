@@ -1,5 +1,7 @@
 use data::constants::TextColor;
-use freya::prelude::{AccessibilityExt, Button, ButtonLayoutThemePartialExt, Bytes, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, Event, EventHandler, IntoElement, Position, PressEventData, Size, rect, svg};
+use freya::prelude::{AccessibilityExt, Button, ButtonLayoutThemePartialExt,
+	Bytes, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, Event,
+	EventHandler, Gaps, IntoElement, Position, PressEventData, Size, rect, svg};
 
 #[derive(Clone, PartialEq)]
 pub struct IconButton
@@ -10,6 +12,7 @@ pub struct IconButton
 	icon: Bytes,
 	innerHeight: Size,
 	innerWidth: Size,
+	margin: Gaps,
 	position: Position,
 	onPress: Option<EventHandler<Event<PressEventData>>>,
 	width: Size,
@@ -24,6 +27,7 @@ impl Component for IconButton
 		
 		return rect()
 			.height(self.height.clone())
+			.margin(self.margin.clone())
 			.position(self.position.clone())
 			.width(self.width.clone())
 			
@@ -57,6 +61,7 @@ impl IconButton
 			icon: icon.into(),
 			innerHeight: Size::px(32.0),
 			innerWidth: Size::px(32.0),
+			margin: Gaps::default(),
 			onPress: Default::default(),
 			position: Default::default(),
 			width: Size::px(64.0),
@@ -90,6 +95,12 @@ impl IconButton
 	pub fn innerWidth(mut self, size: impl Into<Size>) -> Self
 	{
 		self.innerWidth = size.into();
+		return self;
+	}
+	
+	pub fn margin(mut self, gaps: impl Into<Gaps>) -> Self
+	{
+		self.margin = gaps.into();
 		return self;
 	}
 	
