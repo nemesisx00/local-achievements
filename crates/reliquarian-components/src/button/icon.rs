@@ -1,7 +1,5 @@
 use data::constants::TextColor;
-use freya::prelude::{AccessibilityExt, Button, ButtonLayoutThemePartialExt,
-	Bytes, ChildrenExt, Color, Component, ContainerSizeExt, Event, EventHandler,
-	IntoElement, PressEventData, Size, svg};
+use freya::prelude::{AccessibilityExt, Button, ButtonLayoutThemePartialExt, Bytes, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, Event, EventHandler, IntoElement, Position, PressEventData, Size, rect, svg};
 
 #[derive(Clone, PartialEq)]
 pub struct IconButton
@@ -12,6 +10,7 @@ pub struct IconButton
 	icon: Bytes,
 	innerHeight: Size,
 	innerWidth: Size,
+	position: Position,
 	onPress: Option<EventHandler<Event<PressEventData>>>,
 	width: Size,
 }
@@ -23,17 +22,24 @@ impl Component for IconButton
 		let pressHandler = self.onPress.clone()
 			.unwrap_or(EventHandler::new(move |_| {}));
 		
-		return Button::new()
-			.on_press(pressHandler)
+		return rect()
 			.height(self.height.clone())
+			.position(self.position.clone())
 			.width(self.width.clone())
 			
 			.child(
-				svg(self.icon.clone())
-					.color(self.color.clone())
-					.height(self.innerHeight.clone())
-					.width(self.innerWidth.clone())
-					.a11y_alt(self.alt.clone().unwrap_or_default())
+				Button::new()
+					.height(self.height.clone())
+					.on_press(pressHandler)
+					.width(self.width.clone())
+					
+					.child(
+						svg(self.icon.clone())
+							.color(self.color.clone())
+							.height(self.innerHeight.clone())
+							.width(self.innerWidth.clone())
+							.a11y_alt(self.alt.clone().unwrap_or_default())
+					)
 			);
 	}
 }
@@ -52,6 +58,7 @@ impl IconButton
 			innerHeight: Size::px(32.0),
 			innerWidth: Size::px(32.0),
 			onPress: Default::default(),
+			position: Default::default(),
 			width: Size::px(64.0),
 		};
 	}
@@ -83,6 +90,12 @@ impl IconButton
 	pub fn innerWidth(mut self, size: impl Into<Size>) -> Self
 	{
 		self.innerWidth = size.into();
+		return self;
+	}
+	
+	pub fn position(mut self, position: impl Into<Position>) -> Self
+	{
+		self.position = position.into();
 		return self;
 	}
 	
