@@ -11,7 +11,7 @@ use crate::constants::{SecretsKeyFileName, SecretsVaultFileName};
 use crate::io::FileLocation;
 use crate::settings::AppSettings;
 
-const Application: &str = "local-achievements";
+const Application: &str = "reliquarian";
 const Organization: &str = "";
 const Qualifier: &str = "";
 

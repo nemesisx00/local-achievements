@@ -30,7 +30,7 @@ impl AuthorizationManager
 	const SuccessHtml: &str = r#"<!DOCTYPE html>
 <html>
 	<head>
-		<title>Platform Authentication Successful | Local Achievements</title>
+		<title>Platform Authentication Successful | Reliquarian</title>
 		<style>
 			body
 			{
@@ -48,7 +48,7 @@ impl AuthorizationManager
 	</head>
 	<body>
 		<h1>Authentication Successful</h1>
-		<p>You can close this tab and return to Local Achievements.</p>
+		<p>You can close this tab and return to Reliquarian.</p>
 	</body>
 </html>"#;
 	

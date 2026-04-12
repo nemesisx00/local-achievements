@@ -2,13 +2,13 @@
 authors = ["Peter Lunneberg"]
 description = "A desktop application for collecting, storing, and tracking achievement data."
 edition = "2024"
-name = "local-achievements"
+name = "reliquarian"
 publish = false
 version = "0.5.0"
 
 [package.metadata.appimage]
 assets = [ "assets" ]
-desktop_entry = "local-achievements.desktop"
+desktop_entry = "reliquarian.desktop"
 icon = "assets/icon.png"
 
 [dependencies]

@@ -1,5 +1,5 @@
 /*!
-Local Achievements is an open source desktop application for collecting, storing,
+Reliquarian is an open source desktop application for collecting, storing,
 and tracking your achievements across multiple platforms in one unified UI.
 */
 

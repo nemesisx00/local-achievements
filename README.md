@@ -1,29 +1,29 @@
-<h1 align="center">Local Achievements</h1>
+<h1 align="center">Reliquarian</h1>
 
 <div align="center" width="100%">
-	<img alt="GitHub" src="https://img.shields.io/github/license/nemesisx00/local-achievements" />
-	<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nemesisx00/local-achievements/rust.yml" />
-	<img alt="GitHub contributors" src="https://img.shields.io/github/contributors/nemesisx00/local-achievements" />
-	<img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/nemesisx00/local-achievements" />
+	<img alt="GitHub" src="https://img.shields.io/github/license/nemesisx00/reliquarian" />
+	<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/nemesisx00/reliquarian/rust.yml" />
+	<img alt="GitHub contributors" src="https://img.shields.io/github/contributors/nemesisx00/reliquarian" />
+	<img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/nemesisx00/reliquarian" />
 </div>
 
 <p align="center">
-Local Achievements is a desktop application for viewing, tracking, and backing up achievements data.
+Reliquarian is a desktop application for viewing, tracking, and backing up achievements data.
 </p>
 
 &nbsp;
 
 ## Downloads
 
-When Local Achievements releases, you will be able to download it from the Releases section.
+When Reliquarian releases, you will be able to download it from the Releases section.
 
 ## Table of Contents
 
-- [Supported Platforms](https://github.com/nemesisx00/local-achievements#supported-platforms)
-- [Inside Local Achievements](https://github.com/nemesisx00/local-achievements#inside-local-achievements)
-- [Getting Started](https://github.com/nemesisx00/local-achievements#getting-started)
-	- [Requirements](https://github.com/nemesisx00/local-achievements#requirements)
-	- [Compiling, Running, and Testing](https://github.com/nemesisx00/local-achievements#compiling-running-and-testing)
+- [Supported Platforms](https://github.com/nemesisx00/reliquarian#supported-platforms)
+- [Inside Reliquarian](https://github.com/nemesisx00/reliquarian#inside-reliquarian)
+- [Getting Started](https://github.com/nemesisx00/reliquarian#getting-started)
+	- [Requirements](https://github.com/nemesisx00/reliquarian#requirements)
+	- [Compiling, Running, and Testing](https://github.com/nemesisx00/reliquarian#compiling-running-and-testing)
 
 ## Supported Platforms
 
@@ -37,17 +37,17 @@ When Local Achievements releases, you will be able to download it from the Relea
 - [x] [Steam](https://store.steampowered.com)
 - [ ] [XBox Live](https://www.xbox.com/live)
 
-## Inside Local Achievements
+## Inside Reliquarian
 
-Local Achievements is built in [Rust](https://rust-lang.org), relying on [Freya](https://freyaui.dev) to define the GUI.
+Reliquarian is built in [Rust](https://rust-lang.org), relying on [Freya](https://freyaui.dev) to define the GUI.
 
-Local Achievements is built for Linux first. However, it should be compatible with any platform that [Freya](https://freyaui.dev) supports.
+Reliquarian is also built for Linux first. It should be compatible with any platform that [Freya](https://freyaui.dev) supports but I will only be providing support for Linux issues for the time being.
 
 ## Getting Started
 
 ### Requirements
 
-In order to compile Local Achievements, you will need the following tools installed:
+In order to compile Reliquarian, you will need the following tools installed:
 
 - [Rust](https://rust-lang.org/learn/get-started)
 
@@ -74,7 +74,7 @@ cargo run --release
 ```
 
 > [!IMPORTANT]
-> At the moment, there is an issue with [Freya](https://freyaui.dev) where running the debug build will result in excessive lag in the UI. It still functions but, for the time being, it is recommended to only run the release build of Local Achievements.
+> At the moment, there is an issue with [Freya](https://freyaui.dev) where running the debug build will result in excessive lag in the UI. It still functions but, for the time being, it is recommended to only run the release build of Reliquarian.
 
 
 If you want to generate the executable for the release build, use the following command:
@@ -83,4 +83,4 @@ If you want to generate the executable for the release build, use the following 
 cargo build --release
 ```
 
-Once the build process is complete, you will find the resulting `local-achievements` executable in the `target/release` directory.
+Once the build process is complete, you will find the resulting `reliquarian` executable in the `target/release` directory.

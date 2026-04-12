@@ -37,8 +37,8 @@ impl Component for UiSettings
 				spawn(async move {
 					match saveAppSettings(&appSettings.read())
 					{
-						Err(e) => warn!("[Local Achievements] Error saving app settings: {:?}", e),
-						Ok(_) => info!("[Local Achievements] Saved app settings"),
+						Err(e) => warn!("[Reliquarian] Error saving app settings: {:?}", e),
+						Ok(_) => info!("[Reliquarian] Saved app settings"),
 					}
 				});
 			}

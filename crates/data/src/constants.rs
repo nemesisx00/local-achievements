@@ -1,6 +1,6 @@
 use freya::prelude::{Color, CornerRadius};
 
-pub const AppTitle: &str = "Local Achievements";
+pub const AppTitle: &str = "Reliquarian";
 #[allow(unused)]
 pub const AppVersion: &str = "0.5.0";
 pub const DefaultWindowSize: (f64, f64) = (1280.0, 720.0);
