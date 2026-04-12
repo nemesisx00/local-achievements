@@ -1,3 +1,4 @@
+mod about;
 mod app;
 mod nav;
 mod profile;

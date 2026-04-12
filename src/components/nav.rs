@@ -7,13 +7,14 @@ use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	BorderWidth, Button, ButtonLayoutThemePartialExt, ChildrenExt,
 	CircularLoader, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Direction, Element, Event, EventHandler, Gaps, ImageViewer, IntoElement,
-	Layer, LayerExt, Position, PressEventData, Size, StyleExt, TextAlign,
-	TextStyleExt, WritableUtils, label, rect, use_side_effect, use_state};
-use freya::radio::use_radio;
+	Direction, Event, EventHandler, Gaps, ImageViewer, IntoElement, Layer,
+	LayerExt, Position, PressEventData, Size, StyleExt, TextAlign, TextStyleExt,
+	WritableUtils, label, rect, use_side_effect, use_state};
+use freya::radio::{IntoWritable, Writable, use_radio};
 use net::RequestEvent;
-use crate::components::ProfileState;
-use crate::components::profile::ProfileElement;
+use super::ProfileState;
+use super::about::About;
+use super::profile::ProfileElement;
 
 pub fn NavBar() -> impl IntoElement
 {
@@ -22,37 +23,23 @@ pub fn NavBar() -> impl IntoElement
 	let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
 	let requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 	
+	let mut showAbout = use_state(|| false);
+	let mut closeAbout = use_state(|| false);
 	let mut selected = use_state(|| match activeContent.read().clone()
 	{
 		None => appSettings.read().defaultActivePlatform,
 		Some(ac) => ac,
 	});
 	
-	let taskCounter: Option<Element> = match requestEvent.read().clone()
+	let aboutOverlay = match showAbout()
 	{
-		RequestEvent::Processing(count) => Some(
-			rect()
-				.cross_align(Alignment::Center)
-				.direction(Direction::Vertical)
-				.main_align(Alignment::End)
-				.height(Size::Fill)
-				.width(Size::percent(100.0))
-				
-				.child(
-					CircularLoader::new()
-						.size(32.0)
-				)
-				
-				.child(
-					label()
-						.font_size(12.0)
-						.text(format!("{} processing", count))
-						.text_align(TextAlign::Center)
-						.width(Size::percent(100.0))
-				)
-				.into()
-		),
-		
+		false => None,
+		true => Some(About::new(closeAbout.into_writable()))
+	};
+	
+	let count = match requestEvent.read().clone()
+	{
+		RequestEvent::Processing(count) => Some(count),
 		_ => None,
 	};
 	
@@ -63,14 +50,21 @@ pub fn NavBar() -> impl IntoElement
 		true => lucide::chevron_left(),
 	};
 	
-	use_side_effect(move || **activeContent.write() = Some(selected()));
+	use_side_effect(move || {
+		**activeContent.write() = Some(selected());
+		
+		if showAbout() && closeAbout()
+		{
+			closeAbout.set(false);
+			showAbout.set(false);
+		}
+	});
 	
 	return rect()
 		.background(BackgroundColor)
 		.direction(Direction::Horizontal)
 		.height(Size::Fill)
 		.layer(Layer::Overlay)
-		.margin(Gaps::new(0.0, 0.0, 0.0, 7.5))
 		.position(Position::new_absolute()
 			.left(0.0)
 			.top(0.0)
@@ -93,7 +87,7 @@ pub fn NavBar() -> impl IntoElement
 				))
 				.direction(Direction::Vertical)
 				.height(Size::Fill)
-				.padding(Gaps::new(10.0, 5.0, 5.0, 0.0))
+				.padding(Gaps::new(10.0, 5.0, 5.0, 7.5))
 				.spacing(5.0)
 				.width(Size::FillMinimum)
 				
@@ -181,10 +175,63 @@ pub fn NavBar() -> impl IntoElement
 					)
 				)
 				
-				.maybe_child(taskCounter)
+				.child(navBottom(showAbout.into_writable(), count))
 		)
 		
-		.child(ProfileElement::new());
+		.child(ProfileElement::new())
+		.maybe_child(aboutOverlay);
+}
+
+fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>) -> impl IntoElement
+{
+	let count = match count
+	{
+		None => None,
+		Some(count) => Some(count.into()),
+	};
+	let mut show = show.into();
+	
+	let loader = match count
+	{
+		None => None,
+		Some(_) => Some(
+			CircularLoader::new()
+				.size(32.0)
+		)
+	};
+	
+	let taskCounter = match count
+	{
+		None => None,
+		Some(count) => Some(
+			label()
+				.font_size(12.0)
+				.text(count.to_string())
+				.text_align(TextAlign::Center)
+				.width(Size::percent(100.0))
+		)
+	};
+	
+	return rect()
+		.cross_align(Alignment::Center)
+		.direction(Direction::Vertical)
+		.main_align(Alignment::End)
+		.height(Size::Fill)
+		.spacing(5.0)
+		.width(Size::percent(100.0))
+		
+		
+		.maybe_child(loader)
+		.maybe_child(taskCounter)
+		
+		.child(
+			IconButton::new(lucide::circle_question_mark())
+				.alt("About Reliquarian")
+				.color(TextColor)
+				.height(Size::px(48.0))
+				.width(Size::px(48.0))
+				.onPress(move |_| show.set(true))
+		);
 }
 
 fn navButton(
