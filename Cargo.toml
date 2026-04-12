@@ -79,7 +79,7 @@ reqwest = { version = "0.12.28", features = [ "json" ] } #Match version required
 ureq = { version = "3", features = [ "json" ] } # synchronous requests only
 
 # Freya and dependencies
-freya = { version = "0.4.0-rc.17", features = [ "icons", "radio" ] }
+freya = { version = "0.4.0-rc.18", features = [ "icons", "radio" ] }
 
 # Logging
 tracing = "0.1"
