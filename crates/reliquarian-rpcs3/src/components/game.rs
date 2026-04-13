@@ -10,7 +10,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, use_memo, use_scroll_controller, use_state};
+	VirtualScrollView, label, rect, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::join;
 use crate::data::user::Rpcs3User;
@@ -41,19 +41,14 @@ impl Component for GameElement
 			.getGame(self.npCommId.clone())
 			.unwrap_or_default();
 		
-		let trophies = use_memo({
-			let game = game.clone();
-			move || {
-				game.filter(FilterCriteria
-				{
-					caseSensitive: caseSensitive(),
-					locked: locked(),
-					nameOnly: nameOnly(),
-					text: search.read().clone(),
-				})
-			}
+		let trophies = game.filter(FilterCriteria
+		{
+			caseSensitive: caseSensitive(),
+			locked: locked(),
+			nameOnly: nameOnly(),
+			text: search.read().clone(),
 		});
-		let trophiesLength = trophies.read().len();
+		let trophiesLength = trophies.len();
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -121,7 +116,7 @@ impl Component for GameElement
 			.child(
 				VirtualScrollView::new_controlled(
 					move |i, _| {
-						let trophy = &trophies.read()[i];
+						let trophy = &trophies[i];
 						return TrophyElement::new(
 							npCommId.clone(),
 							trophy.id

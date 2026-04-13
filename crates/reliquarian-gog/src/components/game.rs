@@ -11,8 +11,8 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, WritableUtils, label, rect, spawn, use_memo,
-	use_scroll_controller, use_side_effect, use_state};
+	VirtualScrollView, WritableUtils, label, rect, spawn, use_scroll_controller,
+	use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
@@ -49,20 +49,15 @@ impl Component for GameElement
 		let game = user.read().getGame(self.gameId)
 			.unwrap_or_default();
 		
-		let achievements = use_memo({
-			let game = game.clone();
-			move || {
-				game.filter(FilterCriteria
-				{
-					caseSensitive: caseSensitive(),
-					locked: locked(),
-					nameOnly: nameOnly(),
-					text: search.read().clone(),
-				})
-			}
+		let achievements = game.filter(FilterCriteria
+		{
+			caseSensitive: caseSensitive(),
+			locked: locked(),
+			nameOnly: nameOnly(),
+			text: search.read().clone(),
 		});
 		
-		let achievementsListLength = achievements.read().len();
+		let achievementsListLength = achievements.len();
 		
 		let gameId = game.id;
 		
@@ -174,7 +169,7 @@ impl Component for GameElement
 			.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
 				VirtualScrollView::new_controlled(
 					move |i, _| {
-						let chievo = &achievements.read()[i];
+						let chievo = &achievements[i];
 						return AchievementElement::new(game.id, chievo.id.clone()).into();
 					},
 					scrollController

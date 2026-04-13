@@ -10,8 +10,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
 	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, spawn, use_memo, use_scroll_controller,
-	use_state};
+	VirtualScrollView, label, rect, spawn, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
@@ -45,19 +44,14 @@ impl Component for GameElement
 		let game = user.read().getGame(self.gameId)
 			.unwrap_or_default();
 		
-		let achievements = use_memo({
-			let game = game.clone();
-			move || {
-				game.filter(FilterCriteria
-				{
-					caseSensitive: caseSensitive(),
-					locked: locked(),
-					nameOnly: nameOnly(),
-					text: search.read().clone(),
-				})
-			}
+		let achievements = game.filter(FilterCriteria
+		{
+			caseSensitive: caseSensitive(),
+			locked: locked(),
+			nameOnly: nameOnly(),
+			text: search.read().clone(),
 		});
-		let achievementsListLength = achievements.read().len();
+		let achievementsListLength = achievements.len();
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -150,7 +144,7 @@ impl Component for GameElement
 				
 				.maybe_child(game.hasAchievements.then(||
 					VirtualScrollView::new_controlled(move |i, _| {
-							let chievo = &achievements.read()[i];
+							let chievo = &achievements[i];
 							AchievementElement::new(gameId, chievo.id.clone()).into()
 						},
 						scrollController

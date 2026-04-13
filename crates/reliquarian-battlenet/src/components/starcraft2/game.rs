@@ -4,8 +4,8 @@ use data::filter::{FilterCriteria, Filterable};
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, IntoElement, KeyboardEventData, ScrollConfig,
-	ScrollPosition, Size, VirtualScrollView, rect, use_memo,
-	use_scroll_controller, use_state};
+	ScrollPosition, Size, VirtualScrollView, rect, use_scroll_controller,
+	use_state};
 use freya::radio::{IntoWritable, use_radio};
 use crate::data::user::BattleNetUser;
 use super::achievement::sc2Achievement;
@@ -40,20 +40,15 @@ impl Component for Sc2Element
 			.clone()
 			.unwrap_or_default();
 		
-		let achievements = use_memo({
-			let profile = profile.clone();
-			move || {
-				profile.filter(FilterCriteria
-				{
-					caseSensitive: caseSensitive(),
-					locked: locked(),
-					nameOnly: nameOnly(),
-					text: search.read().clone(),
-				})
-			}
+		let achievements = profile.filter(FilterCriteria
+		{
+			caseSensitive: caseSensitive(),
+			locked: locked(),
+			nameOnly: nameOnly(),
+			text: search.read().clone(),
 		});
 		
-		let achievementsLength = achievements.read().len();
+		let achievementsLength = achievements.len();
 		
 		return rect()
 			.cross_align(Alignment::Center)
@@ -144,7 +139,7 @@ impl Component for Sc2Element
 							.child(
 								VirtualScrollView::new_controlled(
 									move |i, _| {
-										let id = achievements.read()[i].id;
+										let id = achievements[i].id;
 										sc2Achievement(id).into()
 									},
 									scrollController
