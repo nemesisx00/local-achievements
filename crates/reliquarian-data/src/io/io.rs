@@ -299,7 +299,7 @@ pub fn writeDataToFile<T>(directory: String, fileName: String, data: &T) -> Resu
 	
 	let buffer = BufWriter::new(file);
 	
-	serde_json::to_writer(buffer, data)
+	_ = serde_json::to_writer_pretty(buffer, data)
 		.context(format!(
 			"serde_json failed writing data to BufWriter at: '{}'",
 			path.as_path().to_str().unwrap()
