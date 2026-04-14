@@ -14,7 +14,6 @@ use freya::radio::{IntoWritable, Writable, use_radio};
 use net::RequestEvent;
 use super::ProfileState;
 use super::about::About;
-use super::profile::ProfileElement;
 
 pub fn NavBar() -> impl IntoElement
 {
@@ -104,8 +103,8 @@ pub fn NavBar() -> impl IntoElement
 							let mut profileState = profileState.write();
 							match profileState.clone()
 							{
-								ProfileState::Hidden => **profileState = ProfileState::Shown,
-								ProfileState::Shown => **profileState = ProfileState::Hidden,
+								ProfileState::Hidden => **profileState = ProfileState::Showing,
+								ProfileState::Shown => **profileState = ProfileState::Hiding,
 								_ => {}
 							}
 						})
@@ -171,7 +170,6 @@ pub fn NavBar() -> impl IntoElement
 				))
 		)
 		
-		.child(ProfileElement::new())
 		.maybe_child(aboutOverlay);
 }
 

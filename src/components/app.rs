@@ -14,9 +14,9 @@ use epicgamesstore::components::refresh::handleEgsOperation;
 use epicgamesstore::data::io::loadUserData_EpicGamesStore;
 use epicgamesstore::data::user::EgsUser;
 use freya::prelude::{App, ChildrenExt, ContainerSizeExt,
-	ContainerWithContentExt, Direction, Element, IntoElement, Platform,
-	StyleExt, WinitPlatformExt, WritableUtils, rect, spawn, use_init_theme,
-	use_side_effect, use_state};
+	ContainerWithContentExt, Direction, Element, IntoElement, LayerExt,
+	Platform, StyleExt, WinitPlatformExt, WritableUtils, rect, spawn,
+	use_init_theme, use_side_effect, use_state};
 use freya::radio::{Radio, use_init_radio_station, use_radio};
 use freya::winit::dpi::PhysicalSize;
 use gog::components::content::GogContentElement;
@@ -40,6 +40,7 @@ use steam::data::user::SteamUser;
 use tracing::{info, warn};
 use crate::components::ProfileState;
 use crate::components::nav::NavBar;
+use crate::components::profile::ProfileElement;
 use crate::components::settings::AppSettingsElement;
 
 pub struct LocalAchievementsApp;
@@ -215,8 +216,14 @@ impl App for LocalAchievementsApp
 			.color(TextColor)
 			.direction(Direction::Vertical)
 			.expanded()
+			.layer(1)
 			
 			.child(NavBar())
+			
+			.child(
+				ProfileElement::new()
+					.offset(64.0)
+			)
 			
 			.child(
 				rect()

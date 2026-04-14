@@ -2,10 +2,11 @@ use battlenet::components::profile::BattleNetUserProfile;
 use data::constants::{BorderColor, ButtonBackgroundColor};
 use data::enums::DataChannel;
 use epicgamesstore::components::profile::EgsUserProfile;
+use freya::animation::{AnimNum, Ease, Function, use_animation};
 use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
 	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Direction, Gaps, IntoElement, Layer, LayerExt, ScrollView, Size, StyleExt,
-	TextAlign, TextStyleExt, WritableUtils, label, rect, use_state};
+	Direction, Gaps, IntoElement, LayerExt, Position, ScrollView, Size,
+	StyleExt, TextAlign, TextStyleExt, label, rect, use_side_effect};
 use freya::radio::{RadioChannel, use_radio};
 use gog::components::profile::GogUserProfile;
 use retroachievements::components::profile::RetroAchievementsUserProfile;
@@ -30,6 +31,7 @@ impl RadioChannel<ProfileState> for DataChannel {}
 pub struct ProfileElement
 {
 	duration: u64,
+	offset: f32,
 	width: f32,
 }
 
@@ -37,19 +39,39 @@ impl Component for ProfileElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
+		let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
 		
-		let mut visible = use_state(|| false);
-		let leftShown = self.width;
-		let leftHidden = 0.0;
+		let duration = self.duration;
+		let offset = self.offset;
+		let width = self.width;
+		let mut slide = use_animation(move |_| {
+			AnimNum::new(-width, offset)
+				.function(Function::Expo)
+				.ease(Ease::Out)
+				.time(duration)
+		});
 		
-		visible.set(profileState.read().clone() != ProfileState::Hidden);
+		use_side_effect(move || {
+			if !*slide.is_running().read()
+			{
+				let state = *profileState.read();
+				match state
+				{
+					ProfileState::Hiding => {
+						slide.reverse();
+						**profileState.write() = ProfileState::Hidden;
+					}
+					
+					ProfileState::Showing => {
+						slide.start();
+						**profileState.write() = ProfileState::Shown;
+					}
+					_ => {}
+				}
+			}
+		});
 		
-		let x = match visible()
-		{
-			false => leftHidden,
-			true => leftShown,
-		};
+		let x = slide.read().value();
 		
 		return rect()
 			.background(ButtonBackgroundColor)
@@ -66,19 +88,23 @@ impl Component for ProfileElement
 					})
 			))
 			.height(Size::Fill)
-			.layer(Layer::Overlay)
-			.padding(Gaps::new_all(15.0))
-			.width(Size::px(x))
+			.layer(2)
+			.padding(Gaps::new(5.0, 0.0, 0.0, 10.0))
+			.position(
+				Position::new_absolute()
+					.left(x)
+					.top(0.0)
+			)
+			.width(Size::px(self.width))
 			
-			// Profiles
 			.child(
 				ScrollView::new()
-					.show_scrollbar(visible())
 					.spacing(10.0)
 					
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("Battle.Net"))
@@ -88,6 +114,7 @@ impl Component for ProfileElement
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("Epic Games Store"))
@@ -97,6 +124,7 @@ impl Component for ProfileElement
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("GOG"))
@@ -106,6 +134,7 @@ impl Component for ProfileElement
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("RetroAchievements"))
@@ -115,6 +144,7 @@ impl Component for ProfileElement
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("RPCS3"))
@@ -124,6 +154,7 @@ impl Component for ProfileElement
 					.child(
 						rect()
 							.direction(Direction::Vertical)
+							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
 							.width(Size::percent(100.0))
 							
 							.child(profileLabelElement("Steam"))
@@ -140,6 +171,7 @@ impl ProfileElement
 		return Self
 		{
 			duration: AnimationDuration,
+			offset: 0.0,
 			width: 250.0,
 		};
 	}
@@ -148,6 +180,12 @@ impl ProfileElement
 	pub fn duration(mut self, duration: impl Into<u64>) -> Self
 	{
 		self.duration = duration.into();
+		return self;
+	}
+	
+	pub fn offset(mut self, offset: impl Into<f32>) -> Self
+	{
+		self.offset = offset.into();
 		return self;
 	}
 	
