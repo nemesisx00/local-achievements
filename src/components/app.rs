@@ -113,93 +113,93 @@ impl App for LocalAchievementsApp
 					
 					loop
 					{
-						if rateLimiter.read().isEmpty().await
+						let queueLength = rateLimiter.read().len().await;
+						match rateLimiter.read().next().await
 						{
-							break;
-						}
-						
-						if let Some(request) = rateLimiter.read().next().await
-						{
-							//Update the request event with the current number of remaining requests, forces redraw of ui elements that rely on this value
-							**requestEvent.write() = RequestEvent::Processing(rateLimiter.read().len().await);
+							None => break,
 							
-							match request.operation.clone()
-							{
-								DataOperation::CacheImage(force) => if let Some(destination) = request.destination
+							Some(request) => {
+								//Update the request event with the current number of remaining requests; forces redraw of ui elements that rely on this value
+								**requestEvent.write() = RequestEvent::Processing(queueLength);
+								
+								match request.operation.clone()
 								{
-									if let Some(url) = request.url
+									DataOperation::CacheImage(force) => if let Some(destination) = request.destination
 									{
-										if force || !imagePathExists(&destination)
+										if let Some(url) = request.url
 										{
-											let client = Client::builder()
-												.https_only(true)
-												.build()
-												.unwrap_or_default();
-											
-											match cacheImage(&client, &url, &destination).await
+											if force || !imagePathExists(&destination)
 											{
-												Err(e) => warn!("[Cache] Error caching image {} - {:?}", destination, e),
-												Ok(_) => info!("[Cache] Cached image: {}", destination),
+												let client = Client::builder()
+													.https_only(true)
+													.build()
+													.unwrap_or_default();
+												
+												match cacheImage(&client, &url, &destination).await
+												{
+													Err(e) => warn!("[Cache] Error caching image {} - {:?}", destination, e),
+													Ok(_) => info!("[Cache] Cached image: {}", destination),
+												}
+											}
+											else
+											{
+												rateLimiter.read().refundUse()
+													.await;
 											}
 										}
-										else
-										{
-											rateLimiter.read().refundUse()
-												.await;
-										}
 									}
-								}
-								
-								DataOperation::Platform(platform, _) => match platform
-								{
-									GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
-									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformGameId(platform, _, _) => match platform
-								{
-									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
-								{
-									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformGameIdString(platform, _, _) => match platform
-								{
-									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformOptionalInt(platform, _, _) => match platform
-								{
-									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformSaveToFile(platform) => match platform
-								{
-									GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
-									GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-									GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-									GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-									_ => {}
-								}
-								
-								DataOperation::PlatformThreeInt(platform, _, _, _, _) => match platform
-								{
-									GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-									_ => {}
+									
+									DataOperation::Platform(platform, _) => match platform
+									{
+										GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
+										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformGameId(platform, _, _) => match platform
+									{
+										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
+									{
+										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformGameIdString(platform, _, _) => match platform
+									{
+										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformOptionalInt(platform, _, _) => match platform
+									{
+										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformSaveToFile(platform) => match platform
+									{
+										GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
+										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
+										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
+										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+										_ => {}
+									}
+									
+									DataOperation::PlatformThreeInt(platform, _, _, _, _) => match platform
+									{
+										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
+										_ => {}
+									}
 								}
 							}
 						}
