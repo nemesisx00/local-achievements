@@ -69,7 +69,7 @@ pub fn NavBar() -> impl IntoElement
 			.left(0.0)
 			.top(0.0)
 		)
-		.width(Size::px(60.0))
+		.width(Size::px(64.0))
 		
 		.child(
 			rect()
@@ -87,7 +87,7 @@ pub fn NavBar() -> impl IntoElement
 				))
 				.direction(Direction::Vertical)
 				.height(Size::Fill)
-				.padding(Gaps::new(10.0, 5.0, 5.0, 7.5))
+				.padding(Gaps::new(10.0, 7.5, 5.0, 7.5))
 				.spacing(5.0)
 				.width(Size::FillMinimum)
 				
@@ -109,17 +109,6 @@ pub fn NavBar() -> impl IntoElement
 								_ => {}
 							}
 						})
-				)
-				
-				.child(
-					IconButton::new(lucide::settings())
-						.alt("Settings")
-						.color(TextColor)
-						.height(Size::px(48.0))
-						.innerHeight(Size::px(32.0))
-						.innerWidth(Size::px(32.0))
-						.width(Size::px(48.0))
-						.onPress(move |_| selected.set(ActiveContent::Settings))
 				)
 				
 				.child(
@@ -175,14 +164,18 @@ pub fn NavBar() -> impl IntoElement
 					)
 				)
 				
-				.child(navBottom(showAbout.into_writable(), count))
+				.child(navBottom(
+					showAbout.into_writable(),
+					count,
+					selected.into_writable()
+				))
 		)
 		
 		.child(ProfileElement::new())
 		.maybe_child(aboutOverlay);
 }
 
-fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>) -> impl IntoElement
+fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>, selected: impl Into<Writable<ActiveContent>>) -> impl IntoElement
 {
 	let count = match count
 	{
@@ -190,6 +183,7 @@ fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>) -
 		Some(count) => Some(count.into()),
 	};
 	let mut show = show.into();
+	let mut selected = selected.into();
 	
 	let loader = match count
 	{
@@ -230,6 +224,17 @@ fn navBottom(show: impl Into<Writable<bool>>, count: Option<impl Into<usize>>) -
 				.height(Size::px(48.0))
 				.width(Size::px(48.0))
 				.onPress(move |_| show.set(true))
+		)
+		
+		.child(
+			IconButton::new(lucide::settings())
+				.alt("Settings")
+				.color(TextColor)
+				.height(Size::px(48.0))
+				.innerHeight(Size::px(32.0))
+				.innerWidth(Size::px(32.0))
+				.width(Size::px(48.0))
+				.onPress(move |_| selected.set(ActiveContent::Settings))
 		);
 }
 
