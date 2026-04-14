@@ -7,7 +7,7 @@ use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, Direction, Event, EventHandlersExt, FontWeight, Gaps,
+	Content, CornerRadius, Direction, Event, EventHandlersExt, FontWeight, Gaps,
 	ImageViewer, Input, IntoElement, KeyboardEventData, ProgressBar,
 	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, StyleExt,
 	TextAlign, TextStyleExt, VirtualScrollView, label, rect,
@@ -33,6 +33,7 @@ impl Component for GameList
 		let gamesLength = games.len();
 		
 		return rect()
+			.content(Content::Flex)
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
 			.spacing(10.0)
@@ -68,8 +69,8 @@ impl Component for GameList
 					scrollController
 				)
 					.direction(Direction::Vertical)
-					.height(Size::percent(100.0))
-					.item_size(81.0)
+					.height(Size::flex(1.0))
+					.item_size(105.0)
 					.length(gamesLength)
 					.scroll_with_arrows(true)
 			);
