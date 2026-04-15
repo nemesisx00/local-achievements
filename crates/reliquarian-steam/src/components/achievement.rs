@@ -75,15 +75,9 @@ impl Component for AchievementElement
 					.width(Size::percent(50.0))
 					
 					.maybe_child(showIcon.then(||
-						rect()
-							.cross_align(Alignment::Center)
-							.main_align(Alignment::Center)
-							
-							.child(
-								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-									.corner_radius(CornerRadius)
-									.height(Size::px(64.0))
-							)
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
 					))
 					
 					.child(

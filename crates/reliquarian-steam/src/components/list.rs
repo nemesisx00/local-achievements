@@ -33,6 +33,7 @@ impl Component for GameList
 		let gamesLength = games.len();
 		
 		return rect()
+			.content(Content::Flex)
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
 			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
@@ -70,6 +71,7 @@ impl Component for GameList
 					scrollController
 				)
 					.direction(Direction::Vertical)
+					.height(Size::flex(1.0))
 					.item_size(105.0)
 					.length(gamesLength)
 					.scroll_with_arrows(true)
@@ -99,10 +101,10 @@ impl Component for GameListNode
 		let user = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		let mut selectedGameId = use_radio::<Option<u64>, GamePlatforms>(GamePlatforms::Steam);
 		
+		let hovering = use_state(|| false);
+		
 		let game = user.read().getGame(self.gameId)
 			.unwrap_or_default();
-		
-		let hovering = use_state(|| false);
 		
 		let iconPath = getImagePath(&FileLocation
 		{

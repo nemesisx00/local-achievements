@@ -64,102 +64,104 @@ impl Component for GameElement
 		let gameId = self.gameId;
 		
 		return rect()
-				.cross_align(Alignment::Center)
-				.direction(Direction::Vertical)
-				.expanded()
-				.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
-				.spacing(10.0)
-				
-				.on_global_key_up(move |e: Event<KeyboardEventData>| match e.code
-				{
-					Code::Home => scrollController.scroll_to(ScrollPosition::Start, Direction::Vertical),
-					Code::End => scrollController.scroll_to(ScrollPosition::End, Direction::Vertical),
-					_ => {},
-				})
-				
-				.child(
-					rect()
-						.content(Content::Flex)
-						.cross_align(Alignment::Center)
-						.direction(Direction::Horizontal)
-						.height(Size::px(64.0))
-						.main_align(Alignment::SpaceBetween)
-						.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
-						.spacing(10.0)
-						.width(Size::percent(50.0))
-						
-						.child(
-							IconButton::new(lucide::arrow_big_left())
-								.alt("Back")
-								.onPress(move |_| **selectedGameId.write() = None)
-						)
-						
-						.maybe_child(filePathExists(&iconPath).then(||
-							ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-								.corner_radius(CornerRadius)
-								.height(Size::px(64.0))
-						))
-						
-						.child(
-							label()
-								.font_size(24.0)
-								.font_weight(FontWeight::BOLD)
-								.text_align(TextAlign::Center)
-								.text(game.name)
-								.width(Size::flex(1.0))
-						)
-						
-						.child(
-							IconButton::new(lucide::refresh_ccw())
-								.alt("Refresh")
-								.onPress(move |_| if gameId > 0
-								{
-									spawn(async move {
-										rateLimiter.read().pushAll(vec![
-											SteamOperation::GetGameImage(gameId, true).into(),
-											SteamOperation::GetSchemaForGame(gameId).into(),
-											SteamOperation::GetPlayerAchievements(gameId).into(),
-											SteamOperation::GetGlobalPercentages(gameId).into(),
-											SteamOperation::SetGameLoaded(gameId, true).into(),
-											SteamOperation::SaveToFile.into(),
-										]).await;
-										
-										**requestEvent.write() = RequestEvent::Added;
-									});
-								})
-						)
-				)
-				
-				.child(
-					AchievementsFilter::new(
-						caseSensitive.into_writable(),
-						locked.into_writable(),
-						nameOnly.into_writable(),
-						search.into_writable()
+			.content(Content::Flex)
+			.cross_align(Alignment::Center)
+			.direction(Direction::Vertical)
+			.expanded()
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
+			.spacing(10.0)
+			
+			.on_global_key_up(move |e: Event<KeyboardEventData>| match e.code
+			{
+				Code::Home => scrollController.scroll_to(ScrollPosition::Start, Direction::Vertical),
+				Code::End => scrollController.scroll_to(ScrollPosition::End, Direction::Vertical),
+				_ => {},
+			})
+			
+			.child(
+				rect()
+					.content(Content::Flex)
+					.cross_align(Alignment::Center)
+					.direction(Direction::Horizontal)
+					.height(Size::px(64.0))
+					.main_align(Alignment::SpaceBetween)
+					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
+					.spacing(10.0)
+					.width(Size::percent(50.0))
+					
+					.child(
+						IconButton::new(lucide::arrow_big_left())
+							.alt("Back")
+							.onPress(move |_| **selectedGameId.write() = None)
 					)
-						.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
-						.width(Size::percent(50.0))
-				)
-				
-				.maybe_child((!game.hasAchievements).then(||
-					label()
-						.text_align(TextAlign::Center)
-						.width(Size::Fill)
-						.text("No Achievements to display")
-				))
-				
-				.maybe_child(game.hasAchievements.then(||
-					VirtualScrollView::new_controlled(move |i, _| {
-							let chievo = &achievements[i];
-							AchievementElement::new(gameId, chievo.id.clone()).into()
-						},
-						scrollController
+					
+					.maybe_child(filePathExists(&iconPath).then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
+					))
+					
+					.child(
+						label()
+							.font_size(24.0)
+							.font_weight(FontWeight::BOLD)
+							.text_align(TextAlign::Center)
+							.text(game.name)
+							.width(Size::flex(1.0))
 					)
-						.direction(Direction::Vertical)
-						.item_size(105.0)
-						.length(achievementsListLength)
-						.scroll_with_arrows(true)
-				));
+					
+					.child(
+						IconButton::new(lucide::refresh_ccw())
+							.alt("Refresh")
+							.onPress(move |_| if gameId > 0
+							{
+								spawn(async move {
+									rateLimiter.read().pushAll(vec![
+										SteamOperation::GetGameImage(gameId, true).into(),
+										SteamOperation::GetSchemaForGame(gameId).into(),
+										SteamOperation::GetPlayerAchievements(gameId).into(),
+										SteamOperation::GetGlobalPercentages(gameId).into(),
+										SteamOperation::SetGameLoaded(gameId, true).into(),
+										SteamOperation::SaveToFile.into(),
+									]).await;
+									
+									**requestEvent.write() = RequestEvent::Added;
+								});
+							})
+					)
+			)
+			
+			.child(
+				AchievementsFilter::new(
+					caseSensitive.into_writable(),
+					locked.into_writable(),
+					nameOnly.into_writable(),
+					search.into_writable()
+				)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
+					.width(Size::percent(50.0))
+			)
+			
+			.maybe_child((!game.hasAchievements).then(||
+				label()
+					.text_align(TextAlign::Center)
+					.width(Size::Fill)
+					.text("No Achievements to display")
+			))
+			
+			.maybe_child(game.hasAchievements.then(||
+				VirtualScrollView::new_controlled(move |i, _| {
+						let chievo = &achievements[i];
+						AchievementElement::new(gameId, chievo.id.clone()).into()
+					},
+					scrollController
+				)
+					.direction(Direction::Vertical)
+					.height(Size::flex(1.0))
+					.item_size(105.0)
+					.length(achievementsListLength)
+					.scroll_with_arrows(true)
+			));
 	}
 }
 
