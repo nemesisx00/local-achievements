@@ -1,16 +1,15 @@
 use std::path::PathBuf;
-use data::constants::{BorderColor, Icon_Locked, Path_Games,
+use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games,
 	RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
-use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt,
-	CircularLoader, Color, Component, ContainerExt, ContainerSizeExt,
-	ContainerWithContentExt, CornerRadius, Direction, FontWeight, Gaps,
-	ImageViewer, IntoElement, Layer, LayerExt, Position, ProgressBar,
-	ProgressBarThemePartialExt, Size, Span, StyleExt, TextAlign,
-	TextStyleExt, label, paragraph, rect};
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Color,
+	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content,
+	Direction, FontWeight, Gaps, ImageViewer, IntoElement, Layer, LayerExt,
+	Position, ProgressBar, ProgressBarThemePartialExt, Size, Span, StyleExt,
+	TextAlign, TextStyleExt, label, paragraph, rect};
 use freya::radio::use_radio;
 use macros::{join, png, pngAlt};
 use crate::api::RetroAchievementsApi;
@@ -80,7 +79,6 @@ impl Component for AchievementElement
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
-			.margin(Gaps::new_symmetric(5.0, 0.0))
 			.width(Size::Fill)
 			
 			.child(
@@ -91,47 +89,47 @@ impl Component for AchievementElement
 							.fill(BorderColor)
 							.width(1.0)
 					))
-					.corner_radius(CornerRadius::new_all(10.0))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
 					.main_align(Alignment::SpaceBetween)
-					.margin(Gaps::new_all(5.0))
+					.margin(Gaps::new_symmetric(5.0, 0.0))
 					.min_height(Size::px(64.0))
 					.min_width(Size::px(540.0))
-					.padding(Gaps::new_symmetric(10.0, 15.0))
-					.spacing(10.0)
+					.padding(Gaps::new_all(10.0))
+					.spacing(15.0)
 					.width(Size::percent(50.0))
+					
+					.maybe_child(showIcon.then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
+					))
 					
 					.child(
 						rect()
-							.direction(Direction::Horizontal)
-							.min_height(Size::px(64.0))
+							.direction(Direction::Vertical)
 							.spacing(10.0)
-							.width(Size::Fill)
-							
-							.maybe_child((!showIcon).then(||
-								CircularLoader::new()
-							))
-							
-							.maybe_child(showIcon.then(||
-								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-									.width(Size::px(64.0))
-							))
+							.width(Size::flex(1.0))
 							
 							.child(
-								rect()
-									.direction(Direction::Vertical)
-									.main_align(Alignment::SpaceBetween)
-									.spacing(15.0)
-									.width(Size::percent(60.0))
-									
-									.child(label().text(achievement.name))
-									
-									.child(
-										label()
-											.font_size(10.0)
-											.max_height(Size::px(48.0))
-											.text(achievement.description)
-									)
+								label()
+									.text(achievement.name)
+									.width(Size::flex(1.0))
+							)
+							
+							.child(
+								label()
+									.font_size(10.0)
+									.text(achievement.description)
+									.width(Size::flex(1.0))
+							)
+							
+							.child(
+								label()
+									.font_size(10.0)
+									.text(timestamp)
+									.width(Size::flex(1.0))
 							)
 					)
 					
@@ -139,85 +137,74 @@ impl Component for AchievementElement
 						rect()
 							.cross_align(Alignment::End)
 							.direction(Direction::Vertical)
-							.main_align(Alignment::SpaceBetween)
-							.min_width(Size::px(150.0))
+							.main_align(Alignment::Center)
+							.height(Size::px(64.0))
+							.spacing(5.0)
 							.width(Size::px(150.0))
 							
 							.child(
+								ProgressBar::new(percentCasual as f32)
+									.background(RetroAchievementsProgressColorBackground)
+									.height(8.0)
+									.color(RetroAchievementsProgressColorCasual)
+									.progress_background(RetroAchievementsProgressColorCasual)
+									.width(Size::px(100.0))
+							)
+							
+							.child(
 								rect()
-									.cross_align(Alignment::End)
-									.direction(Direction::Vertical)
-									.main_align(Alignment::Start)
-									.width(Size::Fill)
-									
-									.child(
-										rect()
-											.layer(Layer::Relative(1))
-											.position(Position::new_absolute()
-												.right(0.0)
-												.top(0.0)
-											)
-											.width(Size::px(150.0))
-											
-											.child(
-												ProgressBar::new(percentCasual as f32)
-													.background(RetroAchievementsProgressColorBackground)
-													.height(8.0)
-													.color(RetroAchievementsProgressColorCasual)
-													.progress_background(RetroAchievementsProgressColorCasual)
-											)
+									.layer(Layer::Relative(2))
+									.position(Position::new_absolute()
+										.right(0.0)
+										.top(10.5)
 									)
+									.width(Size::px(100.0))
 									
 									.child(
-										rect()
-											.layer(Layer::Relative(2))
-											.position(Position::new_absolute()
-												.right(0.0)
-												.top(0.0)
-											)
-											.width(Size::px(150.0))
-											
-											.child(
-												ProgressBar::new(percentHardcore as f32)
-													.background(Color::TRANSPARENT)
-													.height(8.0)
-													.color(RetroAchievementsProgressColorHardcore)
-													.progress_background(RetroAchievementsProgressColorHardcore)
-											)
-									)
-									
-									.child(
-										paragraph()
-											.margin(Gaps::new(15.0, 0.0, 0.0, 0.0))
-											.text_align(TextAlign::Center)
-											.width(Size::Fill)
-											
-											.span(Span::new(format!("{} ", achievement.awardedCasual)).font_size(10.0))
-											.span(Span::new(format!("({})", achievement.awardedCasual)).font_size(10.0).font_weight(FontWeight::BOLD))
-											.span(Span::new(format!(" of {}", distinctPlayers)).font_size(10.0))
-									)
-									
-									.child(
-										paragraph()
-											.text_align(TextAlign::Center)
-											.width(Size::Fill)
-											
-											.span(Span::new(format!("{}% ", percentCasualString)).font_size(10.0))
-											.span(Span::new(format!("({}%)", percentHardcoreString)).font_size(10.0).font_weight(FontWeight::BOLD))
-											.span(Span::new(" unlock rate").font_size(10.0))
+										ProgressBar::new(percentHardcore as f32)
+											.background(Color::TRANSPARENT)
+											.height(8.0)
+											.color(RetroAchievementsProgressColorHardcore)
+											.progress_background(RetroAchievementsProgressColorHardcore)
 									)
 							)
 							
 							.child(
-								label()
-									.font_size(10.0)
-									.text_align(TextAlign::Center)
-									.width(Size::Fill)
-									.text(timestamp)
+								paragraph()
+									.margin(Gaps::new(1.0, 0.0, 0.0, 0.0))
+									.text_align(TextAlign::End)
+									.width(Size::percent(100.0))
+									
+									.span(
+										Span::new(format!("{} of {} ", achievement.awardedCasual, distinctPlayers))
+											.font_size(10.0)
+									)
+									
+									.span(
+										Span::new(format!("({}%)", percentCasualString))
+											.font_size(10.0)
+									)
+							)
+							
+							.child(
+								paragraph()
+									.text_align(TextAlign::End)
+									.width(Size::percent(100.0))
+									
+									.span(
+										Span::new(format!("{} of {} ", achievement.awardedHardcore, distinctPlayers))
+											.font_size(10.0)
+											.font_weight(FontWeight::BOLD)
+									)
+									
+									.span(
+										Span::new(format!("({}%)", percentHardcoreString))
+											.font_size(10.0)
+											.font_weight(FontWeight::BOLD)
+									)
 							)
 					)
-			)
-		;
+			);
 	}
 }
 

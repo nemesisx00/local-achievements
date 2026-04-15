@@ -1,18 +1,18 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, ButtonBackgroundColor, FileName_GameIcon,
-	Path_Games, RetroAchievementsProgressColorBackground,
+use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
+	FileName_GameIcon, Path_Games, RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, Direction, Event, EventHandlersExt, FontWeight, Gaps,
-	ImageViewer, Input, IntoElement, KeyboardEventData, Layer, LayerExt,
-	Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
-	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
-	VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
+	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
+	Input, IntoElement, KeyboardEventData, Layer, LayerExt, Position,
+	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
+	Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label,
+	paragraph, rect, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, png};
 use crate::api::RetroAchievementsApi;
@@ -35,8 +35,10 @@ impl Component for GameList
 		let gamesLength = games.len();
 		
 		return rect()
+			.content(Content::Flex)
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
 			.spacing(10.0)
 			.width(Size::Fill)
 			
@@ -49,7 +51,8 @@ impl Component for GameList
 			
 			.child(
 				label()
-					.font_size(24.0)
+					.font_size(32.0)
+					.font_weight(FontWeight::BOLD)
 					.text_align(TextAlign::Center)
 					.width(Size::percent(100.0))
 					.text("Retro Achievements")
@@ -70,6 +73,7 @@ impl Component for GameList
 					scrollController
 				)
 					.direction(Direction::Vertical)
+					.height(Size::flex(1.0))
 					.item_size(105.0)
 					.length(gamesLength)
 					.scroll_with_arrows(true)
@@ -98,10 +102,10 @@ impl Component for GameListNode
 		let user = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
 		let mut selectedGameId = use_radio::<Option<u64>, GamePlatforms>(GamePlatforms::RetroAchievements);
 		
+		let hovering = use_state(|| false);
+		
 		let game = user.read().getGame(self.gameId)
 			.unwrap_or_default();
-		
-		let hovering = use_state(|| false);
 		
 		let iconPath = getImagePath(&FileLocation
 		{
@@ -121,6 +125,14 @@ impl Component for GameListNode
 		let progressHardcore = game.percentUnlocked(RetroAchievementsMode::Hardcore);
 		let progressHardcoreString = format!("{:.2}", progressHardcore);
 		
+		let achievementsCount= game.achievements.len();
+		let casualUnlockedCount = game.achievements.iter()
+			.filter(|a| a.unlocked(RetroAchievementsMode::Casual))
+			.count();
+		let hardcoreUnlockedCount = game.achievements.iter()
+			.filter(|a| a.unlocked(RetroAchievementsMode::Hardcore))
+			.count();
+		
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
@@ -137,9 +149,9 @@ impl Component for GameListNode
 							.fill(BorderColor)
 							.width(1.0)
 					))
-					.corner_radius(CornerRadius::new_all(5.0))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
-					.main_align(Alignment::SpaceBetween)
 					.min_width(Size::px(540.0))
 					.padding(Gaps::new_symmetric(10.0, 15.0))
 					.spacing(10.0)
@@ -152,22 +164,26 @@ impl Component for GameListNode
 					
 					.child(
 						rect()
+							.content(Content::Flex)
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
+							.width(Size::flex(1.0))
 							
 							.maybe_child(filePathExists(&iconPath).then(||
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-									.width(Size::px(64.0))
+									.corner_radius(CornerRadius)
+									.height(Size::px(64.0))
 							))
 							
 							.child(
 								rect()
 									.direction(Direction::Vertical)
-									.main_align(Alignment::SpaceAround)
+									.height(Size::px(64.0))
+									.main_align(Alignment::Center)
+									.width(Size::flex(1.0))
 									
 									.child(
 										label()
-											.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
 											.font_size(18.0)
 											.text(game.name)
 									)
@@ -184,27 +200,18 @@ impl Component for GameListNode
 						rect()
 							.cross_align(Alignment::End)
 							.direction(Direction::Vertical)
-							.main_align(Alignment::SpaceAround)
+							.height(Size::px(64.0))
+							.main_align(Alignment::Center)
 							.min_height(Size::px(40.0))
-							.min_width(Size::px(150.0))
+							.spacing(5.0)
 							.width(Size::px(100.0))
 							
 							.child(
-								rect()
-									.layer(Layer::Relative(1))
-									.position(Position::new_absolute()
-										.right(0.0)
-										.top(10.0)
-									)
-									.width(Size::px(100.0))
-									
-									.child(
-										ProgressBar::new(progressCasual as f32)
-											.background(RetroAchievementsProgressColorBackground)
-											.height(8.0)
-											.progress_background(RetroAchievementsProgressColorCasual)
-											.color(RetroAchievementsProgressColorCasual)
-									)
+								ProgressBar::new(progressCasual)
+									.background(RetroAchievementsProgressColorBackground)
+									.height(8.0)
+									.progress_background(RetroAchievementsProgressColorCasual)
+									.color(RetroAchievementsProgressColorCasual)
 							)
 							
 							.child(
@@ -212,12 +219,12 @@ impl Component for GameListNode
 									.layer(Layer::Relative(2))
 									.position(Position::new_absolute()
 										.right(0.0)
-										.top(10.0)
+										.top(11.0)
 									)
 									.width(Size::px(100.0))
 									
 									.child(
-										ProgressBar::new(progressHardcore as f32)
+										ProgressBar::new(progressHardcore)
 											.background(Color::TRANSPARENT)
 											.height(8.0)
 											.progress_background(RetroAchievementsProgressColorHardcore)
@@ -227,12 +234,38 @@ impl Component for GameListNode
 							
 							.child(
 								paragraph()
-									.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
 									.text_align(TextAlign::Center)
 									.width(Size::px(100.0))
 									
-									.span(Span::new(format!("{}% ", progressCasualString)).font_size(10.0))
-									.span(Span::new(format!("({}%)", progressHardcoreString)).font_size(10.0).font_weight(FontWeight::BOLD))
+									.span(
+										Span::new(format!("{} / {} ", casualUnlockedCount, achievementsCount))
+											.font_size(10.0)
+									)
+									
+									.span(
+										Span::new(format!("({}%)", progressCasualString))
+											.color(Color::GRAY)
+											.font_size(10.0)
+									)
+							)
+							
+							.child(
+								paragraph()
+									.text_align(TextAlign::Center)
+									.width(Size::px(100.0))
+									
+									.span(
+										Span::new(format!("{} / {} ", hardcoreUnlockedCount, achievementsCount))
+											.font_size(10.0)
+											.font_weight(FontWeight::BOLD)
+									)
+									
+									.span(
+										Span::new(format!("({}%)", progressHardcoreString))
+											.color(Color::GRAY)
+											.font_size(10.0)
+											.font_weight(FontWeight::BOLD)
+									)
 							)
 					)
 			);
