@@ -2,11 +2,10 @@ use std::path::PathBuf;
 use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
-use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
-	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
-	ContainerWithContentExt, Content, CornerRadius, Direction, Gaps,
-	ImageViewer, IntoElement, Size, StyleExt, TextAlign, TextStyleExt, label,
-	rect};
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Component,
+	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content,
+	CornerRadius, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt,
+	TextAlign, TextStyleExt, label, rect};
 use freya::radio::use_radio;
 use macros::{join, jpg, jpgAlt};
 use crate::api::SteamApi;
@@ -54,7 +53,6 @@ impl Component for AchievementElement
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
-			//.margin(Gaps::new_symmetric(5.0, 0.0))
 			.width(Size::Fill)
 			
 			.child(
@@ -63,7 +61,7 @@ impl Component for AchievementElement
 						Border::new()
 							.alignment(BorderAlignment::Center)
 							.fill(BorderColor)
-							.width(BorderWidth::from(1.0))
+							.width(1.0)
 					))
 					.content(Content::Flex)
 					.corner_radius(CornerRadius::new_all(10.0))
@@ -72,7 +70,7 @@ impl Component for AchievementElement
 					.margin(Gaps::new_symmetric(5.0, 0.0))
 					.min_height(Size::px(64.0))
 					.min_width(Size::px(540.0))
-					.padding(Gaps::new_symmetric(10.0, 10.0))
+					.padding(Gaps::new_all(10.0))
 					.spacing(15.0)
 					.width(Size::percent(50.0))
 					
@@ -85,7 +83,6 @@ impl Component for AchievementElement
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
 									.corner_radius(CornerRadius)
 									.height(Size::px(64.0))
-									.width(Size::px(64.0))
 							)
 					))
 					

@@ -67,6 +67,8 @@ pub fn SteamProfile() -> impl IntoElement
 					IconButton::new(lucide::refresh_ccw())
 						.alt("Refresh")
 						.height(Size::px(32.0))
+						.innerHeight(Size::px(24.0))
+						.innerWidth(Size::px(24.0))
 						.width(Size::px(32.0))
 						.onPress(move |_| {
 							spawn(async move {

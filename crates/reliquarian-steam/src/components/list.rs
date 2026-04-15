@@ -9,9 +9,9 @@ use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
 	Input, IntoElement, KeyboardEventData, ProgressBar,
-	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, StyleExt,
-	TextAlign, TextStyleExt, VirtualScrollView, label, rect,
-	use_scroll_controller, use_state};
+	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
+	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
+	rect, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use crate::api::SteamApi;
@@ -156,11 +156,19 @@ impl Component for GameListNode
 						.width(Size::px(100.0))
 				)
 				.child(
-					label()
-						.font_size(10.0)
+					paragraph()
 						.text_align(TextAlign::Center)
-						.width(Size::px(100.0))
-						.text(format!("{} / {} ({}%)", unlockedCount, achievementsCount, percentUnlockedString))
+						.width(Size::percent(100.0))
+						
+						.span(
+							Span::new(format!("{} / {} ", unlockedCount, achievementsCount))
+								.font_size(10.0)
+						)
+						.span(
+							Span::new(format!("({}%) ", percentUnlockedString))
+								.font_size(10.0)
+								.color(Color::GREY)
+						)
 				)
 		};
 		
