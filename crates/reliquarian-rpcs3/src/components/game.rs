@@ -1,18 +1,21 @@
 use std::path::PathBuf;
 use components::button::icon::IconButton;
 use components::input::filter::AchievementsFilter;
-use data::constants::Path_Games;
+use data::constants::{Path_Games, TextColor};
 use data::enums::GamePlatforms;
 use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
-	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, label, rect, use_scroll_controller, use_state};
+	EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement,
+	KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign,
+	TextStyleExt, VirtualScrollView, label, rect, spawn, use_scroll_controller,
+	use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::join;
+use crate::components::refresh::refreshUserData;
+use crate::data::settings::Rpcs3Settings;
 use crate::data::user::Rpcs3User;
 use crate::api::api::Rpcs3Api;
 use super::trophy::TrophyElement;
@@ -27,8 +30,9 @@ impl Component for GameElement
 {
 	fn render(&self) -> impl IntoElement
 	{
-		let user = use_radio::<Rpcs3User, GamePlatforms>(GamePlatforms::Rpcs3);
 		let mut selectedGameId = use_radio::<Option<String>, GamePlatforms>(GamePlatforms::Rpcs3);
+		let settings = use_radio::<Rpcs3Settings, GamePlatforms>(GamePlatforms::Rpcs3);
+		let mut user = use_radio::<Rpcs3User, GamePlatforms>(GamePlatforms::Rpcs3);
 		
 		let mut scrollConroller = use_scroll_controller(ScrollConfig::default);
 		
@@ -76,7 +80,9 @@ impl Component for GameElement
 			.child(
 				rect()
 					.content(Content::Flex)
+					.cross_align(Alignment::Center)
 					.direction(Direction::Horizontal)
+					.height(Size::px(64.0))
 					.main_align(Alignment::SpaceBetween)
 					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
 					.spacing(10.0)
@@ -96,9 +102,23 @@ impl Component for GameElement
 					.child(
 						label()
 							.font_size(24.0)
+							.font_weight(FontWeight::BOLD)
 							.text_align(TextAlign::Center)
 							.text(game.name)
-							.width(Size::flex(0.9))
+							.width(Size::flex(1.0))
+					)
+					
+					.child(
+						IconButton::new(lucide::refresh_ccw())
+							.alt("Refresh")
+							.color(TextColor)
+							.onPress(move |_| _ = spawn(async move {
+								let refreshedData = refreshUserData(
+									user.read().clone(),
+									settings.read().clone()
+								).await;
+								**user.write() = refreshedData;
+							}))
 					)
 			)
 			

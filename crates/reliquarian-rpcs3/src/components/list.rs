@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, ButtonBackgroundColor, Path_Games,
-	RetroAchievementsProgressColorBackground,
+use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
+	Path_Games, RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, Direction, Event, EventHandlersExt, Gaps, ImageViewer, Input,
-	IntoElement, KeyboardEventData, Position, ProgressBar,
+	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
+	Input, IntoElement, KeyboardEventData, ProgressBar,
 	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
 	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
 	rect, use_scroll_controller, use_state};
@@ -35,6 +35,7 @@ impl Component for GameList
 		return rect()
 			.direction(Direction::Vertical)
 			.cross_align(Alignment::Center)
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
 			.spacing(10.0)
 			.width(Size::Fill)
 			
@@ -47,7 +48,8 @@ impl Component for GameList
 			
 			.child(
 				label()
-					.font_size(24.0)
+					.font_size(32.0)
+					.font_weight(FontWeight::BOLD)
 					.text_align(TextAlign::Center)
 					.width(Size::percent(100.0))
 					.text("RPCS3")
@@ -116,6 +118,10 @@ impl Component for GameListNode
 		
 		let progress = game.percentUnlocked();
 		let progressString = format!("{:.2}", progress);
+		let trophyCount = game.trophies.len();
+		let unlockedCount = game.trophies.iter()
+			.filter(|t| t.unlocked)
+			.count();
 		
 		return rect()
 			.direction(Direction::Horizontal)
@@ -133,76 +139,65 @@ impl Component for GameListNode
 							.fill(BorderColor)
 							.width(1.0)
 					))
-					.corner_radius(CornerRadius::new_all(5.0))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
+					.cross_align(Alignment::Center)
 					.direction(Direction::Horizontal)
-					.main_align(Alignment::SpaceBetween)
 					.min_width(Size::px(540.0))
 					.padding(Gaps::new_symmetric(10.0, 15.0))
-					.spacing(10.0)
+					.spacing(15.0)
 					.width(Size::percent(50.0))
 					
 					.pressableWithHover(
 						hovering.into_writable(),
 						move |_| **selectedGameId.write() = Some(game.npCommId.clone())
 					)
+							
+					.maybe_child(filePathExists(&iconPath).then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
+					))
 					
 					.child(
-						rect()
-							.direction(Direction::Horizontal)
-							.spacing(15.0)
-							
-							.maybe_child(filePathExists(&iconPath).then(||
-								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-									.width(Size::px(80.0))
-							))
-							
-							.child(
-								rect()
-									.direction(Direction::Vertical)
-									.main_align(Alignment::SpaceAround)
-									
-									.child(
-										label()
-											.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
-											.font_size(18.0)
-											.text(game.name)
-									)
-							)
+						label()
+							.font_size(18.0)
+							.text(game.name)
+							.width(Size::flex(1.0))
 					)
 					
 					.child(
 						rect()
 							.cross_align(Alignment::End)
 							.direction(Direction::Vertical)
-							.main_align(Alignment::SpaceAround)
-							.min_height(Size::px(40.0))
-							.min_width(Size::px(150.0))
+							.height(Size::px(64.0))
+							.main_align(Alignment::Center)
+							.spacing(5.0)
 							.width(Size::px(100.0))
 							
 							.child(
-								rect()
-									.position(Position::new_absolute()
-										.right(0.0)
-										.top(10.0)
-									)
-									.width(Size::px(100.0))
-									
-									.child(
-										ProgressBar::new(progress)
-											.background(RetroAchievementsProgressColorBackground)
-											.height(8.0)
-											.progress_background(RetroAchievementsProgressColorHardcore)
-											.color(RetroAchievementsProgressColorHardcore)
-									)
+								ProgressBar::new(progress)
+									.background(RetroAchievementsProgressColorBackground)
+									.height(8.0)
+									.progress_background(RetroAchievementsProgressColorHardcore)
+									.color(RetroAchievementsProgressColorHardcore)
+									.width(Size::percent(100.0))
 							)
 							
 							.child(
 								paragraph()
-									.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
 									.text_align(TextAlign::Center)
-									.width(Size::px(100.0))
+									.width(Size::percent(100.0))
 									
-									.span(Span::new(format!("{}% ", progressString)).font_size(10.0))
+									.span(
+										Span::new(format!("{} / {} ", unlockedCount, trophyCount))
+											.font_size(10.0)
+									)
+									.span(
+										Span::new(format!("({}%) ", progressString))
+											.font_size(10.0)
+											.color(Color::GREY)
+									)
 							)
 					)
 			);

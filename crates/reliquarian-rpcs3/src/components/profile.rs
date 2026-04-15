@@ -1,8 +1,14 @@
-use data::constants::{BorderColor, RetroAchievementsProgressColorHardcore, TextColor};
+use components::button::icon::IconButton;
+use data::constants::{BorderColor, RetroAchievementsProgressColorHardcore,
+	TextColor};
 use data::enums::GamePlatforms;
 use data::format::truncateF32;
 use freya::icons::lucide;
-use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment, BorderWidth, Button, ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, CornerRadius, Direction, Gaps, IntoElement, ProgressBar, ProgressBarThemePartialExt, Size, StyleExt, TextAlign, TextStyleExt, label, rect, spawn, svg};
+use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
+	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Content, CornerRadius, Direction, Gaps, IntoElement, ProgressBar,
+	ProgressBarThemePartialExt, Size, StyleExt, TextAlign, TextStyleExt, label,
+	rect, spawn};
 use freya::radio::use_radio;
 use crate::components::refresh::refreshUserData;
 use crate::data::settings::Rpcs3Settings;
@@ -59,22 +65,20 @@ pub fn Rpcs3ProfileElement() -> impl IntoElement
 				)
 				
 				.child(
-					Button::new()
-						.on_press(move |_| _ = spawn(async move {
+					IconButton::new(lucide::refresh_ccw())
+						.alt("Refresh")
+						.color(TextColor)
+						.height(Size::px(32.0))
+						.innerHeight(Size::px(24.0))
+						.innerWidth(Size::px(24.0))
+						.width(Size::px(32.0))
+						.onPress(move |_| _ = spawn(async move {
 							let refreshedData = refreshUserData(
 								user.read().clone(),
 								settings.read().clone()
 							).await;
 							**user.write() = refreshedData;
 						}))
-						
-						.child(
-							svg(lucide::refresh_ccw())
-								.color(TextColor)
-								.height(Size::px(32.0))
-								.width(Size::px(32.0))
-								.a11y_alt("Refresh")
-						)
 				)
 		)
 		
