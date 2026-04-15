@@ -4,9 +4,11 @@ use battlenet::components::content::BattleNetContentElement;
 use battlenet::components::refresh::handleBattleNetOperation;
 use battlenet::data::io::{loadSettings_BattleNet, loadUserData_BattleNet};
 use battlenet::data::user::BattleNetUser;
-use data::constants::{BackgroundColor, DefaultHttpRequestRate, TextColor};
+use data::constants::{BackgroundColor, DefaultHttpRequestRate, FileName_GameHeader,
+	Path_Games, TextColor};
 use data::enums::{ActiveContent, DataChannel, GamePlatforms};
-use data::io::{cacheImage, imagePathExists, loadAppSettings};
+use data::io::{FileLocation, cacheImage, filePathExists, getImagePath,
+	imagePathExists, loadAppSettings};
 use data::localAchievementsTheme;
 use data::settings::AppSettings;
 use epicgamesstore::components::content::EgsContentElement;
@@ -23,6 +25,7 @@ use gog::components::content::GogContentElement;
 use gog::components::refresh::handleGogOperation;
 use gog::data::io::loadUserData_Gog;
 use gog::data::user::GogUser;
+use macros::{join, jpg};
 use net::{DataOperation, RateLimiter, RequestEvent};
 use reqwest::Client;
 use retroachievements::components::content::RetroAchievementsContent;
@@ -33,9 +36,11 @@ use rpcs3::components::content::Rpcs3ContentElement;
 use rpcs3::data::io::{loadSettings_Rpcs3, loadUserData_Rpcs3};
 use rpcs3::data::settings::Rpcs3Settings;
 use rpcs3::data::user::Rpcs3User;
+use steam::api::SteamApi;
 use steam::components::content::SteamContent;
 use steam::components::refresh::handleSteamOperation;
 use steam::data::io::loadUserData_Steam;
+use steam::data::operation::SteamOperation;
 use steam::data::user::SteamUser;
 use tracing::{info, warn};
 use crate::components::ProfileState;
@@ -169,7 +174,36 @@ impl App for LocalAchievementsApp
 									
 									DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
 									{
-										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+										GamePlatforms::Steam => match request.operation.clone().try_into()
+										{
+											Err(_) => {},
+											
+											Ok(steamOperation) => match steamOperation
+											{
+												SteamOperation::GetGameImage(gameId,force ) => {
+													
+													let location = FileLocation
+													{
+														fileName: jpg!(FileName_GameHeader),
+														group: join!(Path_Games, gameId),
+														platform: SteamApi::Platform.to_string(),
+													};
+													
+													if force || !filePathExists(&getImagePath(&location))
+													{
+														processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await;
+													}
+													else
+													{
+														rateLimiter.read().refundUse()
+															.await;
+													}
+												}
+												
+												_ => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
+											}
+										}
+										
 										_ => {}
 									}
 									
