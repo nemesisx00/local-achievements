@@ -6,6 +6,7 @@ use data::{constants::Path_Avatars, io::FileLocation};
 use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
+use crate::api::endpoint::appinfo::Payload_GetAppInfo;
 use crate::secure::getSteamAuth;
 use super::SteamAuth;
 use super::endpoint::gameschema::Payload_GetSchemaForGame;
@@ -55,6 +56,8 @@ impl SteamApi
 	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
 	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGame/v0002";
 	
+	const StoreEndpoint_GetAppInfo: &str = "https://store.steampowered.com/api/appdetails?appids={appid}";
+	
 	const Parameter_AppId: &str = "appid";
 	const Parameter_Format: &str = "format";
 	const Parameter_GameId: &str = "gameid";
@@ -75,7 +78,6 @@ impl SteamApi
 	const Replace_Hash: &str = "{hash}";
 	const Replace_Size: &str = "{size}";
 	
-	//const IconUrl_Achievement: &str = "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
 	const IconUrl_Game: &str = "https://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{hash}.jpg";
 	
 	const AvatarUrl: &str = "https://avatars.steamstatic.com/{hash}{size}.jpg";
@@ -124,6 +126,28 @@ impl SteamApi
 	}
 	
 	/**
+	Get all info that is displayed on the Store page for an individual game.
+	*/
+	pub async fn getAppInfo(&self, appId: u64) -> Result<Payload_GetAppInfo>
+	{
+		let url = Self::StoreEndpoint_GetAppInfo
+			.replace(Self::Replace_AppId, &appId.to_string());
+		
+		let response = self.getStore::<HashMap<u64, Payload_GetAppInfo>>(url).await
+			.context(format!(
+				"Error retrieving app info from the Steam Store API for Game ID {}",
+				appId
+			))?;
+		
+		return match response.iter()
+			.find(|(k, _)| **k == appId)
+		{
+			None => Err(anyhow!("No data returned for Game ID {}", appId)),
+			Some((_, appinfo)) => Ok(appinfo.clone()),
+		};
+	}
+	
+	/**
 	Get the global completion percentages of each achievment for an individual game.
 	
 	---
@@ -159,7 +183,7 @@ impl SteamApi
 				Self::Endpoint_GetGlobalAchievementPercentagesForApp
 			)
 			{
-				return Ok(self.get::<Payload_GetGlobalPercentages>(&url, &parameters).await
+				return Ok(self.get::<Payload_GetGlobalPercentages>(url, parameters).await
 					.context(format!(
 						"Error retrieving list of global percentages from Steam Web API for Game ID {}",
 						appId
@@ -226,7 +250,7 @@ impl SteamApi
 				Self::Endpoint_GetOwnedGames
 			)
 			{
-				return Ok(self.get::<Payload_GetOwnedGames>(&url, &parameters).await
+				return Ok(self.get::<Payload_GetOwnedGames>(url, parameters).await
 					.context(format!(
 						"Error retrieving list of owned games from Steam Web API for Steam ID {}",
 						auth.id()
@@ -292,7 +316,7 @@ impl SteamApi
 				Self::Endpoint_GetPlayerAchievements
 			)
 			{
-				return Ok(self.get::<Payload_GetPlayerAchievements>(&url, &parameters).await
+				return Ok(self.get::<Payload_GetPlayerAchievements>(url, parameters).await
 					.context(format!(
 						"Error retrieving the list of achievements from Stema Web API for App ID {}",
 						appId
@@ -382,7 +406,7 @@ impl SteamApi
 				Self::Endpoint_GetPlayerSummaries
 			)
 			{
-				return Ok(self.get::<Payload_GetPlayerSummaries>(&url, &parameters).await
+				return Ok(self.get::<Payload_GetPlayerSummaries>(url, parameters).await
 					.context(format!(
 						"Error retrieving player summary from Steam Web API for Steam ID {}",
 						auth.id()
@@ -440,7 +464,7 @@ impl SteamApi
 				Self::Endpoint_GetRecentlyPlayedGames
 			)
 			{
-				return Ok(self.get::<Payload_GetRecentlyPlayedGames>(&url, &self.generateParameterMap(&auth)).await
+				return Ok(self.get::<Payload_GetRecentlyPlayedGames>(url, self.generateParameterMap(&auth)).await
 					.context(format!(
 						"Error retrieving recently played games from Steam Web API for Steam ID {}",
 						auth.id()
@@ -510,7 +534,7 @@ impl SteamApi
 				Self::Endpoint_GetSchemaForGame
 			)
 			{
-				return Ok(self.get::<Payload_GetSchemaForGame>(&url, &parameters).await
+				return Ok(self.get::<Payload_GetSchemaForGame>(url, parameters).await
 					.context(format!(
 						"Error retrieving game schema from Steam Web API for Game ID {}",
 						appId
@@ -552,27 +576,34 @@ impl SteamApi
 	/**
 	Execute an HTTP GET request.
 	*/
-	async fn get<T>(&self, url: &String, parameters: &HashMap<String, String>) -> Result<T>
+	async fn get<T>(&self, url: String, parameters: HashMap<String, String>) -> Result<T>
 		where T: DeserializeOwned
 	{
-		let mut params = String::from("?");
-		for (k, v) in parameters
+		let mut params = String::default();
+		if !parameters.is_empty()
 		{
-			params = format!("{}&{}={}", params, k, v);
+			params = "?".into();
+			for (k, v) in parameters
+			{
+				params = format!("{}&{}={}", params, k, v);
+			}
 		}
 		
 		let requestUrl = format!("{}{}", url, params);
 		
-		/*
-		let response = self.agent.get(requestUrl)
-			.call()
-				.context("Error retrieving Steam API response")?
-			.body_mut()
-			.read_json::<T>()
-				.context("Error parsing Steam API response as JSON")?;
-		*/
-		
 		let response = self.client.get(requestUrl)
+			.send().await
+				.context("Error retrieving Steam API response")?
+			.json::<T>().await
+				.context("Error parsing Steam API response as JSON")?;
+		
+		return Ok(response);
+	}
+	
+	async fn getStore<T>(&self, url: String) -> Result<T>
+		where T: DeserializeOwned
+	{
+		let response = self.client.get(url)
 			.send().await
 				.context("Error retrieving Steam API response")?
 			.json::<T>().await

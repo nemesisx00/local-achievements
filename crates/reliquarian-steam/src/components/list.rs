@@ -1,13 +1,14 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, ButtonBackgroundColor, FileName_GameIcon,
-	Path_Games, RetroAchievementsProgressColorBackground, SteamContrast};
+use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
+	FileName_GameHeader, Path_Games, RetroAchievementsProgressColorBackground,
+	SteamContrast};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Direction, Event, EventHandlersExt, Gaps, ImageViewer, Input, IntoElement,
-	KeyboardEventData, Layer, LayerExt, Position, ProgressBar,
+	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
+	Input, IntoElement, KeyboardEventData, ProgressBar,
 	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, StyleExt,
 	TextAlign, TextStyleExt, VirtualScrollView, label, rect,
 	use_scroll_controller, use_state};
@@ -34,6 +35,7 @@ impl Component for GameList
 		return rect()
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
 			.spacing(10.0)
 			.width(Size::Fill)
 			
@@ -46,7 +48,8 @@ impl Component for GameList
 			
 			.child(
 				label()
-					.font_size(24.0)
+					.font_size(32.0)
+					.font_weight(FontWeight::BOLD)
 					.text_align(TextAlign::Center)
 					.width(Size::percent(100.0))
 					.text("Steam")
@@ -103,7 +106,7 @@ impl Component for GameListNode
 		
 		let iconPath = getImagePath(&FileLocation
 		{
-			fileName: jpg!(FileName_GameIcon),
+			fileName: jpg!(FileName_GameHeader),
 			group: join!(Path_Games, game.id),
 			platform: SteamApi::Platform.to_lowercase(),
 		});
@@ -116,6 +119,50 @@ impl Component for GameListNode
 		
 		let percentUnlocked = game.percentUnlocked();
 		let percentUnlockedString = format!("{:.2}", percentUnlocked);
+		let achievementsCount = game.achievements.len();
+		let unlockedCount = game.achievements.iter()
+			.filter(|a| a.unlocked())
+			.count();
+		
+		let mut rightSide = rect()
+			.cross_align(Alignment::End)
+			.direction(Direction::Vertical)
+			.height(Size::px(64.0))
+			.main_align(Alignment::Center)
+			.spacing(5.0)
+			.width(Size::px(100.0));
+		
+		rightSide = match game.hasAchievements
+		{
+			false => rightSide.child(
+					label()
+						.font_size(10.0)
+						.text_align(TextAlign::Center)
+						.width(Size::px(100.0))
+						.text(match game.loaded
+						{
+							false => "Click to Load",
+							true => "Achievements N/A",
+						})
+				),
+			
+			true => rightSide
+				.child(
+					ProgressBar::new(percentUnlocked as f32)
+						.background(RetroAchievementsProgressColorBackground)
+						.color(SteamContrast)
+						.height(8.0)
+						.progress_background(SteamContrast)
+						.width(Size::px(100.0))
+				)
+				.child(
+					label()
+						.font_size(10.0)
+						.text_align(TextAlign::Center)
+						.width(Size::px(100.0))
+						.text(format!("{} / {} ({}%)", unlockedCount, achievementsCount, percentUnlockedString))
+				)
+		};
 		
 		return rect()
 			.direction(Direction::Horizontal)
@@ -133,8 +180,9 @@ impl Component for GameListNode
 							.fill(BorderColor)
 							.width(1.0)
 					))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
-					.main_align(Alignment::SpaceBetween)
 					.min_width(Size::px(540.0))
 					.padding(Gaps::new_symmetric(10.0, 15.0))
 					.spacing(10.0)
@@ -147,88 +195,33 @@ impl Component for GameListNode
 					
 					.child(
 						rect()
+							.content(Content::Flex)
 							.direction(Direction::Horizontal)
 							.spacing(15.0)
+							.width(Size::flex(1.0))
 							
 							.maybe_child(filePathExists(&iconPath).then(||
-								rect()
-									.cross_align(Alignment::Center)
-									.direction(Direction::Vertical)
+								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+									.corner_radius(CornerRadius)
 									.height(Size::px(64.0))
-									.main_align(Alignment::Center)
-									.child(
-										ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-											.height(Size::px(48.0))
-											.width(Size::px(48.0))
-									)
 							))
 							
 							.child(
 								rect()
 									.direction(Direction::Vertical)
-									.main_align(Alignment::SpaceAround)
+									.height(Size::px(64.0))
+									.main_align(Alignment::Center)
+									.width(Size::flex(1.0))
 									
 									.child(
 										label()
-											.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
 											.font_size(18.0)
 											.text(game.name)
 									)
 							)
 					)
 					
-					.child(
-						rect()
-							.cross_align(Alignment::End)
-							.direction(Direction::Vertical)
-							.main_align(Alignment::SpaceAround)
-							.min_width(Size::px(150.0))
-							.min_height(Size::px(40.0))
-							.width(Size::px(100.0))
-							
-							.maybe_child(game.hasAchievements.then(||
-								rect()
-									.layer(Layer::Relative(2))
-									.position(Position::new_absolute()
-										.right(0.0)
-										.top(10.0)
-									)
-									.width(Size::px(100.0))
-									
-									.child(
-										ProgressBar::new(percentUnlocked as f32)
-											.background(RetroAchievementsProgressColorBackground)
-											.color(SteamContrast)
-											.height(8.0)
-											.progress_background(SteamContrast)
-									)
-							))
-							
-							.maybe_child(game.hasAchievements.then(||
-								label()
-									.margin(Gaps::new(10.0, 0.0, 0.0, 0.0))
-									.font_size(10.0)
-									.text_align(TextAlign::Center)
-									.width(Size::px(100.0))
-									.text(format!("{}%", percentUnlockedString))
-							))
-							
-							.maybe_child((!game.hasAchievements && game.loaded).then(||
-								label()
-									.font_size(10.0)
-									.text_align(TextAlign::Center)
-									.width(Size::px(100.0))
-									.text("Achievements N/A")
-							))
-							
-							.maybe_child((!game.hasAchievements && !game.loaded).then(||
-								label()
-									.font_size(10.0)
-									.text_align(TextAlign::Center)
-									.width(Size::px(100.0))
-									.text("Click to Load")
-							))
-					)
+					.child(rightSide)
 			);
 	}
 }

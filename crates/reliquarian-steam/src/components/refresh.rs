@@ -1,5 +1,6 @@
-use data::constants::{FileName_GameIcon, Icon_Locked, Path_Games};
-use data::io::FileLocation;
+use data::constants::{FileName_GameHeader, Icon_Locked,
+	Path_Games};
+use data::io::{FileLocation, filePathExists, getImagePath};
 use macros::{join, jpg, jpgAlt};
 use net::{DataOperation, DataRequest};
 use tracing::{info, warn};
@@ -18,10 +19,10 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 		Ok(operation) => match operation
 		{
 			SteamOperation::GetGameList => {
-				let result = refreshGameList(user).await;
+				let user = refreshGameList(user).await;
 				info!("[Steam API] Refreshed game list");
 				
-				Some(result)
+				Some(user.into())
 			}
 			
 			SteamOperation::GetGlobalPercentages(id) => {
@@ -29,6 +30,13 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 				info!("[Steam API] Refreshed global percentages for app id {}", id);
 				
 				Some(user.into())
+			}
+			
+			SteamOperation::GetGameImage(id, force) => {
+				let result = refreshImages(user, id, force).await;
+				info!("[Steam API] Queued image refresh for app id {}", id);
+				
+				Some(result)
 			}
 			
 			SteamOperation::GetPlayerAchievements(id) => {
@@ -75,54 +83,6 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 	};
 }
 
-async fn refreshPlayerSummary(mut user: SteamUser) -> SteamOperationResult
-{
-	let mut requests = vec![];
-	if getSteamAuth().is_ok_and(|a| a.validate())
-	{
-		let api = SteamApi::default();
-		
-		if let Ok(payload) = api.getPlayerSummaries().await
-		{
-			if let Some(profile) = payload.response.players.first()
-			{
-				user.update(
-					&profile.steamid,
-					&profile.personaname,
-					match profile.avatarhash.is_empty()
-					{
-						false => Some(&profile.avatarhash),
-						true => None,
-					}
-				);
-				
-				// Cache user avatar images
-				for i in 0..3
-				{
-					let (avatarDestination, avatarUrl) = SteamApi::constructProfileAvatarMetadata(
-						user.id.clone(),
-						user.avatar.clone().unwrap_or_default(),
-						i
-					);
-					
-					requests.push(DataRequest
-					{
-						destination: Some(avatarDestination),
-						operation: DataOperation::CacheImage(true),
-						url: Some(avatarUrl),
-					});
-				}
-			}
-		}
-	}
-	
-	return SteamOperationResult
-	{
-		user,
-		requests
-	};
-}
-
 async fn refreshGameList(mut user: SteamUser) -> SteamOperationResult
 {
 	let mut requests = vec![];
@@ -133,27 +93,10 @@ async fn refreshGameList(mut user: SteamUser) -> SteamOperationResult
 		{
 			user.processOwnedGames(payload);
 			
-			// Cache game icons
-			let platform = SteamApi::Platform.to_string();
-			let fileName = jpg!(FileName_GameIcon);
-			
+			// Cache game images
 			for game in user.games.iter()
 			{
-				let destination = FileLocation
-				{
-					fileName: fileName.clone(),
-					group: join!(Path_Games, game.id),
-					platform: platform.clone(),
-				};
-				
-				let url = SteamApi::constructGameIconUrl(game.id, &game.iconHash);
-				
-				requests.push(DataRequest
-				{
-					destination: Some(destination),
-					operation: DataOperation::CacheImage(false),
-					url: Some(url)
-				});
+				requests.push(SteamOperation::GetGameImage(game.id, false).into());
 			}
 		}
 	}
@@ -271,4 +214,91 @@ async fn refreshGlobalPercentages(mut user: SteamUser, id: u64) -> SteamUser
 	}
 	
 	return user;
+}
+
+async fn refreshImages(user: SteamUser, id: u64, force: bool) -> SteamOperationResult
+{
+	let mut requests = vec![];
+	
+	let location = FileLocation
+	{
+		fileName: jpg!(FileName_GameHeader),
+		group: join!(Path_Games, id),
+		platform: SteamApi::Platform.to_string(),
+	};
+	
+	if force || !filePathExists(&getImagePath(&location))
+	{
+		let api = SteamApi::default();
+		match api.getAppInfo(id).await
+		{
+			Err(e) => warn!("[Steam API] Error getting image for {}: {:?}", id, e),
+			Ok(appinfo) => if let Some(data) = appinfo.data
+			{
+				if let Some(imageUrl) = data.header_image
+				{
+					requests.push(DataRequest
+					{
+						destination: Some(location),
+						operation: DataOperation::CacheImage(force),
+						url: Some(imageUrl.clone())
+					});
+				}
+			}
+		}
+	}
+	
+	return SteamOperationResult
+	{
+		user,
+		requests,
+	};
+}
+
+async fn refreshPlayerSummary(mut user: SteamUser) -> SteamOperationResult
+{
+	let mut requests = vec![];
+	if getSteamAuth().is_ok_and(|a| a.validate())
+	{
+		let api = SteamApi::default();
+		
+		if let Ok(payload) = api.getPlayerSummaries().await
+		{
+			if let Some(profile) = payload.response.players.first()
+			{
+				user.update(
+					&profile.steamid,
+					&profile.personaname,
+					match profile.avatarhash.is_empty()
+					{
+						false => Some(&profile.avatarhash),
+						true => None,
+					}
+				);
+				
+				// Cache user avatar images
+				for i in 0..3
+				{
+					let (avatarDestination, avatarUrl) = SteamApi::constructProfileAvatarMetadata(
+						user.id.clone(),
+						user.avatar.clone().unwrap_or_default(),
+						i
+					);
+					
+					requests.push(DataRequest
+					{
+						destination: Some(avatarDestination),
+						operation: DataOperation::CacheImage(true),
+						url: Some(avatarUrl),
+					});
+				}
+			}
+		}
+	}
+	
+	return SteamOperationResult
+	{
+		user,
+		requests
+	};
 }

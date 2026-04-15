@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use crate::data::achievement::SteamAchievement;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct GameAchievement
 {
 	pub name: String,
@@ -33,14 +33,14 @@ impl From<SteamAchievement> for GameAchievement
 	}
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct GameAvailableStats
 {
 	pub achievements: Option<Vec<GameAchievement>>,
 	pub stats: Option<Vec<GameStat>>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct GameSchema
 {
 	pub availableGameStats: GameAvailableStats,
@@ -48,7 +48,7 @@ pub struct GameSchema
 	pub gameVersion: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct GameStat
 {
 	pub name: String,
@@ -60,7 +60,7 @@ pub struct GameStat
 The expected response data returned by the GetSchemaForGame endpoint.
 */
 #[allow(non_camel_case_types)]
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct Payload_GetSchemaForGame
 {
 	pub game: GameSchema,

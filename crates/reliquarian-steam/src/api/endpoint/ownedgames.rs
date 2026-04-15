@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /**
 The data returned by GetOwnedGames describing a single game.
 */
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct GameInfo
 {
 	pub appid: u64,
@@ -21,7 +21,7 @@ pub struct GameInfo
 /**
 The count and list of games returned from the GetOwnedGames endpoint.
 */
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct OwnedGames
 {
 	pub game_count: u64,
@@ -32,7 +32,7 @@ pub struct OwnedGames
 The expected response data returned by the GetOwnedGames endpoint.
 */
 #[allow(non_camel_case_types)]
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct Payload_GetOwnedGames
 {
 	pub response: OwnedGames,

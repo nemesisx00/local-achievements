@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /**
 The expected response data returned by the GetPlayerSummaries endpoint.
 */
 #[allow(non_camel_case_types)]
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct Payload_GetPlayerSummaries
 {
 	pub response: PlayerSummaries,
@@ -13,7 +13,7 @@ pub struct Payload_GetPlayerSummaries
 /**
 A list of users' profile info, as returned by the GetPlayerSummaries endpoint.
 */
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct PlayerSummaries
 {
 	pub players: Vec<PlayerSummary>,
@@ -22,7 +22,7 @@ pub struct PlayerSummaries
 /**
 A single user's profile info, as returned by the GetPlayerSummaries endpoint.
 */
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 pub struct PlayerSummary
 {
 	pub steamid: String,

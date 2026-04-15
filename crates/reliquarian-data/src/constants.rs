@@ -15,6 +15,7 @@ pub const CornerRadius: CornerRadius = CornerRadius::new_all(5.0);
 
 pub const DefaultHttpRequestRate: u64 = 50;
 
+pub const FileName_GameHeader: &str = "game-header";
 pub const FileName_GameIcon: &str = "game-icon";
 pub const FileName_LogPrefix: &str = "app.log";
 

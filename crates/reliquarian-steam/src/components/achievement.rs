@@ -1,9 +1,9 @@
 use std::path::PathBuf;
-use data::constants::{BorderColor, Icon_Locked, Path_Games};
+use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
-	ChildrenExt, CircularLoader, Component, ContainerExt, ContainerSizeExt,
+	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, CornerRadius, Direction, Gaps,
 	ImageViewer, IntoElement, Size, StyleExt, TextAlign, TextStyleExt, label,
 	rect};
@@ -65,6 +65,7 @@ impl Component for AchievementElement
 							.fill(BorderColor)
 							.width(BorderWidth::from(1.0))
 					))
+					.content(Content::Flex)
 					.corner_radius(CornerRadius::new_all(10.0))
 					.direction(Direction::Horizontal)
 					.main_align(Alignment::SpaceBetween)
@@ -72,11 +73,8 @@ impl Component for AchievementElement
 					.min_height(Size::px(64.0))
 					.min_width(Size::px(540.0))
 					.padding(Gaps::new_symmetric(10.0, 10.0))
+					.spacing(15.0)
 					.width(Size::percent(50.0))
-					
-					.maybe_child((!showIcon).then(||
-						CircularLoader::new()
-					))
 					
 					.maybe_child(showIcon.then(||
 						rect()
@@ -85,6 +83,7 @@ impl Component for AchievementElement
 							
 							.child(
 								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+									.corner_radius(CornerRadius)
 									.height(Size::px(64.0))
 									.width(Size::px(64.0))
 							)
@@ -94,36 +93,20 @@ impl Component for AchievementElement
 						rect()
 							.content(Content::Flex)
 							.direction(Direction::Vertical)
-							//.min_height(Size::px(40.0))
-							//.padding(Gaps::new(0.0, 20.0, 0.0, 0.0))
 							.spacing(10.0)
-							.width(Size::percent(80.0))
+							.width(Size::flex(1.0))
 							
 							.child(
-								rect()
-									.cross_align(Alignment::Center)
-									.direction(Direction::Horizontal)
-									.main_align(Alignment::SpaceBetween)
-									.width(Size::percent(100.0))
-									
-									.child(
-										label()
-											.text(achievement.name)
-											.width(Size:: percent(100.0))
-									)
+								label()
+									.text(achievement.name)
+									.width(Size::flex(1.0))
 							)
 							
 							.child(
-								rect()
-									.direction(Direction::Horizontal)
-									.main_align(Alignment::Start)
-									.width(Size::percent(100.0))
-									
-									.child(
-										label()
-											.font_size(10.0)
-											.text(achievement.description)
-									)
+								label()
+									.font_size(10.0)
+									.text(achievement.description)
+									.width(Size::flex(1.0))
 							)
 							
 							.child(
@@ -131,7 +114,7 @@ impl Component for AchievementElement
 									.content(Content::Flex)
 									.direction(Direction::Horizontal)
 									.main_align(Alignment::SpaceBetween)
-									.width(Size::percent(100.0))
+									.width(Size::flex(1.0))
 									
 									.child(
 										label()

@@ -1,3 +1,4 @@
+pub mod appinfo;
 pub mod gameschema;
 pub mod globalpercentages;
 pub mod ownedgames;

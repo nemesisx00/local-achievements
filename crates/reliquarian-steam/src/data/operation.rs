@@ -9,6 +9,7 @@ pub enum SteamOperation
 {
 	GetGameList,
 	GetGlobalPercentages(u64),
+	GetGameImage(u64, bool),
 	GetPlayerAchievements(u64),
 	GetPlayerSummary,
 	GetSchemaForGame(u64),
@@ -40,7 +41,9 @@ impl From<SteamOperation> for DataOperation
 			
 			SteamOperation::SaveToFile => DataOperation::PlatformSaveToFile(GamePlatforms::Steam),
 			
-			SteamOperation::SetGameLoaded(gameId, switch) => DataOperation::PlatformGameIdBool(
+			SteamOperation::SetGameLoaded(gameId, switch)
+				| SteamOperation::GetGameImage(gameId, switch)
+			=> DataOperation::PlatformGameIdBool(
 				GamePlatforms::Steam,
 				value.as_ref().to_string(),
 				gameId,
@@ -101,6 +104,7 @@ impl TryFrom<DataOperation> for SteamOperation
 				{
 					GamePlatforms::Steam => match SteamOperation::from_str(&operationName)?
 					{
+						Self::GetGameImage(_, _) => Ok(Self::GetGameImage(gameId, switch)),
 						Self::SetGameLoaded(_, _) => Ok(Self::SetGameLoaded(gameId, switch)),
 						_ => Err(anyhow!("Steam operation parameter mismatch")),
 					}
