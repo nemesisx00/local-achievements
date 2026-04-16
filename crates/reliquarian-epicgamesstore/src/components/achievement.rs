@@ -1,14 +1,12 @@
 use std::path::PathBuf;
-use data::constants::{BorderColor, Path_Games};
+use data::constants::{BorderColor, CornerRadius, Path_Games};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Component,
-	ContainerExt, ContainerSizeExt, ContainerWithContentExt, CornerRadius,
-	Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt, TextAlign,
-	TextStyleExt, label, rect};
+	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction,
+	Gaps, ImageViewer, IntoElement, Size, StyleExt, TextStyleExt, label, rect};
 use freya::radio::use_radio;
 use macros::join;
-
 use crate::api::EgsApi;
 use crate::data::user::EgsUser;
 
@@ -64,7 +62,6 @@ impl Component for AchievementElement
 		return rect()
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
-			.margin(Gaps::new_symmetric(5.0, 0.0))
 			.width(Size::Fill)
 			
 			.child(
@@ -75,66 +72,49 @@ impl Component for AchievementElement
 							.fill(BorderColor)
 							.width(1.0)
 					))
-					.corner_radius(CornerRadius::new_all(10.0))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
 					.main_align(Alignment::SpaceBetween)
-					.margin(Gaps::new_all(5.0))
+					.margin(Gaps::new_symmetric(5.0, 0.0))
 					.min_height(Size::px(64.0))
 					.min_width(Size::px(540.0))
-					.padding(Gaps::new_symmetric(10.0, 15.0))
-					.spacing(10.0)
+					.padding(Gaps::new_all(10.0))
+					.spacing(15.0)
 					.width(Size::percent(50.0))
 					
-					.child(
-						rect()
-							.direction(Direction::Horizontal)
-							.min_height(Size::px(64.0))
-							.spacing(10.0)
-							.width(Size::Fill)
-							
-							.maybe_child((!showIcon).then(||
-								rect()
-									.height(Size::px(64.0))
-									.width(Size::px(64.0))
-							))
-							
-							.maybe_child(showIcon.then(||
-								ImageViewer::new(PathBuf::from(iconPath.unwrap()))
-									.width(Size::px(64.0))
-							))
-							
-							.child(
-								rect()
-									.direction(Direction::Vertical)
-									.main_align(Alignment::SpaceBetween)
-									.spacing(15.0)
-									.width(Size::percent(60.0))
-									
-									.child(name)
-									
-									.child(
-										label()
-											.font_size(10.0)
-											.max_height(Size::px(48.0))
-											.text(description)
-									)
-							)
-					)
+					.maybe_child(showIcon.then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
+					))
 					
 					.child(
 						rect()
-							.cross_align(Alignment::End)
+							.content(Content::Flex)
 							.direction(Direction::Vertical)
-							.min_height(Size::px(50.0))
-							.main_align(Alignment::Center)
-							.min_width(Size::px(150.0))
+							.main_align(Alignment::SpaceBetween)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child(
+								label()
+									.text(name)
+									.width(Size::flex(1.0))
+							)
 							
 							.child(
 								label()
 									.font_size(10.0)
-									.text_align(TextAlign::End)
-									.width(Size::percent(100.0))
+									.text(description)
+									.width(Size::flex(1.0))
+							)
+							
+							.child(
+								label()
+									.font_size(10.0)
 									.text(timestamp)
+									.width(Size::flex(100.0))
 							)
 					)
 			);
