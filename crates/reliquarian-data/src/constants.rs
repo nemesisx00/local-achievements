@@ -21,6 +21,8 @@ pub const FileName_LogPrefix: &str = "app.log";
 
 pub const Format_ChronoDateTime: &str = "%B %d, %Y %l:%M %p";
 
+pub const GogProgressColor: Color = Color::from_rgb(13, 186, 132);
+
 pub const Icon_Locked: &str = "locked";
 
 pub const InputModeHiddenChar: char = '*';

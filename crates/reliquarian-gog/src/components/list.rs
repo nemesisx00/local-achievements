@@ -1,17 +1,9 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, ButtonBackgroundColor, FileName_GameIcon,
-	Path_Games, RetroAchievementsProgressColorBackground,
-	RetroAchievementsProgressColorHardcore};
+use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius, FileName_GameIcon, GogProgressColor, Path_Games, RetroAchievementsProgressColorBackground};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
-use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
-	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Content, CornerRadius, Direction, Event, EventHandlersExt, FontWeight, Gaps,
-	ImageViewer, Input, IntoElement, KeyboardEventData, ProgressBar,
-	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, StyleExt,
-	TextAlign, TextStyleExt, VirtualScrollView, label, rect,
-	use_scroll_controller, use_state};
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
 use freya::radio::use_radio;
 use macros::{join, jpg};
 use crate::api::GogApi;
@@ -36,6 +28,7 @@ impl Component for GameList
 			.content(Content::Flex)
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
+			.margin(Gaps::new(10.0, 0.0, 5.0, 0.0))
 			.spacing(10.0)
 			.width(Size::Fill)
 			
@@ -48,7 +41,8 @@ impl Component for GameList
 			
 			.child(
 				label()
-					.font_size(24.0)
+					.font_size(32.0)
+					.font_weight(FontWeight::BOLD)
 					.text_align(TextAlign::Center)
 					.width(Size::percent(100.0))
 					.text("GOG")
@@ -117,7 +111,12 @@ impl Component for GameListNode
 		};
 		
 		let progress = game.percentUnlocked();
-		let progressString = format!("{:.2}%", progress);
+		let progressString = format!("{:.2}", progress);
+		let achievementsCount = game.achievements.len();
+		let unlockedCount = game.achievements.iter()
+			.filter(|a| a.dateUnlocked.is_some())
+			.count();
+		
 		let name = game.name.clone();
 		
 		let showIcon = filePathExists(&iconPath);
@@ -126,8 +125,8 @@ impl Component for GameListNode
 			.direction(Direction::Horizontal)
 			.main_align(Alignment::SpaceAround)
 			.margin(Gaps::new_symmetric(5.0, 0.0))
-			.min_height(Size::px(86.0))
-			.width(Size::percent(100.0))
+			.min_height(Size::px(54.0))
+			.width(Size::Fill)
 			
 			.child(
 				rect()
@@ -138,11 +137,12 @@ impl Component for GameListNode
 							.fill(BorderColor)
 							.width(1.0)
 					))
-					.corner_radius(CornerRadius::new_all(5.0))
+					.content(Content::Flex)
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
-					.main_align(Alignment::SpaceBetween)
 					.min_width(Size::px(540.0))
-					.padding(Gaps::new_symmetric(0.0, 15.0))
+					.padding(Gaps::new_symmetric(10.0, 15.0))
+					.spacing(10.0)
 					.width(Size::percent(50.0))
 					
 					.pressableWithHover(
@@ -150,35 +150,23 @@ impl Component for GameListNode
 						move |_| **selectedGameId.write() = Some(game.id)
 					)
 					
+					.maybe_child(showIcon.then(||
+						ImageViewer::new(PathBuf::from(iconPath.unwrap_or_default()))
+							.corner_radius(CornerRadius)
+							.height(Size::px(64.0))
+					))
+					
 					.child(
 						rect()
-							.cross_align(Alignment::Center)
-							.direction(Direction::Horizontal)
-							.spacing(15.0)
-							
-							.maybe_child((!showIcon).then(||
-								rect()
-									.height(Size::px(64.0))
-									.width(Size::px(64.0))
-							))
-							
-							.maybe_child(showIcon.then(||
-								ImageViewer::new(PathBuf::from(iconPath.unwrap_or_default()))
-									.height(Size::px(64.0))
-							))
+							.direction(Direction::Vertical)
+							.height(Size::px(64.0))
+							.main_align(Alignment::Center)
+							.width(Size::flex(1.0))
 							
 							.child(
-								rect()
-									.direction(Direction::Vertical)
-									.min_height(Size::px(64.0))
-									.main_align(Alignment::Center)
-									.width(Size::percent(50.0))
-									
-									.child(
-										label()
-											.font_size(18.0)
-											.text(name)
-									)
+								label()
+									.font_size(18.0)
+									.text(name)
 							)
 					)
 					
@@ -186,51 +174,46 @@ impl Component for GameListNode
 						rect()
 							.cross_align(Alignment::End)
 							.direction(Direction::Vertical)
+							.height(Size::px(64.0))
 							.main_align(Alignment::Center)
-							.min_height(Size::px(64.0))
-							.min_width(Size::px(100.0))
 							.spacing(5.0)
+							.width(Size::px(100.0))
 							
 							.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
-								rect()
-									.direction(Direction::Horizontal)
-									.main_align(Alignment::End)
-									.width(Size::px(100.0))
+								ProgressBar::new(progress)
+									.background(RetroAchievementsProgressColorBackground)
+									.height(8.0)
+									.progress_background(GogProgressColor)
+									.color(GogProgressColor)
+							))
+							
+							.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
+								paragraph()
+									.text_align(TextAlign::Center)
+									.width(Size::percent(100.0))
 									
-									.child(
-										ProgressBar::new(progress)
-											.background(RetroAchievementsProgressColorBackground)
-											.height(8.0)
-											.progress_background(RetroAchievementsProgressColorHardcore)
-											.color(RetroAchievementsProgressColorHardcore)
+									.span(
+										Span::new(format!("{} / {} ", unlockedCount, achievementsCount))
+											.font_size(10.0)
+									)
+									
+									.span(
+										Span::new(format!("({}%) ", progressString))
+											.font_size(10.0)
+											.color(Color::GREY)
 									)
 							))
 							
-							.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
+							.maybe_child(game.hasAchievements.is_none_or(|b| !b).then(||
 								label()
 									.font_size(10.0)
-									.font_weight(FontWeight::BOLD)
-									.min_width(Size::px(100.0))
 									.text_align(TextAlign::Center)
-									.text(progressString)
-							))
-							
-							.maybe_child(game.hasAchievements.is_some_and(|b| !b).then(||
-								label()
-									.font_size(10.0)
-									.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
-									.text_align(TextAlign::End)
 									.width(Size::percent(100.0))
-									.text("No achievements")
-							))
-							
-							.maybe_child(game.hasAchievements.is_none().then(||
-								label()
-									.font_size(10.0)
-									.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
-									.text_align(TextAlign::End)
-									.width(Size::percent(100.0))
-									.text("Click to load")
+									.text(match game.hasAchievements.is_none()
+									{
+										false => "No achievements",
+										true => "Click to load"
+									})
 							))
 					)
 			);

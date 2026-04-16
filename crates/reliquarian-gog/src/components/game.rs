@@ -2,17 +2,17 @@ use std::path::PathBuf;
 use components::button::icon::IconButton;
 use components::input::filter::AchievementsFilter;
 use components::overlay::refresh::ConfirmRefresh;
-use data::constants::{FileName_GameIcon, Path_Games};
+use data::constants::{CornerRadius, FileName_GameIcon, Path_Games};
 use data::enums::{DataChannel, GamePlatforms};
 use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
-	EventHandlersExt, Gaps, ImageViewer, IntoElement, KeyboardEventData,
-	ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt,
-	VirtualScrollView, WritableUtils, label, rect, spawn, use_scroll_controller,
-	use_side_effect, use_state};
+	EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement,
+	KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign,
+	TextStyleExt, VirtualScrollView, WritableUtils, label, rect, spawn,
+	use_scroll_controller, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
@@ -94,6 +94,7 @@ impl Component for GameElement
 		});
 		
 		return rect()
+			.content(Content::Flex)
 			.cross_align(Alignment::Center)
 			.direction(Direction::Vertical)
 			.expanded()
@@ -110,7 +111,9 @@ impl Component for GameElement
 			.child(
 				rect()
 					.content(Content::Flex)
+					.cross_align(Alignment::Center)
 					.direction(Direction::Horizontal)
+					.height(Size::px(64.0))
 					.main_align(Alignment::SpaceBetween)
 					.margin(Gaps::new(5.0, 0.0, 5.0, 0.0))
 					.spacing(10.0)
@@ -124,15 +127,17 @@ impl Component for GameElement
 					
 					.maybe_child(filePathExists(&iconPath).then(||
 						ImageViewer::new(PathBuf::from(iconPath.unwrap_or_default()))
+							.corner_radius(CornerRadius)
 							.height(Size::px(64.0))
 					))
 					
 					.child(
 						label()
 							.font_size(24.0)
+							.font_weight(FontWeight::BOLD)
 							.text_align(TextAlign::Center)
 							.text(game.name)
-							.width(Size::flex(0.8))
+							.width(Size::flex(1.0))
 					)
 					
 					.child(
@@ -142,20 +147,7 @@ impl Component for GameElement
 					)
 			)
 			
-			.maybe_child((game.hasAchievements.is_none() || game.hasAchievements.is_some_and(|b| !b)).then(||
-				rect()
-					.center()
-					.direction(Direction::Vertical)
-					.height(Size::percent(100.0))
-					.width(Size::percent(100.0))
-					
-					.child(
-						label()
-							.text("No achievements to display")
-					)
-			))
-			
-			.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
+			.child(
 				AchievementsFilter::new(
 					caseSensitive.into_writable(),
 					locked.into_writable(),
@@ -164,6 +156,15 @@ impl Component for GameElement
 				)
 					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 					.width(Size::percent(50.0))
+			)
+			
+			.maybe_child((game.hasAchievements.is_none_or(|b| !b)).then(||
+				rect()
+					.center()
+					.direction(Direction::Vertical)
+					.height(Size::percent(100.0))
+					.width(Size::percent(100.0))
+					.child("No achievements to display")
 			))
 			
 			.maybe_child(game.hasAchievements.is_some_and(|b| b).then(||
@@ -175,6 +176,7 @@ impl Component for GameElement
 					scrollController
 				)
 					.direction(Direction::Vertical)
+					.height(Size::flex(1.0))
 					.item_size(105.0)
 					.length(achievementsListLength)
 					.scroll_with_arrows(true)
