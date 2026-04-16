@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use data::constants::TheString;
 use data::filter::{FilterCriteria, Filterable};
+use data::format::truncateF32;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use crate::api::{GameInfo, Payload_GetGlobalPercentages,
@@ -283,12 +284,18 @@ impl Game
 		};
 	}
 	
-	pub fn percentUnlocked(&self) -> f64
+	pub fn percentUnlocked(&self) -> f32
 	{
-		return (self.achievements.iter()
-				.filter(|a| a.unlocked())
-				.count() as f64 / self.achievements.len() as f64)
-			* 100.0;
+		return truncateF32(
+			(
+					self.achievements.iter()
+						.filter(|a| a.unlocked())
+						.count() as f32
+					/ self.achievements.len() as f32
+				)
+				* 100.0,
+			2
+		);
 	}
 	
 	pub fn sortName(&self) -> String

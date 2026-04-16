@@ -3,9 +3,9 @@ use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Component,
-	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content,
-	CornerRadius, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt,
-	TextAlign, TextStyleExt, label, rect};
+	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction,
+	Gaps, ImageViewer, IntoElement, Size, StyleExt, TextAlign, TextStyleExt,
+	label, rect};
 use freya::radio::use_radio;
 use macros::{join, jpg, jpgAlt};
 use crate::api::SteamApi;
@@ -64,7 +64,7 @@ impl Component for AchievementElement
 							.width(1.0)
 					))
 					.content(Content::Flex)
-					.corner_radius(CornerRadius::new_all(10.0))
+					.corner_radius(CornerRadius)
 					.direction(Direction::Horizontal)
 					.main_align(Alignment::SpaceBetween)
 					.margin(Gaps::new_symmetric(5.0, 0.0))

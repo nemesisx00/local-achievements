@@ -150,7 +150,7 @@ impl Component for GameListNode
 			
 			true => rightSide
 				.child(
-					ProgressBar::new(percentUnlocked as f32)
+					ProgressBar::new(percentUnlocked)
 						.background(RetroAchievementsProgressColorBackground)
 						.color(SteamContrast)
 						.height(8.0)
@@ -166,6 +166,7 @@ impl Component for GameListNode
 							Span::new(format!("{} / {} ", unlockedCount, achievementsCount))
 								.font_size(10.0)
 						)
+						
 						.span(
 							Span::new(format!("({}%) ", percentUnlockedString))
 								.font_size(10.0)
