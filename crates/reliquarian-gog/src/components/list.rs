@@ -1,9 +1,17 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius, FileName_GameIcon, GogProgressColor, Path_Games, RetroAchievementsProgressColorBackground};
+use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
+	FileName_GameIcon, GogProgressColor, Path_Games,
+	RetroAchievementsProgressColorBackground};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
-use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
+	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
+	Input, IntoElement, KeyboardEventData, ProgressBar,
+	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
+	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
+	rect, use_scroll_controller, use_state};
 use freya::radio::use_radio;
 use macros::{join, jpg};
 use crate::api::GogApi;
