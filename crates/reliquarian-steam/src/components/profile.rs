@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 use components::button::icon::IconButton;
-use data::constants::{BorderColor, Path_Avatars};
+use data::constants::{BorderColor, CornerRadius, Path_Avatars};
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	CornerRadius, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt,
-	TextAlign, TextStyleExt, label, rect, spawn};
+	Content, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt, rect,
+	spawn};
 use freya::radio::use_radio;
 use net::{RateLimiter, RequestEvent};
 use crate::api::SteamApi;
@@ -37,7 +37,8 @@ pub fn SteamProfile() -> impl IntoElement
 				.fill(BorderColor)
 				.width(BorderWidth::from(1.0))
 		))
-		.corner_radius(CornerRadius::new_all(10.0))
+		.corner_radius(CornerRadius)
+		.content(Content::Flex)
 		.direction(Direction::Horizontal)
 		.main_align(Alignment::Start)
 		.margin(Gaps::new_symmetric(0.0, 1.0))
@@ -47,21 +48,19 @@ pub fn SteamProfile() -> impl IntoElement
 		
 		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
+				.corner_radius(CornerRadius)
 				.height(Size::px(64.0))
-				.width(Size::px(64.0))
 		))
 		
 		.child(
 			rect()
-				.direction(Direction::Vertical)
-				.main_align(Alignment::SpaceAround)
+				.cross_align(Alignment::Center)
+				.direction(Direction::Horizontal)
+				.height(Size::px(64.0))
+				.main_align(Alignment::SpaceBetween)
+				.width(Size::flex(1.0))
 				
-				.child(
-					label()
-						.margin(Gaps::new(0.0, 0.0, 0.0, 7.0))
-						.text_align(TextAlign::Center)
-						.text(username)
-				)
+				.child(username)
 				
 				.child(
 					IconButton::new(lucide::refresh_ccw())

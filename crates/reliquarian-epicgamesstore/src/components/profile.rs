@@ -7,8 +7,8 @@ use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt, TextAlign,
-	TextStyleExt, WritableUtils, label, rect, spawn, use_side_effect, use_state};
+	Content, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt,
+	WritableUtils, rect, spawn, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::png;
 use net::{RateLimiter, RequestEvent};
@@ -65,6 +65,7 @@ pub fn EgsUserProfile() -> impl IntoElement
 				.width(BorderWidth::from(1.0))
 		))
 		.corner_radius(CornerRadius)
+		.content(Content::Flex)
 		.direction(Direction::Horizontal)
 		.main_align(Alignment::Start)
 		.margin(Gaps::new_symmetric(0.0, 1.0))
@@ -74,25 +75,26 @@ pub fn EgsUserProfile() -> impl IntoElement
 		
 		.maybe_child(filePathExists(&avatarPath).then(||
 			ImageViewer::new(PathBuf::from(avatarPath.unwrap()))
-				.width(Size::px(64.0))
+				.corner_radius(CornerRadius)
+				.height(Size::px(64.0))
 		))
 		
 		.child(
 			rect()
-				.direction(Direction::Vertical)
-				.main_align(Alignment::SpaceAround)
+				.cross_align(Alignment::Center)
+				.direction(Direction::Horizontal)
+				.height(Size::px(64.0))
+				.main_align(Alignment::SpaceBetween)
+				.width(Size::flex(1.0))
 				
-				.child(
-					label()
-						.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
-						.text_align(TextAlign::Start)
-						.text(username)
-				)
+				.child(username)
 				
 				.child(
 					IconButton::new(lucide::refresh_ccw())
 						.alt("Refresh")
 						.height(Size::px(32.0))
+						.innerHeight(Size::px(24.0))
+						.innerWidth(Size::px(24.0))
 						.width(Size::px(32.0))
 						.onPress(move |_| showConfirmationDialog.set(true))
 				)

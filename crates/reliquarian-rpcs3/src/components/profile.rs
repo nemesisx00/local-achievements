@@ -1,14 +1,12 @@
 use components::button::icon::IconButton;
-use data::constants::{BorderColor, RetroAchievementsProgressColorHardcore,
-	TextColor};
+use data::constants::{BorderColor, CornerRadius, RetroAchievementsProgressColorHardcore, TextColor};
 use data::enums::GamePlatforms;
 use data::format::truncateF32;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
-	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Content, CornerRadius, Direction, Gaps, IntoElement, ProgressBar,
-	ProgressBarThemePartialExt, Size, StyleExt, TextAlign, TextStyleExt, label,
-	rect, spawn};
+	ChildrenExt, Color, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Content, Direction, Gaps, IntoElement, ProgressBar,
+	ProgressBarThemePartialExt, Size, StyleExt, label, rect, spawn, svg};
 use freya::radio::use_radio;
 use crate::components::refresh::refreshUserData;
 use crate::data::settings::Rpcs3Settings;
@@ -42,27 +40,26 @@ pub fn Rpcs3ProfileElement() -> impl IntoElement
 				.fill(BorderColor)
 				.width(BorderWidth::from(1.0))
 		))
-		.corner_radius(CornerRadius::new_all(10.0))
-		.direction(Direction::Horizontal)
-		.main_align(Alignment::SpaceBetween)
+		.content(Content::Flex)
+		.corner_radius(CornerRadius)
+		.direction(Direction::Vertical)
+		.main_align(Alignment::Center)
 		.margin(Gaps::new_symmetric(0.0, 1.0))
-		.padding(Gaps::new_symmetric(10.0, 10.0))
-		.spacing(25.0)
-		.width(Size::Fill)
+		.height(Size::px(84.0))
+		.padding(Gaps::new_all(10.0))
+		.spacing(5.0)
+		.width(Size::flex(1.0))
 		
 		.child(
 			rect()
-				.direction(Direction::Vertical)
-				.main_align(Alignment::SpaceAround)
-				.spacing(10.0)
-				.width(Size::percent(40.0))
+				.content(Content::Flex)
+				.cross_align(Alignment::Center)
+				.direction(Direction::Horizontal)
+				.height(Size::flex(1.0))
+				.main_align(Alignment::SpaceBetween)
+				.width(Size::flex(1.0))
 				
-				.child(
-					label()
-						.text_align(TextAlign::Center)
-						.width(Size::Fill)
-						.text(username)
-				)
+				.child(username)
 				
 				.child(
 					IconButton::new(lucide::refresh_ccw())
@@ -84,19 +81,19 @@ pub fn Rpcs3ProfileElement() -> impl IntoElement
 		
 		.child(
 			rect()
-				.direction(Direction::Vertical)
-				.main_align(Alignment::SpaceAround)
-				.spacing(10.0)
-				.width(Size::percent(55.0))
+				.content(Content::Flex)
+				.cross_align(Alignment::Center)
+				.direction(Direction::Horizontal)
+				.height(Size::flex(1.0))
+				.spacing(5.0)
+				.width(Size::flex(1.0))
 				
 				.child(
 					rect()
-						.content(Content::Flex)
 						.cross_align(Alignment::Center)
 						.direction(Direction::Horizontal)
-						.main_align(Alignment::Start)
 						.spacing(10.0)
-						.width(Size::Fill)
+						.width(Size::flex(1.5))
 						
 						.child(
 							label()
@@ -108,30 +105,26 @@ pub fn Rpcs3ProfileElement() -> impl IntoElement
 								//Match the background color until more properties are exposed to customize the text
 								.color(RetroAchievementsProgressColorHardcore)
 								.progress_background(RetroAchievementsProgressColorHardcore)
-								.width(Size::Fill)
+								.width(Size::flex(1.0))
 						)
 				)
 				
 				.child(
 					rect()
-						.content(Content::Flex)
+						.cross_align(Alignment::Center)
 						.direction(Direction::Horizontal)
-						.main_align(Alignment::Start)
-						.width(Size::flex(1.0))
+						.main_align(Alignment::End)
+						.spacing(5.0)
+						.width(Size::flex(0.5))
 						
 						.child(
-							label()
-								.text_align(TextAlign::Start)
-								.width(Size::flex(1.5))
-								.text("Platinums")
+							svg(lucide::trophy())
+								.color(Color::from_rgb(229, 228, 226))
+								.height(Size::px(16.0))
+								.width(Size::px(16.0))
 						)
 						
-						.child(
-							label()
-								.text_align(TextAlign::End)
-								.width(Size::flex(0.5))
-								.text(platinumCount)
-						)
+						.child(format!("{}", platinumCount))
 				)
 		);
 }

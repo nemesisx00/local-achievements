@@ -5,7 +5,10 @@ use data::constants::{BorderColor, CornerRadius, Path_Avatars};
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
-use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth, Button, ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt, TextAlign, TextStyleExt, WritableUtils, label, rect, spawn, use_side_effect, use_state};
+use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
+	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Content, Direction, Gaps, ImageViewer, IntoElement, Size, StyleExt,
+	WritableUtils, rect, spawn, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::jpgAlt;
 use net::{RateLimiter, RequestEvent};
@@ -85,10 +88,11 @@ pub fn BattleNetUserProfile() -> impl IntoElement
 				.width(BorderWidth::from(1.0))
 		))
 		.corner_radius(CornerRadius)
+		.content(Content::Flex)
 		.direction(Direction::Horizontal)
 		.main_align(Alignment::Start)
 		.margin(Gaps::new_symmetric(0.0, 1.0))
-		.padding(Gaps::new_symmetric(10.0, 10.0))
+		.padding(Gaps::new_all(10.0))
 		.spacing(10.0)
 		.width(Size::flex(1.0))
 		
@@ -99,41 +103,41 @@ pub fn BattleNetUserProfile() -> impl IntoElement
 		
 		.child(
 			rect()
+				.cross_align(Alignment::SpaceBetween)
 				.direction(Direction::Vertical)
-				.main_align(Alignment::SpaceAround)
+				.height(Size::px(64.0))
+				.main_align(Alignment::Center)
+				.spacing(5.0)
+				.width(Size::flex(1.0))
+				
+				.child(user.read().battleTag.clone())
 				
 				.child(
-					label()
-						.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
-						.text_align(TextAlign::Start)
-						.text(user.read().battleTag.clone())
-				)
-				
-				.maybe_child(sessionValid().then(||
 					IconButton::new(lucide::refresh_ccw())
 						.alt("Refresh")
 						.height(Size::px(32.0))
+						.innerHeight(Size::px(24.0))
+						.innerWidth(Size::px(24.0))
 						.width(Size::px(32.0))
 						.onPress(move |_| {
-							spawn(async move {
-								rateLimiter.read().pushAll(vec![
-									BattleNetOperation::GetUserInfo.into(),
-									BattleNetOperation::SaveToFile.into(),
-								]).await;
-								
-								**requestEvent.write() = RequestEvent::Added;
-							});
+							if sessionValid()
+							{
+								spawn(async move {
+									rateLimiter.read().pushAll(vec![
+										BattleNetOperation::GetUserInfo.into(),
+										BattleNetOperation::SaveToFile.into(),
+									]).await;
+									
+									**requestEvent.write() = RequestEvent::Added;
+								});
+							}
+							else
+							{
+								browserOpened.set(false);
+								showAuthorizationOverlay.set(true);
+							}
 						})
-				))
-				
-				.maybe_child((!sessionValid()).then(||
-					Button::new()
-						.on_press(move |_| {
-							browserOpened.set(false);
-							showAuthorizationOverlay.set(true);
-						})
-						.child("Log In")
-				))
+				)
 		)
 		
 		.maybe_child(showAuthorizationOverlay().then(||
