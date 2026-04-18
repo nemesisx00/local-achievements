@@ -6,7 +6,7 @@ use crate::data::region::Region;
 /**
 The data necessary to access the Steam Web API.
 */
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct BattleNetSettings
 {
 	/// The user's preferred region for accessing the API
