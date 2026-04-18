@@ -1,13 +1,14 @@
 use data::enums::{ActiveContent, DataChannel};
 use data::io::saveAppSettings;
-use data::settings::AppSettings;
+use data::settings::{AppSettings, Language};
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
-	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt, WritableUtils,
-	label, rect, spawn, use_side_effect, use_state};
-use freya::radio::use_radio;
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
+	Gaps, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,
+	WritableUtils, label, rect, spawn, use_side_effect, use_state};
+use freya::radio::{IntoWritable, use_radio};
 use strum::IntoEnumIterator;
 use tracing::{info, warn};
+use super::toggles::PlatformToggles;
 
 #[derive(Clone, PartialEq)]
 pub struct UiSettings
@@ -22,26 +23,31 @@ impl Component for UiSettings
 		let mut appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		
 		let mut defaultActiveContent = use_state(|| appSettings.read().defaultActivePlatform);
-		let language = use_state(|| appSettings.read().language.clone());
+		let enabledBNet = use_state(|| appSettings.read().enabledPlatforms.battleNet);
+		let enabledEgs = use_state(|| appSettings.read().enabledPlatforms.epicGamesStores);
+		let enabledGog = use_state(|| appSettings.read().enabledPlatforms.gog);
+		let enabledRA = use_state(|| appSettings.read().enabledPlatforms.retroAchievements);
+		let enabledRpcs3 = use_state(|| appSettings.read().enabledPlatforms.rpcs3);
+		let enabledSteam = use_state(|| appSettings.read().enabledPlatforms.steam);
+		let mut language = use_state(|| appSettings.read().language.clone());
 		
 		use_side_effect(move || {
-			let dac = defaultActiveContent.read().clone();
-			let lang = language.read().clone();
+			appSettings.write().defaultActivePlatform = defaultActiveContent.read().clone();
+			appSettings.write().enabledPlatforms.battleNet = enabledBNet();
+			appSettings.write().enabledPlatforms.epicGamesStores = enabledEgs();
+			appSettings.write().enabledPlatforms.gog = enabledGog();
+			appSettings.write().enabledPlatforms.retroAchievements = enabledRA();
+			appSettings.write().enabledPlatforms.rpcs3 = enabledRpcs3();
+			appSettings.write().enabledPlatforms.steam = enabledSteam();
+			appSettings.write().language = language.read().clone();
 			
-			if appSettings.read().defaultActivePlatform != dac
-				|| appSettings.read().language != lang
-			{
-				appSettings.write().defaultActivePlatform = dac;
-				appSettings.write().language = lang;
-				
-				spawn(async move {
-					match saveAppSettings(&appSettings.read())
-					{
-						Err(e) => warn!("[Reliquarian] Error saving app settings: {:?}", e),
-						Ok(_) => info!("[Reliquarian] Saved app settings"),
-					}
-				});
-			}
+			spawn(async move {
+				match saveAppSettings(&appSettings.read())
+				{
+					Err(e) => warn!("[Reliquarian] Error saving app settings: {:?}", e),
+					Ok(_) => info!("[Reliquarian] Saved app settings"),
+				}
+			});
 		});
 		
 		return rect()
@@ -53,75 +59,96 @@ impl Component for UiSettings
 			
 			.child(
 				label()
-					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
-					.text_align(TextAlign::Center)
-					.width(Size::Fill)
+					.font_size(24.0)
+					.font_weight(FontWeight::BOLD)
 					.text("Application")
+					.text_align(TextAlign::Center)
+					.width(Size::percent(75.0))
 			)
 			
 			.child(
 				rect()
 					.content(Content::Flex)
+					.cross_align(Alignment::Center)
 					.direction(Direction::Horizontal)
 					.main_align(Alignment::Start)
-					.spacing(10.0)
 					.width(Size::percent(75.0))
 					
 					.child(
-						label()
-							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
-							.min_width(Size::px(102.0))
-							.text_align(TextAlign::End)
-							.width(self.labelWidth.clone())
-							.text("Starting Tab")
+						rect()
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child("Language")
+							
+							.child(
+								Select::new()
+									.selected_item(
+										match Language::iter()
+											.find(|lang| lang == &language())
+										{
+											None => Language::default().to_string(),
+											Some(lang) => lang.to_string(),
+										}
+									)
+									
+									.children(
+										Language::iter().map(|lang| {
+											MenuItem::new()
+												.selected(lang == language())
+												.on_press(move |_| language.set(lang))
+												.child(lang.to_string())
+												.into()
+										})
+									)
+							)
 					)
 					
 					.child(
-						Select::new()
-							.selected_item(
-								match ActiveContent::iter()
-									.find(|ac| ac == &defaultActiveContent())
-								{
-									None => ActiveContent::default().to_string(),
-									Some(ac) => ac.to_string(),
-								}
-							)
-							.children(
-								ActiveContent::iter().map(|ac| {
-									MenuItem::new()
-										.selected(ac == defaultActiveContent())
-										.on_press(move |_| defaultActiveContent.set(ac))
-										.child(ac.to_string())
-										.into()
-								})
+						rect()
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child("Starting Tab")
+							
+							.child(
+								Select::new()
+									.selected_item(
+										match ActiveContent::iter()
+											.find(|ac| ac == &defaultActiveContent())
+										{
+											None => ActiveContent::default().to_string(),
+											Some(ac) => ac.to_string(),
+										}
+									)
+									
+									.children(
+										ActiveContent::iter().map(|ac| {
+											MenuItem::new()
+												.selected(ac == defaultActiveContent())
+												.on_press(move |_| defaultActiveContent.set(ac))
+												.child(ac.to_string())
+												.into()
+										})
+									)
 							)
 					)
-					
 			)
 			
-			.child(
-				rect()
-					.content(Content::Flex)
-					.direction(Direction::Horizontal)
-					.main_align(Alignment::Center)
-					.spacing(10.0)
-					.width(Size::percent(75.0))
-					
-					.child(
-						label()
-							.margin(Gaps::new(7.0, 0.0, 0.0, 0.0))
-							.min_width(Size::px(102.0))
-							.text_align(TextAlign::End)
-							.width(self.labelWidth.clone())
-							.text("Language")
-					)
-					
-					.child(
-						Input::new(language)
-							.placeholder("en")
-							.width(Size::flex(1.0))
-					)
-			);
+			.child(PlatformToggles::new(
+				enabledBNet.into_writable(),
+				enabledEgs.into_writable(),
+				enabledGog.into_writable(),
+				enabledRA.into_writable(),
+				enabledRpcs3.into_writable(),
+				enabledSteam.into_writable()
+			));
 	}
 }
 
