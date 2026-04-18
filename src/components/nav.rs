@@ -22,13 +22,13 @@ pub fn NavBar() -> impl IntoElement
 	let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
 	let requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 	
-	let mut showAbout = use_state(|| false);
 	let mut closeAbout = use_state(|| false);
 	let mut selected = use_state(|| match activeContent.read().clone()
 	{
 		None => appSettings.read().defaultActivePlatform,
 		Some(ac) => ac,
 	});
+	let mut showAbout = use_state(|| false);
 	
 	let aboutOverlay = match showAbout()
 	{
@@ -47,6 +47,72 @@ pub fn NavBar() -> impl IntoElement
 	{
 		false => lucide::chevron_right(),
 		true => lucide::chevron_left(),
+	};
+	
+	let bnet = match appSettings.read().enabledPlatforms.battleNet
+	{
+		false => None,
+		true => Some(navButton(
+			"assets/battlenet-logo.png",
+			"Battle.Net",
+			move |_| selected.set(ActiveContent::BattleNet)
+		))
+	};
+	
+	let egs = match appSettings.read().enabledPlatforms.epicGamesStores
+	{
+		false => None,
+		true => Some(navButton(
+			"assets/egs-logo.png",
+			"Epic Games Store",
+			move |_| selected.set(ActiveContent::EpicGamesStore)
+		))
+	};
+	
+	let gog = match appSettings.read().enabledPlatforms.gog
+	{
+		false => None,
+		true => Some(navButton(
+			"assets/gog-logo.png",
+			"GOG",
+			move |_| selected.set(ActiveContent::Gog)
+		))
+	};
+	
+	let ra = match appSettings.read().enabledPlatforms.retroAchievements
+	{
+		false => None,
+		true => Some(Button::new()
+			.height(Size::px(48.0))
+			.margin(Gaps::new_all(0.0))
+			.width(Size::px(48.0))
+			.child(
+				ImageViewer::new(PathBuf::from("assets/ra-logo.png"))
+					.a11y_alt("Retro Achievements")
+					.width(Size::px(32.0))
+			)
+			.on_press(move |_| selected.set(ActiveContent::RetroAchievements))
+		)
+	};
+	
+	let rpcs3 = match appSettings.read().enabledPlatforms.rpcs3
+	{
+		false => None,
+		true => Some(navButton(
+			"assets/rpcs3-logo.png",
+			"RPCS3",
+			move |_| selected.set(ActiveContent::Rpcs3)
+		))
+	};
+	
+	let steam = match appSettings.read().enabledPlatforms.steam
+	{
+		false => None,
+		true => Some(navButton(
+			"assets/steam-logo.png",
+			"Steam",
+			move |_| selected.set(ActiveContent::Steam)
+		))
 	};
 	
 	use_side_effect(move || {
@@ -100,68 +166,22 @@ pub fn NavBar() -> impl IntoElement
 						.innerWidth(Size::px(32.0))
 						.width(Size::px(48.0))
 						.onPress(move |_| {
-							let mut profileState = profileState.write();
-							match profileState.clone()
+							let value = profileState.read().cloned();
+							match value
 							{
-								ProfileState::Hidden => **profileState = ProfileState::Showing,
-								ProfileState::Shown => **profileState = ProfileState::Hiding,
+								ProfileState::Hidden => **profileState.write() = ProfileState::Showing,
+								ProfileState::Shown => **profileState.write() = ProfileState::Hiding,
 								_ => {}
 							}
 						})
 				)
 				
-				.child(
-					navButton(
-						"assets/battlenet-logo.png",
-						"Battle.Net",
-						move |_| selected.set(ActiveContent::BattleNet)
-					)
-				)
-				
-				.child(
-					navButton(
-						"assets/egs-logo.png",
-						"Epic Games Store",
-						move |_| selected.set(ActiveContent::EpicGamesStore)
-					)
-				)
-				
-				.child(
-					navButton(
-						"assets/gog-logo.png",
-						"GOG",
-						move |_| selected.set(ActiveContent::Gog)
-					)
-				)
-				
-				.child(
-					Button::new()
-						.height(Size::px(48.0))
-						.margin(Gaps::new_all(0.0))
-						.width(Size::px(48.0))
-						.child(
-							ImageViewer::new(PathBuf::from("assets/ra-logo.png"))
-								.a11y_alt("Retro Achievements")
-								.width(Size::px(32.0))
-						)
-						.on_press(move |_| selected.set(ActiveContent::RetroAchievements))
-				)
-				
-				.child(
-					navButton(
-						"assets/rpcs3-logo.png",
-						"RPCS3",
-						move |_| selected.set(ActiveContent::Rpcs3)
-					)
-				)
-				
-				.child(
-					navButton(
-						"assets/steam-logo.png",
-						"Steam",
-						move |_| selected.set(ActiveContent::Steam)
-					)
-				)
+				.maybe_child(bnet)
+				.maybe_child(egs)
+				.maybe_child(gog)
+				.maybe_child(ra)
+				.maybe_child(rpcs3)
+				.maybe_child(steam)
 				
 				.child(navBottom(
 					showAbout.into_writable(),
