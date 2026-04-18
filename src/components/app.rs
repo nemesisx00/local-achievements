@@ -10,7 +10,7 @@ use data::enums::{ActiveContent, DataChannel, GamePlatforms};
 use data::io::{FileLocation, cacheImage, filePathExists, getImagePath,
 	imagePathExists, loadAppSettings};
 use data::localAchievementsTheme;
-use data::settings::AppSettings;
+use data::settings::{AppSettings, Language};
 use epicgamesstore::components::content::EgsContentElement;
 use epicgamesstore::components::refresh::handleEgsOperation;
 use epicgamesstore::data::io::loadUserData_EpicGamesStore;
@@ -19,7 +19,8 @@ use freya::prelude::{App, ChildrenExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Element, IntoElement, LayerExt,
 	Platform, StyleExt, WinitPlatformExt, WritableUtils, rect, spawn,
 	use_init_theme, use_side_effect, use_state};
-use freya::radio::{Radio, use_init_radio_station, use_radio};
+use freya::radio::{IntoWritable, Radio, Writable, use_init_radio_station,
+	use_radio};
 use freya::winit::dpi::PhysicalSize;
 use gog::components::content::GogContentElement;
 use gog::components::refresh::handleGogOperation;
@@ -74,176 +75,52 @@ impl App for LocalAchievementsApp
 		use_init_radio_station::<Rpcs3User, GamePlatforms>(loadUserData_Rpcs3);
 		use_init_radio_station::<SteamUser, GamePlatforms>(loadUserData_Steam);
 		
-		let activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);
+		let mut activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);
 		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
-		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
+		let requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
 		let mut windowSize = use_radio::<PhysicalSize<u32>, DataChannel>(DataChannel::WindowSize);
 		
 		let bnetSettings = use_radio::<BattleNetSettings, GamePlatforms>(GamePlatforms::BattleNet);
-		let mut bnetUser = use_radio::<BattleNetUser, GamePlatforms>(GamePlatforms::BattleNet);
-		let mut egsUser = use_radio::<EgsUser, GamePlatforms>(GamePlatforms::EpicGamesStore);
-		let mut gogUser = use_radio::<GogUser, GamePlatforms>(GamePlatforms::Gog);
-		let mut retroAchievementsUser = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
-		let mut steamUser = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
+		let bnetUser = use_radio::<BattleNetUser, GamePlatforms>(GamePlatforms::BattleNet);
+		let egsUser = use_radio::<EgsUser, GamePlatforms>(GamePlatforms::EpicGamesStore);
+		let gogUser = use_radio::<GogUser, GamePlatforms>(GamePlatforms::Gog);
+		let retroAchievementsUser = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
+		let steamUser = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		
-		let mut limiterSpawned = use_state(bool::default);
+		let limiterSpawned = use_state(bool::default);
 		
 		Platform::get().with_window(
 			None,
 			move |window| **windowSize.write() = window.inner_size()
 		);
 		
-		let active = activeContent.read().clone()
+		let active = activeContent.read()
 			.unwrap_or(appSettings.read().defaultActivePlatform);
 		
-		let activeContent: Option<Element> = match active
+		let activeContent = match appSettings.read().enabledPlatforms.isEnabled(active)
 		{
-			ActiveContent::BattleNet => Some(BattleNetContentElement::new().into()),
-			ActiveContent::EpicGamesStore => Some(EgsContentElement::new().into()),
-			ActiveContent::Gog => Some(GogContentElement::new().into()),
-			ActiveContent::RetroAchievements => Some(RetroAchievementsContent::new().into()),
-			ActiveContent::Rpcs3 => Some(Rpcs3ContentElement::new().into()),
-			ActiveContent::Settings => Some(AppSettingsElement::new().into()),
-			ActiveContent::Steam => Some(SteamContent::new().into()),
+			// Manually set the active element to avoid flickering while waiting for the redraw from modifying activeContent
+			false => {
+				**activeContent.write() = Some(ActiveContent::Settings);
+				AppSettingsElement::new().into()
+			},
+			
+			true => getActiveElement(active),
 		};
 		
-		use_side_effect(move || {
-			if !limiterSpawned()
-				&& *requestEvent.read() != RequestEvent::Done
-				&& !rateLimiter.read().blockingIsEmpty()
-			{
-				spawn(async move {
-					limiterSpawned.set(true);
-					
-					loop
-					{
-						let queueLength = rateLimiter.read().len().await;
-						match rateLimiter.read().next().await
-						{
-							None => break,
-							
-							Some(request) => {
-								//Update the request event with the current number of remaining requests; forces redraw of ui elements that rely on this value
-								**requestEvent.write() = RequestEvent::Processing(queueLength);
-								
-								match request.operation.clone()
-								{
-									DataOperation::CacheImage(force) => if let Some(destination) = request.destination
-									{
-										if let Some(url) = request.url
-										{
-											if force || !imagePathExists(&destination)
-											{
-												let client = Client::builder()
-													.https_only(true)
-													.build()
-													.unwrap_or_default();
-												
-												match cacheImage(&client, &url, &destination).await
-												{
-													Err(e) => warn!("[Cache] Error caching image {} - {:?}", destination, e),
-													Ok(_) => info!("[Cache] Cached image: {}", destination),
-												}
-											}
-											else
-											{
-												rateLimiter.read().refundUse()
-													.await;
-											}
-										}
-									}
-									
-									DataOperation::Platform(platform, _) => match platform
-									{
-										GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
-										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-										_ => {}
-									}
-									
-									DataOperation::PlatformGameId(platform, _, _) => match platform
-									{
-										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-										_ => {}
-									}
-									
-									DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
-									{
-										GamePlatforms::Steam => match request.operation.clone().try_into()
-										{
-											Err(_) => {},
-											
-											Ok(steamOperation) => match steamOperation
-											{
-												SteamOperation::GetGameImage(gameId,force ) => {
-													
-													let location = FileLocation
-													{
-														fileName: jpg!(FileName_GameHeader),
-														group: join!(Path_Games, gameId),
-														platform: SteamApi::Platform.to_string(),
-													};
-													
-													if force || !filePathExists(&getImagePath(&location))
-													{
-														processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await;
-													}
-													else
-													{
-														rateLimiter.read().refundUse()
-															.await;
-													}
-												}
-												
-												_ => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-											}
-										}
-										
-										_ => {}
-									}
-									
-									DataOperation::PlatformGameIdString(platform, _, _) => match platform
-									{
-										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-										_ => {}
-									}
-									
-									DataOperation::PlatformOptionalInt(platform, _, _) => match platform
-									{
-										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-										_ => {}
-									}
-									
-									DataOperation::PlatformSaveToFile(platform) => match platform
-									{
-										GamePlatforms::BattleNet => processBattleNetResult(request.operation, &mut bnetUser, bnetSettings.read().clone(), &rateLimiter).await,
-										GamePlatforms::EpicGamesStore => processEgsResult(request.operation, &mut egsUser, &rateLimiter).await,
-										GamePlatforms::Gog => processGogResult(request.operation, &mut gogUser, &rateLimiter).await,
-										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-										GamePlatforms::Steam => processSteamResult(request.operation, &mut steamUser, &rateLimiter, appSettings.read().language.clone()).await,
-										_ => {}
-									}
-									
-									DataOperation::PlatformThreeInt(platform, _, _, _, _) => match platform
-									{
-										GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, &mut retroAchievementsUser, &rateLimiter).await,
-										_ => {}
-									}
-								}
-							}
-						}
-					}
-					
-					**requestEvent.write() = RequestEvent::Done;
-					limiterSpawned.set(false);
-				});
-			}
-		});
+		use_side_effect(move || processRateLimiter(
+			limiterSpawned.into_writable(),
+			requestEvent.clone(),
+			rateLimiter.clone(),
+			appSettings.read().language,
+			*bnetSettings.read(),
+			bnetUser.clone(),
+			egsUser.clone(),
+			gogUser.clone(),
+			retroAchievementsUser.clone(),
+			steamUser.clone(),
+		));
 		
 		return rect()
 			.background(BackgroundColor)
@@ -263,7 +140,7 @@ impl App for LocalAchievementsApp
 				rect()
 					.direction(Direction::Vertical)
 					.expanded()
-					.maybe_child(activeContent)
+					.child(activeContent)
 			);
 	}
 }
@@ -276,11 +153,25 @@ impl LocalAchievementsApp
 	}
 }
 
+fn getActiveElement(active: ActiveContent) -> Element
+{
+	return match active
+	{
+		ActiveContent::BattleNet => BattleNetContentElement::new().into(),
+		ActiveContent::EpicGamesStore => EgsContentElement::new().into(),
+		ActiveContent::Gog => GogContentElement::new().into(),
+		ActiveContent::RetroAchievements => RetroAchievementsContent::new().into(),
+		ActiveContent::Rpcs3 => Rpcs3ContentElement::new().into(),
+		ActiveContent::Settings => AppSettingsElement::new().into(),
+		ActiveContent::Steam => SteamContent::new().into(),
+	};
+}
+
 async fn processBattleNetResult(
 	operation: DataOperation,
-	userRadio: &mut Radio<BattleNetUser, GamePlatforms>,
+	mut userRadio: Radio<BattleNetUser, GamePlatforms>,
 	settings: BattleNetSettings,
-	rateLimiter: &Radio<RateLimiter, DataChannel>
+	rateLimiter: Radio<RateLimiter, DataChannel>
 )
 {
 	let user = userRadio.read().clone();
@@ -297,8 +188,8 @@ async fn processBattleNetResult(
 
 async fn processEgsResult(
 	operation: DataOperation,
-	userRadio: &mut Radio<EgsUser, GamePlatforms>,
-	rateLimiter: &Radio<RateLimiter, DataChannel>
+	mut userRadio: Radio<EgsUser, GamePlatforms>,
+	rateLimiter: Radio<RateLimiter, DataChannel>
 )
 {
 	let user = userRadio.read().clone();
@@ -314,8 +205,8 @@ async fn processEgsResult(
 
 async fn processGogResult(
 	operation: DataOperation,
-	userRadio: &mut Radio<GogUser, GamePlatforms>,
-	rateLimiter: &Radio<RateLimiter, DataChannel>
+	mut userRadio: Radio<GogUser, GamePlatforms>,
+	rateLimiter: Radio<RateLimiter, DataChannel>
 )
 {
 	let user = userRadio.read().clone();
@@ -331,8 +222,8 @@ async fn processGogResult(
 
 async fn processRetroAchievementsResult(
 	operation: DataOperation,
-	userRadio: &mut Radio<RetroAchievementsUser, GamePlatforms>,
-	rateLimiter: &Radio<RateLimiter, DataChannel>
+	mut userRadio: Radio<RetroAchievementsUser, GamePlatforms>,
+	rateLimiter: Radio<RateLimiter, DataChannel>
 )
 {
 	let user = userRadio.read().clone();
@@ -348,9 +239,9 @@ async fn processRetroAchievementsResult(
 
 async fn processSteamResult(
 	operation: DataOperation,
-	userRadio: &mut Radio<SteamUser, GamePlatforms>,
-	rateLimiter: &Radio<RateLimiter, DataChannel>,
-	language: String,
+	mut userRadio: Radio<SteamUser, GamePlatforms>,
+	rateLimiter: Radio<RateLimiter, DataChannel>,
+	language: Language,
 )
 {
 	let user = userRadio.read().clone();
@@ -362,5 +253,154 @@ async fn processSteamResult(
 	{
 		**userRadio.write() = result.user.clone();
 		rateLimiter.read().pushAll(result.requests).await;
+	}
+}
+
+fn processRateLimiter(
+	mut limiterSpawned: Writable<bool>,
+	mut requestEvent: Radio<RequestEvent, DataChannel>,
+	rateLimiter: Radio<RateLimiter, DataChannel>,
+	language: Language,
+	bnetSettings: BattleNetSettings,
+	bnetUser: Radio<BattleNetUser, GamePlatforms>,
+	egsUser: Radio<EgsUser, GamePlatforms>,
+	gogUser: Radio<GogUser, GamePlatforms>,
+	retroAchievementsUser: Radio<RetroAchievementsUser, GamePlatforms>,
+	steamUser: Radio<SteamUser, GamePlatforms>,
+)
+{
+	if !*limiterSpawned.read()
+		&& *requestEvent.read() != RequestEvent::Done
+		&& !rateLimiter.read().blockingIsEmpty()
+	{
+		spawn(async move {
+			limiterSpawned.set(true);
+			
+			loop
+			{
+				let queueLength = rateLimiter.read().len().await;
+				match rateLimiter.read().next().await
+				{
+					None => break,
+					
+					Some(request) => {
+						//Update the request event with the current number of remaining requests; forces redraw of ui elements that rely on this value
+						**requestEvent.write() = RequestEvent::Processing(queueLength);
+						
+						match request.operation.clone()
+						{
+							DataOperation::CacheImage(force) => if let Some(destination) = request.destination
+							{
+								if let Some(url) = request.url
+								{
+									if force || !imagePathExists(&destination)
+									{
+										let client = Client::builder()
+											.https_only(true)
+											.build()
+											.unwrap_or_default();
+										
+										match cacheImage(&client, &url, &destination).await
+										{
+											Err(e) => warn!("[Cache] Error caching image {} - {:?}", destination, e),
+											Ok(_) => info!("[Cache] Cached image: {}", destination),
+										}
+									}
+									else
+									{
+										rateLimiter.read().refundUse()
+											.await;
+									}
+								}
+							}
+							
+							DataOperation::Platform(platform, _) => match platform
+							{
+								GamePlatforms::BattleNet => processBattleNetResult(request.operation, bnetUser, bnetSettings, rateLimiter).await,
+								GamePlatforms::EpicGamesStore => processEgsResult(request.operation, egsUser, rateLimiter).await,
+								GamePlatforms::Gog => processGogResult(request.operation, gogUser, rateLimiter).await,
+								GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, retroAchievementsUser, rateLimiter).await,
+								GamePlatforms::Steam => processSteamResult(request.operation, steamUser, rateLimiter, language).await,
+								_ => {}
+							}
+							
+							DataOperation::PlatformGameId(platform, _, _) => match platform
+							{
+								GamePlatforms::Gog => processGogResult(request.operation, gogUser, rateLimiter).await,
+								GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, retroAchievementsUser, rateLimiter).await,
+								GamePlatforms::Steam => processSteamResult(request.operation, steamUser, rateLimiter, language).await,
+								_ => {}
+							}
+							
+							DataOperation::PlatformGameIdBool(platform, _, _, _) => match platform
+							{
+								GamePlatforms::Steam => match request.operation.clone().try_into()
+								{
+									Err(_) => {},
+									
+									Ok(steamOperation) => match steamOperation
+									{
+										SteamOperation::GetGameImage(gameId,force ) => {
+											
+											let location = FileLocation
+											{
+												fileName: jpg!(FileName_GameHeader),
+												group: join!(Path_Games, gameId),
+												platform: SteamApi::Platform.to_string(),
+											};
+											
+											if force || !filePathExists(&getImagePath(&location))
+											{
+												processSteamResult(request.operation, steamUser, rateLimiter, language).await;
+											}
+											else
+											{
+												rateLimiter.read().refundUse()
+													.await;
+											}
+										}
+										
+										_ => processSteamResult(request.operation, steamUser, rateLimiter, language).await,
+									}
+								}
+								
+								_ => {}
+							}
+							
+							DataOperation::PlatformGameIdString(platform, _, _) => match platform
+							{
+								GamePlatforms::EpicGamesStore => processEgsResult(request.operation, egsUser, rateLimiter).await,
+								_ => {}
+							}
+							
+							DataOperation::PlatformOptionalInt(platform, _, _) => match platform
+							{
+								GamePlatforms::Gog => processGogResult(request.operation, gogUser, rateLimiter).await,
+								_ => {}
+							}
+							
+							DataOperation::PlatformSaveToFile(platform) => match platform
+							{
+								GamePlatforms::BattleNet => processBattleNetResult(request.operation, bnetUser, bnetSettings, rateLimiter).await,
+								GamePlatforms::EpicGamesStore => processEgsResult(request.operation, egsUser, rateLimiter).await,
+								GamePlatforms::Gog => processGogResult(request.operation, gogUser, rateLimiter).await,
+								GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, retroAchievementsUser, rateLimiter).await,
+								GamePlatforms::Steam => processSteamResult(request.operation, steamUser, rateLimiter, language).await,
+								_ => {}
+							}
+							
+							DataOperation::PlatformThreeInt(platform, _, _, _, _) => match platform
+							{
+								GamePlatforms::RetroAchievements => processRetroAchievementsResult(request.operation, retroAchievementsUser, rateLimiter).await,
+								_ => {}
+							}
+						}
+					}
+				}
+			}
+			
+			**requestEvent.write() = RequestEvent::Done;
+			limiterSpawned.set(false);
+		});
 	}
 }
