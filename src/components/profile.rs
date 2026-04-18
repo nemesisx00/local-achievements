@@ -1,6 +1,7 @@
 use battlenet::components::profile::BattleNetUserProfile;
 use data::constants::{BorderColor, ButtonBackgroundColor};
 use data::enums::DataChannel;
+use data::settings::AppSettings;
 use epicgamesstore::components::profile::EgsUserProfile;
 use freya::animation::{AnimNum, Ease, Function, use_animation};
 use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
@@ -39,6 +40,7 @@ impl Component for ProfileElement
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let mut profileState = use_radio::<ProfileState, DataChannel>(DataChannel::ProfileState);
 		
 		let duration = self.duration;
@@ -50,6 +52,90 @@ impl Component for ProfileElement
 				.ease(Ease::Out)
 				.time(duration)
 		});
+		
+		let bnet = match appSettings.read().enabledPlatforms.battleNet
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("Battle.Net"))
+					.child(BattleNetUserProfile::new())
+			)
+		};
+		
+		let egs = match appSettings.read().enabledPlatforms.epicGamesStores
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("Epic Games Store"))
+					.child(EgsUserProfile::new())
+			)
+		};
+		
+		let gog = match appSettings.read().enabledPlatforms.gog
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("GOG"))
+					.child(GogUserProfile::new())
+			)
+		};
+		
+		let ra = match appSettings.read().enabledPlatforms.retroAchievements
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("Retro Achievements"))
+					.child(RetroAchievementsUserProfile::new())
+			)
+		};
+		
+		let rpcs3 = match appSettings.read().enabledPlatforms.rpcs3
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("RPCS3"))
+					.child(Rpcs3ProfileElement::new())
+			)
+		};
+		
+		let steam = match appSettings.read().enabledPlatforms.steam
+		{
+			false => None,
+			true => Some(
+				rect()
+					.direction(Direction::Vertical)
+					.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
+					.width(Size::percent(100.0))
+					
+					.child(profileLabelElement("Steam"))
+					.child(SteamProfile::new())
+			)
+		};
 		
 		use_side_effect(move || {
 			if !*slide.is_running().read()
@@ -101,65 +187,12 @@ impl Component for ProfileElement
 				ScrollView::new()
 					.spacing(10.0)
 					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("Battle.Net"))
-							.child(BattleNetUserProfile())
-					)
-					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("Epic Games Store"))
-							.child(EgsUserProfile())
-					)
-					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("GOG"))
-							.child(GogUserProfile())
-					)
-					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("RetroAchievements"))
-							.child(RetroAchievementsUserProfile())
-					)
-					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("RPCS3"))
-							.child(Rpcs3ProfileElement())
-					)
-					
-					.child(
-						rect()
-							.direction(Direction::Vertical)
-							.margin(Gaps::new(0.0, 10.0, 0.0, 0.0))
-							.width(Size::percent(100.0))
-							
-							.child(profileLabelElement("Steam"))
-							.child(SteamProfile())
-					)
+					.maybe_child(bnet)
+					.maybe_child(egs)
+					.maybe_child(gog)
+					.maybe_child(ra)
+					.maybe_child(rpcs3)
+					.maybe_child(steam)
 			);
 	}
 }
