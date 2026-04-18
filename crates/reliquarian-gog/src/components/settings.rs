@@ -1,3 +1,4 @@
+use components::settings::util::separatorElement;
 use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps,
 	IntoElement, Size, TextAlign, TextStyleExt, label, rect};
@@ -22,6 +23,8 @@ impl Component for GogSettingsElement
 			.margin(Gaps::new_all(10.0))
 			.spacing(5.0)
 			.width(Size::Fill)
+			
+			.child(separatorElement())
 			
 			.child(
 				label()

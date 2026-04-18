@@ -1,5 +1,6 @@
 use components::input::number::NumericInput;
-use components::settings::switch::SettingsSwitch;
+use components::settings::switch::InputModeSwitch;
+use components::settings::util::separatorElement;
 use data::constants::InputModeHiddenChar;
 use data::enums::GamePlatforms;
 use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
@@ -68,11 +69,13 @@ impl Component for BattleNetSettingsElement
 			.spacing(5.0)
 			.width(Size::Fill)
 			
+			.child(separatorElement())
+			
 			.child(
 				label()
 					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
 					.text_align(TextAlign::Center)
-					.width(Size::Fill)
+					.width(Size::percent(75.0))
 					.text("Battle.Net API Authentication")
 			)
 			
@@ -108,7 +111,7 @@ impl Component for BattleNetSettingsElement
 							.text("Show")
 					)
 					
-					.child(SettingsSwitch(inputModeClientId.into_writable()))
+					.child(InputModeSwitch(inputModeClientId.into_writable()))
 			)
 			
 			.child(
@@ -143,7 +146,7 @@ impl Component for BattleNetSettingsElement
 							.text("Show")
 					)
 					
-					.child(SettingsSwitch(inputModeClientSecret.into_writable()))
+					.child(InputModeSwitch(inputModeClientSecret.into_writable()))
 			)
 			
 			.child(

@@ -1,4 +1,5 @@
 use components::input::number::NumericInput;
+use components::settings::util::separatorElement;
 use data::enums::GamePlatforms;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
@@ -51,6 +52,8 @@ impl Component for Rpcs3SettingsElement
 			.margin(Gaps::new_all(10.0))
 			.spacing(5.0)
 			.width(Size::Fill)
+			
+			.child(separatorElement())
 			
 			.child(
 				label()

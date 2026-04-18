@@ -1,15 +1,17 @@
 use data::constants::InputModeHiddenChar;
-use freya::prelude::{ChildrenExt, ContainerExt, ContainerSizeExt, Gaps,
-	InputMode, IntoElement, Size, Switch, rect};
+use freya::prelude::{Alignment, ChildrenExt, ContainerSizeExt,
+	ContainerWithContentExt, InputMode, IntoElement, Size, Switch, rect};
 use freya::radio::Writable;
 
-pub fn SettingsSwitch(mut inputMode: Writable<InputMode>) -> impl IntoElement
+pub fn InputModeSwitch(mut inputMode: Writable<InputMode>) -> impl IntoElement
 {
 	let value = inputMode.read().clone();
 	
 	return rect()
-		.margin(Gaps::new(4.0, 0.0, 0.0, 0.0))
+		.cross_align(Alignment::Center)
+		.main_align(Alignment::Center)
 		.width(Size::FillMinimum)
+		
 		.child(
 			Switch::new()
 				.toggled(value == InputMode::Shown)

@@ -1,4 +1,5 @@
-use components::settings::switch::SettingsSwitch;
+use components::settings::switch::InputModeSwitch;
+use components::settings::util::separatorElement;
 use data::constants::InputModeHiddenChar;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
@@ -45,6 +46,8 @@ impl Component for RetroAchievementsSettingsElement
 			.spacing(5.0)
 			.width(Size::Fill)
 			
+			.child(separatorElement())
+			
 			.child(
 				label()
 					.margin(Gaps::new(0.0, 0.0, 5.0, 0.0))
@@ -85,7 +88,7 @@ impl Component for RetroAchievementsSettingsElement
 							.text("Show")
 					)
 					
-					.child(SettingsSwitch(inputModeUsername.into_writable()))
+					.child(InputModeSwitch(inputModeUsername.into_writable()))
 			)
 			
 			.child(
@@ -120,7 +123,7 @@ impl Component for RetroAchievementsSettingsElement
 							.text("Show")
 					)
 					
-					.child(SettingsSwitch(inputModeApiKey.into_writable()))
+					.child(InputModeSwitch(inputModeApiKey.into_writable()))
 			);
 	}
 }

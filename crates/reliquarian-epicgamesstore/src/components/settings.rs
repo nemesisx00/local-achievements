@@ -1,4 +1,5 @@
-use components::settings::switch::SettingsSwitch;
+use components::settings::switch::InputModeSwitch;
+use components::settings::util::separatorElement;
 use data::constants::InputModeHiddenChar;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
@@ -30,6 +31,8 @@ impl Component for EgsSettingsElement
 			.margin(Gaps::new_all(10.0))
 			.spacing(5.0)
 			.width(Size::Fill)
+			
+			.child(separatorElement())
 			
 			.child(
 				label()
@@ -71,7 +74,7 @@ impl Component for EgsSettingsElement
 							.text("Show")
 					)
 					
-					.child(SettingsSwitch(inputModeId.into_writable()))
+					.child(InputModeSwitch(inputModeId.into_writable()))
 			);
 	}
 }
