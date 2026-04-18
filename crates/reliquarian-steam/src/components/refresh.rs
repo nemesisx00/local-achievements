@@ -1,6 +1,7 @@
 use data::constants::{FileName_GameHeader, Icon_Locked,
 	Path_Games};
 use data::io::{FileLocation, filePathExists, getImagePath};
+use data::settings::Language;
 use macros::{join, jpg, jpgAlt};
 use net::{DataOperation, DataRequest};
 use tracing::{info, warn};
@@ -11,7 +12,7 @@ use crate::data::result::SteamOperationResult;
 use crate::data::user::SteamUser;
 use crate::secure::getSteamAuth;
 
-pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperation, language: String) -> Option<SteamOperationResult>
+pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperation, language: Language) -> Option<SteamOperationResult>
 {
 	return match dataOperation.try_into()
 	{
@@ -121,13 +122,13 @@ if let Ok(payload) = api.getRecentlyPlayedGames().await
 }
 */
 
-async fn refreshGameSchema(mut user: SteamUser, id: u64, language: String) -> SteamOperationResult
+async fn refreshGameSchema(mut user: SteamUser, id: u64, language: Language) -> SteamOperationResult
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
 		let api = SteamApi::default();
-		if let Ok(payload) = api.getSchemaForGame(id, &language).await
+		if let Ok(payload) = api.getSchemaForGame(id, language).await
 		{
 			if let Some(game) = user.games.iter_mut()
 				.find(|g| g.id == id)
@@ -180,12 +181,12 @@ async fn refreshGameSchema(mut user: SteamUser, id: u64, language: String) -> St
 	};
 }
 
-async fn refreshGameAchievements(mut user: SteamUser, id: u64, language: String) -> SteamUser
+async fn refreshGameAchievements(mut user: SteamUser, id: u64, language: Language) -> SteamUser
 {
 	if getSteamAuth().is_ok_and(|a| a.validate())
 	{
 		let api = SteamApi::default();
-		if let Ok(payload) = api.getPlayerAchievements(id, &language).await
+		if let Ok(payload) = api.getPlayerAchievements(id, language).await
 		{
 			if let Some(game) = user.games.iter_mut()
 				.find(|g| g.id == id)

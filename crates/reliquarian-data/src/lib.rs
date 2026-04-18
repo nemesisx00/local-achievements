@@ -4,7 +4,6 @@ pub mod filter;
 pub mod format;
 pub mod io;
 pub mod settings;
-pub mod state;
 
 use std::sync::LazyLock;
 use freya::prelude::{ButtonLayoutThemePreference, ColorsSheet, Gaps, Preference,

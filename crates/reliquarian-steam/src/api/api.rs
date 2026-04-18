@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::Path;
 use anyhow::{anyhow, Context, Result};
+use data::settings::Language;
 use data::{constants::Path_Avatars, io::FileLocation};
 use path_slash::PathExt;
 use reqwest::Client;
@@ -41,8 +42,6 @@ impl SteamApi
 	
 	const Protocol: &str = "https://";
 	const Domain: &str = "api.steampowered.com/";
-	
-	const DefaultLanguage: &str = "en";
 	
 	const Service_Player: &str = "IPlayerService";
 	const Service_User: &str = "ISteamUser";
@@ -296,20 +295,14 @@ impl SteamApi
 	name | **Optional** Localized achievement name
 	description | **Optional** Localized description of the achievement
 	*/
-	pub async fn getPlayerAchievements(&self, appId: u64, language: &String) -> Result<Payload_GetPlayerAchievements>
+	pub async fn getPlayerAchievements(&self, appId: u64, language: Language) -> Result<Payload_GetPlayerAchievements>
 	{
 		let auth = getSteamAuth()?;
 		if auth.validate()
 		{
-			let language = match language.is_empty()
-			{
-				false => language,
-				true => &Self::DefaultLanguage.to_string(),
-			};
-			
 			let mut parameters = self.generateParameterMap(&auth);
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language.clone());
+			parameters.insert(Self::Parameter_Language.into(), Self::evaluateLanguage(language));
 			
 			if let Some(url) = self.buildUrl(
 				Self::Service_UserStats,
@@ -513,21 +506,15 @@ impl SteamApi
 				-  defaultvalue (int) Default value of stat.
 				-  displayName (string) Developer provided name of string.
 	*/
-	pub async fn getSchemaForGame(&self, appId: u64, language: &String) -> Result<Payload_GetSchemaForGame>
+	pub async fn getSchemaForGame(&self, appId: u64, language: Language) -> Result<Payload_GetSchemaForGame>
 	{
 		let auth = getSteamAuth()?;
 		if auth.validate()
 		{
-			let language = match language.is_empty()
-			{
-				false => language,
-				true => &Self::DefaultLanguage.to_string(),
-			};
-			
 			let mut parameters = self.generateParameterMap(&auth);
 			parameters.remove(Self::Parameter_SteamId);
 			parameters.insert(Self::Parameter_AppId.into(), appId.to_string());
-			parameters.insert(Self::Parameter_Language.into(), language.clone());
+			parameters.insert(Self::Parameter_Language.into(), Self::evaluateLanguage(language));
 			
 			if let Some(url) = self.buildUrl(
 				Self::Service_UserStats,
@@ -610,5 +597,13 @@ impl SteamApi
 				.context("Error parsing Steam API response as JSON")?;
 		
 		return Ok(response);
+	}
+	
+	fn evaluateLanguage(language: Language) -> String
+	{
+		return match language
+		{
+			Language::English => "en".to_string(),
+		};
 	}
 }
