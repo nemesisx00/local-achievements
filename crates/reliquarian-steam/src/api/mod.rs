@@ -12,4 +12,5 @@ pub use endpoint::{
 	playerachievements::{PlayerAchievement, Payload_GetPlayerAchievements},
 	playersummaries::Payload_GetPlayerSummaries,
 	recentlyplayedgames::Payload_GetRecentlyPlayedGames,
+	sharedlibraryapps::{AppInfo, Payload_GetSharedLibraryApps},
 };

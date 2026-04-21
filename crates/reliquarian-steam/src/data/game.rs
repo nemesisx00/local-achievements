@@ -4,7 +4,7 @@ use data::filter::{FilterCriteria, Filterable};
 use data::format::truncateF32;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use crate::api::{GameInfo, Payload_GetGlobalPercentages,
+use crate::api::{AppInfo, GameInfo, Payload_GetGlobalPercentages,
 	Payload_GetPlayerAchievements, Payload_GetSchemaForGame};
 use super::achievement::SteamAchievement;
 use super::playtime::Playtime;
@@ -91,6 +91,16 @@ impl Filterable<SteamAchievement> for Game
 		achievements.sort();
 		
 		return achievements;
+	}
+}
+
+impl From<AppInfo> for Game
+{
+	fn from(value: AppInfo) -> Self
+	{
+		let mut instance = Self::default();
+		instance.updateShared(&value);
+		return instance;
 	}
 }
 
@@ -319,6 +329,20 @@ impl Game
 		self.lastPlayed = info.rtime_last_played;
 		self.name = info.name.clone();
 		self.playtime.update(info);
+	}
+	
+	pub fn updateShared(&mut self, info: &AppInfo)
+	{
+		self.id = info.appid;
+		
+		if let Some(hash) = &info.img_icon_hash
+		{
+			self.iconHash = hash.clone();
+		}
+		
+		self.lastPlayed = info.rt_last_played;
+		self.name = info.name.clone();
+		self.playtime.updateShared(info);
 	}
 	
 	pub fn updateGlobalPercentages(&mut self, payload: &Payload_GetGlobalPercentages)

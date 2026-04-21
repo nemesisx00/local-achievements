@@ -4045,6 +4045,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "tracing",
+ "webbrowser",
 ]
 
 [[package]]

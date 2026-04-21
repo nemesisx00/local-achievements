@@ -3,7 +3,7 @@ use data::enums::GamePlatforms;
 use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::api::Payload_GetOwnedGames;
+use crate::api::{Payload_GetOwnedGames, Payload_GetSharedLibraryApps};
 use super::achievement::SteamAchievement;
 use super::game::Game;
 
@@ -158,6 +158,20 @@ impl SteamUser
 			{
 				None => self.games.push(game.clone().into()),
 				Some(g) => g.update(&game),
+			}
+		}
+	}
+	
+	pub fn processSharedGames(&mut self, payload: Payload_GetSharedLibraryApps)
+	{
+		for app in payload.response.apps.iter()
+			.filter(|a| a.exclude_reason == 0 || a.owner_steamids.contains(&self.id))
+		{
+			match self.games.iter_mut()
+				.find(|g| g.id == app.appid)
+			{
+				None => self.games.push(app.clone().into()),
+				Some(g) => g.updateShared(app),
 			}
 		}
 	}

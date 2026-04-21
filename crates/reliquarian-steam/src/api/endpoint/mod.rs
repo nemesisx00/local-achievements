@@ -5,3 +5,4 @@ pub mod ownedgames;
 pub mod playerachievements;
 pub mod playersummaries;
 pub mod recentlyplayedgames;
+pub mod sharedlibraryapps;

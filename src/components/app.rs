@@ -4,8 +4,8 @@ use battlenet::components::content::BattleNetContentElement;
 use battlenet::components::refresh::handleBattleNetOperation;
 use battlenet::data::io::{loadSettings_BattleNet, loadUserData_BattleNet};
 use battlenet::data::user::BattleNetUser;
-use data::constants::{BackgroundColor, DefaultHttpRequestRate, FileName_GameHeader,
-	Path_Games, TextColor};
+use data::constants::{BackgroundColor, DefaultHttpRequestRate,
+	FileName_GameHeader, Path_Games, TextColor};
 use data::enums::{ActiveContent, DataChannel, GamePlatforms};
 use data::io::{FileLocation, cacheImage, filePathExists, getImagePath,
 	imagePathExists, loadAppSettings};
@@ -40,8 +40,9 @@ use rpcs3::data::user::Rpcs3User;
 use steam::api::SteamApi;
 use steam::components::content::SteamContent;
 use steam::components::refresh::handleSteamOperation;
-use steam::data::io::loadUserData_Steam;
+use steam::data::io::{loadSettings_Steam, loadUserData_Steam};
 use steam::data::operation::SteamOperation;
+use steam::data::settings::SteamSettings;
 use steam::data::user::SteamUser;
 use tracing::{info, warn};
 use crate::components::ProfileState;
@@ -73,6 +74,7 @@ impl App for LocalAchievementsApp
 		use_init_radio_station::<RetroAchievementsUser, GamePlatforms>(loadUserData_RetroAchievements);
 		use_init_radio_station::<Rpcs3Settings, GamePlatforms>(loadSettings_Rpcs3);
 		use_init_radio_station::<Rpcs3User, GamePlatforms>(loadUserData_Rpcs3);
+		use_init_radio_station::<SteamSettings, GamePlatforms>(loadSettings_Steam);
 		use_init_radio_station::<SteamUser, GamePlatforms>(loadUserData_Steam);
 		
 		let mut activeContent = use_radio::<Option<ActiveContent>, DataChannel>(DataChannel::ActiveContent);

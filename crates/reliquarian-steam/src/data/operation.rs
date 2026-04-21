@@ -13,6 +13,7 @@ pub enum SteamOperation
 	GetPlayerAchievements(u64),
 	GetPlayerSummary,
 	GetSchemaForGame(u64),
+	GetSharedLibraryApps,
 	SaveToFile,
 	SetGameLoaded(u64, bool),
 }
@@ -25,6 +26,7 @@ impl From<SteamOperation> for DataOperation
 		{
 			SteamOperation::GetGameList
 				| SteamOperation::GetPlayerSummary
+				| SteamOperation::GetSharedLibraryApps
 			=> DataOperation::Platform(
 				GamePlatforms::Steam,
 				value.as_ref().to_string()
@@ -80,6 +82,7 @@ impl TryFrom<DataOperation> for SteamOperation
 					{
 						Self::GetGameList => Ok(Self::GetGameList),
 						Self::GetPlayerSummary => Ok(Self::GetPlayerSummary),
+						Self::GetSharedLibraryApps => Ok(Self::GetSharedLibraryApps),
 						_ => Err(anyhow!("Invalid Steam operation")),
 					},
 					_ => Err(anyhow!("Invalid Steam operation")),

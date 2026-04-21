@@ -1,6 +1,6 @@
 use anyhow::Result;
 use data::Secrets;
-use crate::api::SteamAuth;
+use crate::api::{SteamApi, SteamAuth};
 
 pub fn getSteamAuth() -> Result<SteamAuth>
 {
@@ -10,13 +10,11 @@ pub fn getSteamAuth() -> Result<SteamAuth>
 	return Ok(SteamAuth::new(id, key));
 }
 
-#[allow(unused)]
-pub fn removeSteamId() -> Result<()>
+pub fn getSteamWebToken() -> Result<String>
 {
-	let mut secrets = Secrets.blocking_lock();
-	secrets.remove(SteamAuth::UserIdSecretKey)?;
-	_ = secrets.save()?;
-	return Ok(());
+	let secrets = Secrets.blocking_lock();
+	let token = secrets.get(SteamApi::WebTokenSecretKey)?;
+	return Ok(token);
 }
 
 #[allow(unused)]
@@ -28,10 +26,19 @@ pub fn removeSteamApiKey() -> Result<()>
 	return Ok(());
 }
 
-pub fn setSteamId(id: String) -> Result<()>
+pub fn removeSteamWebToken() -> Result<()>
 {
 	let mut secrets = Secrets.blocking_lock();
-	secrets.set(SteamAuth::UserIdSecretKey, id);
+	secrets.remove(SteamApi::WebTokenSecretKey)?;
+	_ = secrets.save()?;
+	return Ok(());
+}
+
+#[allow(unused)]
+pub fn removeSteamId() -> Result<()>
+{
+	let mut secrets = Secrets.blocking_lock();
+	secrets.remove(SteamAuth::UserIdSecretKey)?;
 	_ = secrets.save()?;
 	return Ok(());
 }
@@ -40,6 +47,22 @@ pub fn setSteamApiKey(key: String) -> Result<()>
 {
 	let mut secrets = Secrets.blocking_lock();
 	secrets.set(SteamAuth::ApiKeySecretKey, key);
+	_ = secrets.save()?;
+	return Ok(());
+}
+
+pub fn setSteamWebToken(token: String) -> Result<()>
+{
+	let mut secrets = Secrets.blocking_lock();
+	secrets.set(SteamApi::WebTokenSecretKey, token);
+	_ = secrets.save()?;
+	return Ok(());
+}
+
+pub fn setSteamId(id: String) -> Result<()>
+{
+	let mut secrets = Secrets.blocking_lock();
+	secrets.set(SteamAuth::UserIdSecretKey, id);
 	_ = secrets.save()?;
 	return Ok(());
 }

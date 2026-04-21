@@ -8,7 +8,8 @@ use path_slash::PathExt;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use crate::api::endpoint::appinfo::Payload_GetAppInfo;
-use crate::secure::getSteamAuth;
+use crate::api::endpoint::sharedlibraryapps::Payload_GetSharedLibraryApps;
+use crate::secure::{getSteamAuth, getSteamWebToken};
 use super::SteamAuth;
 use super::endpoint::gameschema::Payload_GetSchemaForGame;
 use super::endpoint::globalpercentages::Payload_GetGlobalPercentages;
@@ -38,11 +39,15 @@ impl Default for SteamApi
 
 impl SteamApi
 {
+	/// Key for referencing the `webapi_token` used to interact with the `IFamilyGroupsService` endpoint
+	pub const WebTokenSecretKey: &str = "steamWebToken";
+	
 	pub const Platform: &str = "Steam";
 	
 	const Protocol: &str = "https://";
 	const Domain: &str = "api.steampowered.com/";
 	
+	const Service_FamilyGroups: &str = "IFamilyGroupsService";
 	const Service_Player: &str = "IPlayerService";
 	const Service_User: &str = "ISteamUser";
 	const Service_UserStats: &str = "ISteamUserStats";
@@ -54,6 +59,7 @@ impl SteamApi
 	#[allow(unused)]
 	const Endpoint_GetRecentlyPlayedGames: &str = "GetRecentlyPlayedGames/v0001";
 	const Endpoint_GetSchemaForGame: &str = "GetSchemaForGame/v0002";
+	const Endpoint_GetSharedLibraryApps: &str = "GetSharedLibraryApps/v1";
 	
 	const StoreEndpoint_GetAppInfo: &str = "https://store.steampowered.com/api/appdetails?appids={appid}";
 	
@@ -144,6 +150,33 @@ impl SteamApi
 			None => Err(anyhow!("No data returned for Game ID {}", appId)),
 			Some((_, appinfo)) => Ok(appinfo.clone()),
 		};
+	}
+	
+	pub async fn getSharedLibraryApps(&self) -> Result<Payload_GetSharedLibraryApps>
+	{
+		let token = getSteamWebToken()?;
+		if !token.is_empty()
+		{
+			let parameters = HashMap::from([
+				("access_token".into(), token),
+				("include_own".into(), "true".into()),
+				("family_groupid".into(), "0".into()),
+				("include_excluded".into(), "true".into()),
+				("include_free".into(), "true".into()),
+				("include_non_games".into(), "false".into()),
+			]);
+			
+			if let Some(url) = self.buildUrl(
+				Self::Service_FamilyGroups,
+				Self::Endpoint_GetSharedLibraryApps
+			)
+			{
+				return Ok(self.get::<Payload_GetSharedLibraryApps>(url, parameters).await
+					.context("Error retrieving list of games, including those from a Family Sharing library, from Steam Web API")?);
+			}
+		}
+		
+		return Err(anyhow!(ErrorKind::InvalidInput));
 	}
 	
 	/**

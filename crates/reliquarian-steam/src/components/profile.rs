@@ -12,6 +12,7 @@ use freya::radio::use_radio;
 use net::{RateLimiter, RequestEvent};
 use crate::api::SteamApi;
 use crate::data::operation::SteamOperation;
+use crate::data::settings::SteamSettings;
 use crate::data::user::SteamUser;
 
 #[derive(Clone, PartialEq)]
@@ -24,6 +25,7 @@ impl Component for SteamProfile
 		let user = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
+		let settings = use_radio::<SteamSettings, GamePlatforms>(GamePlatforms::Steam);
 		
 		let userId = user.read().id.clone();
 		let username = user.read().name.clone();
@@ -78,7 +80,11 @@ impl Component for SteamProfile
 								spawn(async move {
 									rateLimiter.read().pushAll(vec![
 										SteamOperation::GetPlayerSummary.into(),
-										SteamOperation::GetGameList.into(),
+										match settings.read().enableSteamFamilyLibrary
+										{
+											false => SteamOperation::GetGameList.into(),
+											true => SteamOperation::GetSharedLibraryApps.into(),
+										},
 										SteamOperation::SaveToFile.into(),
 									]).await;
 									

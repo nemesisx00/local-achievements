@@ -10,7 +10,7 @@ use crate::data::io::saveUserData;
 use crate::data::operation::SteamOperation;
 use crate::data::result::SteamOperationResult;
 use crate::data::user::SteamUser;
-use crate::secure::getSteamAuth;
+use crate::secure::{getSteamAuth, getSteamWebToken};
 
 pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperation, language: Language) -> Option<SteamOperationResult>
 {
@@ -57,6 +57,13 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 			SteamOperation::GetSchemaForGame(id)  => {
 				let result = refreshGameSchema(user, id, language).await;
 				info!("[Steam API] Refreshed schema for app id {}", id);
+				
+				Some(result)
+			}
+			
+			SteamOperation::GetSharedLibraryApps => {
+				let result = refreshSharedLibrary(user).await;
+				info!("[Steam API] Refreshed shared library game list");
 				
 				Some(result)
 			}
@@ -301,5 +308,31 @@ async fn refreshPlayerSummary(mut user: SteamUser) -> SteamOperationResult
 	{
 		user,
 		requests
+	};
+}
+
+async fn refreshSharedLibrary(mut user: SteamUser) -> SteamOperationResult
+{
+	let mut requests = vec![];
+	
+	if getSteamWebToken().is_ok_and(|t| !t.is_empty())
+	{
+		let api = SteamApi::default();
+		if let Ok(payload) = api.getSharedLibraryApps().await
+		{
+			user.processSharedGames(payload);
+			
+			// Cache game images
+			for game in user.games.iter()
+			{
+				requests.push(SteamOperation::GetGameImage(game.id, false).into());
+			}
+		}
+	}
+	
+	return SteamOperationResult
+	{
+		user,
+		requests,
 	};
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use crate::api::GameInfo;
+use crate::api::{AppInfo, GameInfo};
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct Playtime
@@ -97,6 +97,11 @@ impl Playtime
 		self.offline = info.playtime_disconnected;
 		self.total = info.playtime_forever;
 		self.windows = info.playtime_windows_forever;
+	}
+	
+	pub fn updateShared(&mut self, info: &AppInfo)
+	{
+		self.total = info.rt_playtime;
 	}
 }
 

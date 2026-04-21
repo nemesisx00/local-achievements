@@ -27,6 +27,8 @@ pub const Icon_Locked: &str = "locked";
 
 pub const InputModeHiddenChar: char = '*';
 
+pub const LinkBlue: Color = Color::from_rgb(173, 194, 252);
+
 pub const OverlayBackgroundColor: Color = Color::from_rgb(12, 12, 12);
 pub const OverlayGreyoutColor: Color = Color::from_argb(128, 0, 0, 0);
 
