@@ -1,11 +1,10 @@
 use components::button::icon::IconButton;
 use components::extensions::PressableExt;
-use data::constants::{BorderColor, OverlayBackgroundColor, OverlayGreyoutColor,
-	TextColor};
+use data::constants::{BorderColor, LinkBlue, OverlayBackgroundColor, OverlayGreyoutColor, TextColor};
 use data::enums::DataChannel;
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
-	ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt,
+	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, CornerRadius, Direction, Gaps, IntoElement, Layer,
 	LayerExt, Position, Size, StyleExt, TextAlign, TextDecoration, TextStyleExt,
 	WritableUtils, label, rect, use_side_effect, use_state};
@@ -121,7 +120,7 @@ impl Component for About
 							.child(
 								label()
 									.a11y_alt("https://github.com/nemesisx00/reliquarian")
-									.color(Color::from_rgb(12, 96, 223))
+									.color(LinkBlue)
 									.text("https://github.com/nemesisx00/reliquarian")
 									.text_decoration(TextDecoration::Underline)
 									.pressable(move |_| _ = webbrowser::open("https://github.com/nemesisx00/reliquarian"))
