@@ -19,5 +19,5 @@ pub struct Payload_GetUserProfile
 	pub Untracked: u64,
 	pub User: String,
 	pub UserPic: String,
-	pub UserWallActive: bool,
+	pub UserWallActive: u64,
 }
