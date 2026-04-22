@@ -36,6 +36,12 @@ pub const Path_Avatars: &str = "avatars";
 pub const Path_Logs: &str = "logs";
 pub const Path_Games: &str = "games";
 
+pub const RetroAchievementsGameUnfinished: Color = Color::from_rgb(22, 22, 22);
+pub const RetroAchievementsGameUnfinishedBorder: Color = Color::from_rgb(42, 42, 42);
+pub const RetroAchievementsGameBeaten: Color = Color::from_rgb(212, 212, 216);
+pub const RetroAchievementsGameBeatenCasual: Color = Color::from_rgb(161, 161, 170);
+pub const RetroAchievementsGameComplete: Color = Color::from_rgb(202, 138, 4);
+pub const RetroAchievementsGameMastered: Color = Color::from_rgb(255, 215, 0);
 pub const RetroAchievementsProgressColorBackground: Color = Color::from_rgb(9, 9, 11);
 pub const RetroAchievementsProgressColorCasual: Color = Color::from_rgb(115, 115, 115);
 pub const RetroAchievementsProgressColorHardcore: Color = Color::from_rgb(250, 186, 6);
