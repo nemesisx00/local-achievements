@@ -8,7 +8,11 @@ use data::constants::{BorderColor, CornerRadius, Path_Avatars,
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
-use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment, BorderWidth, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement, Size, Span, StyleExt, TextStyleExt, WritableUtils, label, paragraph, rect, spawn, svg, use_side_effect, use_state};
+use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
+	BorderWidth, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
+	Size, Span, StyleExt, TextStyleExt, WritableUtils, label, paragraph, rect,
+	spawn, svg, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::png;
 use net::{RateLimiter, RequestEvent};
