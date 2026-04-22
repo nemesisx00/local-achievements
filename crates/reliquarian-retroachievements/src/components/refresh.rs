@@ -63,26 +63,30 @@ fn refreshUserProfile(mut user: RetroAchievementsUser) -> RetroAchievementsResul
 	if getRetroAchievementsAuth().is_ok_and(|a| a.isValid())
 	{
 		let ulid = user.ulid.clone();
-		if let Ok(payload) = RetroAchievementsApi::getUserProfile(ulid.clone())
+		match RetroAchievementsApi::getUserProfile(ulid.clone())
 		{
-			user.processUserProfile(&payload);
+			Err(e) => warn!("[RetroAchievements] {:?}", e),
 			
-			if let Some(ulid) = ulid
-			{
-				if let Some(avatarPath) = user.avatar.clone()
+			Ok(payload) => {
+				user.processUserProfile(&payload);
+				
+				if let Some(ulid) = ulid
 				{
-					requests.push(DataRequest
+					if let Some(avatarPath) = user.avatar.clone()
 					{
-						destination: Some(FileLocation
+						requests.push(DataRequest
 						{
-							fileName: png!(ulid),
-							group: Path_Avatars.into(),
-							platform: RetroAchievementsApi::Platform.into(),
-						}),
-						
-						operation: DataOperation::CacheImage(true),
-						url: RetroAchievementsApi::buildMediaUrl(&avatarPath)
-					});
+							destination: Some(FileLocation
+							{
+								fileName: png!(ulid),
+								group: Path_Avatars.into(),
+								platform: RetroAchievementsApi::Platform.into(),
+							}),
+							
+							operation: DataOperation::CacheImage(true),
+							url: RetroAchievementsApi::buildMediaUrl(&avatarPath)
+						});
+					}
 				}
 			}
 		}
@@ -168,7 +172,7 @@ fn refreshGameInfo(mut user: RetroAchievementsUser, id: u64) -> RetroAchievement
 		
 		match RetroAchievementsApi::getGameInfo(&ulid, id)
 		{
-			Err(e) => warn!("[RetroAchievements] Error getting game info for {}: {:?}", id, e),
+			Err(e) => warn!("[RetroAchievements] {:?}", e),
 			
 			Ok(payload) => {
 				match user.games.iter_mut()
