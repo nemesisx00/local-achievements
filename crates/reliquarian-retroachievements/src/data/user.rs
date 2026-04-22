@@ -4,6 +4,7 @@ use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::api::{Payload_GetUserCompletionProgress, Payload_GetUserProfile};
+use crate::data::kind::AwardKind;
 use super::makeRelative;
 use super::achievement::Achievement;
 use super::mode::RetroAchievementsMode;
@@ -29,6 +30,9 @@ pub struct RetroAchievementsUser
 	#[serde(default)]
 	pub hardcore: RankData,
 	
+	#[serde(default)]
+	pub retroPoints: u64,
+	
 	/// The user's ULID.
 	#[serde(default)]
 	pub ulid: Option<String>,
@@ -49,6 +53,7 @@ impl Default for RetroAchievementsUser
 			casual: RetroAchievementsMode::Casual.into(),
 			games: vec![],
 			hardcore: RankData::default(),
+			retroPoints: u64::default(),
 			ulid: None,
 			username: String::default(),
 		};
@@ -58,6 +63,59 @@ impl Default for RetroAchievementsUser
 impl RetroAchievementsUser
 {
 	pub const FileName: &str = "retroAchievements.json";
+	
+	pub fn countByAward(&self, award: AwardKind) -> usize
+	{
+		return self.games.iter()
+			.filter(|g| g.highestAward.is_some_and(
+				|a| a == award)
+			)
+			.count();
+	}
+	
+	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
+	{
+		let search = search.into().to_lowercase();
+		let mut games = self.games.iter()
+			.filter(|g| g.name.to_lowercase().contains(&search)
+					|| g.system.name.to_lowercase().contains(&search))
+			.cloned()
+			.collect::<Vec<_>>();
+		games.sort();
+		
+		return games;
+	}
+	
+	pub fn getAchievement(&self, gameId: impl Into<u64>, achievementId: impl Into<u64>) -> Option<Achievement>
+	{
+		let achievementId = achievementId.into();
+		return match self.getGame(gameId)
+		{
+			None => None,
+			Some(g) => g.achievements.iter()
+				.find(|a| a.id == achievementId)
+				.cloned(),
+		};
+	}
+	
+	pub fn getDistinctPlayersForGame(&self, id: impl Into<u64>) -> Option<u64>
+	{
+		let id = id.into();
+		return match self.games.iter()
+			.find(|g| g.id == id)
+		{
+			None => None,
+			Some(g) => Some(g.distinctPlayers),
+		};
+	}
+	
+	pub fn getGame(&self, id: impl Into<u64>) -> Option<Game>
+	{
+		let id = id.into();
+		return self.games.iter()
+			.find(|g| g.id == id)
+			.cloned();
+	}
 	
 	/**
 	Parse a JSON string which does not strictly conform to the expected `User`
@@ -108,6 +166,18 @@ impl RetroAchievementsUser
 				}
 				
 				if let Some((_, value)) = map.iter()
+					.find(|(key, _)| key.as_str() == "retroPoints")
+				{
+					if let Value::Number(number) = value
+					{
+						if let Some(inner) = number.as_u64()
+						{
+							user.retroPoints = inner;
+						}
+					}
+				}
+				
+				if let Some((_, value)) = map.iter()
 					.find(|(k, _)| k.as_str() == "ulid")
 				{
 					if let Value::String(value) = value
@@ -152,48 +222,13 @@ impl RetroAchievementsUser
 		return Ok(user);
 	}
 	
-	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
+	pub fn points(&self) -> u64
 	{
-		let search = search.into().to_lowercase();
-		let mut games = self.games.iter()
-			.filter(|g| g.name.to_lowercase().contains(&search)
-					|| g.system.name.to_lowercase().contains(&search))
-			.cloned()
-			.collect::<Vec<_>>();
-		games.sort();
-		
-		return games;
-	}
-	
-	pub fn getAchievement(&self, gameId: impl Into<u64>, achievementId: impl Into<u64>) -> Option<Achievement>
-	{
-		let achievementId = achievementId.into();
-		return match self.getGame(gameId)
+		return match self.hardcore.points > 0
 		{
-			None => None,
-			Some(g) => g.achievements.iter()
-				.find(|a| a.id == achievementId)
-				.cloned(),
+			false => self.casual.points,
+			true => self.hardcore.points,
 		};
-	}
-	
-	pub fn getDistinctPlayersForGame(&self, id: impl Into<u64>) -> Option<u64>
-	{
-		let id = id.into();
-		return match self.games.iter()
-			.find(|g| g.id == id)
-		{
-			None => None,
-			Some(g) => Some(g.distinctPlayers),
-		};
-	}
-	
-	pub fn getGame(&self, id: impl Into<u64>) -> Option<Game>
-	{
-		let id = id.into();
-		return self.games.iter()
-			.find(|g| g.id == id)
-			.cloned();
 	}
 	
 	pub fn processUserCompletionProgress(&mut self, payload: &Payload_GetUserCompletionProgress)
@@ -213,6 +248,7 @@ impl RetroAchievementsUser
 	{
 		self.casual.points = payload.TotalSoftcorePoints;
 		self.hardcore.points = payload.TotalPoints;
+		self.retroPoints = payload.TotalTruePoints;
 		
 		self.avatar = match payload.UserPic.is_empty()
 		{
