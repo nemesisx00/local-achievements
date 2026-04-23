@@ -7,6 +7,8 @@ use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	InputMode, IntoElement, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, use_hook, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
+use tracing::{info, warn};
+use crate::data::io::saveSettings;
 use crate::data::settings::RetroAchievementsSettings;
 use crate::secure::{getRetroAchievementsAuth, setRetroAchievementsApiKey,
 	setRetroAchievementsUsername};
@@ -33,7 +35,16 @@ impl Component for RetroAchievementsSettingsElement
 			_ = setRetroAchievementsApiKey(apiKey.read().clone());
 			_ = setRetroAchievementsUsername(username.read().clone());
 			
-			settings.write().showGameAwardBadges = showGameAwards();
+			let toggle = showGameAwards();
+			if settings.read().showGameAwardBadges != toggle
+			{
+				settings.write().showGameAwardBadges = toggle;
+				match saveSettings(&settings.read())
+				{
+					Err(e) => warn!("[RetroAchievements] Error saving settings to file: {:?}", e),
+					Ok(_) => info!("[RetroAchievements] Settings saved to file"),
+				}
+			}
 		});
 		
 		use_hook(|| {
