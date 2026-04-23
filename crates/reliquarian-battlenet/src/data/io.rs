@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use anyhow::{Result, anyhow};
-use data::io::{getConfigDir, getDataDir, readDataFromFile, readRawDataFromFile,
-	writeDataToFile};
+use data::io::{getDataDir, getSettingsDir, readDataFromFile,
+	readRawDataFromFile, writeDataToFile};
 use tracing::warn;
 use crate::api::BattleNetSettings;
 use super::user::BattleNetUser;
@@ -37,7 +37,7 @@ Read the Battle.Net settings data from file.
 */
 fn loadSettings() -> Result<BattleNetSettings>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, BattleNetSettings::FileName.into()),
@@ -76,7 +76,7 @@ Write the Battle.Net settings data to file.
 */
 pub fn saveSettings(auth: &BattleNetSettings) -> Result<()>
 {
-	return match getConfigDir(true)
+	return match getSettingsDir(true)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, BattleNetSettings::FileName.into(), auth),

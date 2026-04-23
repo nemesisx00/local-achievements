@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use anyhow::{Result, anyhow};
-use data::io::{getConfigDir, getDataDir, readDataFromFile, readRawDataFromFile,
-	writeDataToFile};
+use data::io::{getDataDir, getSettingsDir, readDataFromFile,
+	readRawDataFromFile, writeDataToFile};
 use tracing::warn;
 use crate::data::settings::Rpcs3Settings;
 use crate::data::user::Rpcs3User;
@@ -31,7 +31,7 @@ Read the RPCS3 settings data from file.
 */
 fn loadSettings() -> Result<Rpcs3Settings>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(
@@ -80,7 +80,7 @@ Write the RPCS3 settings data to file.
 */
 pub fn saveSettings(settings: &Rpcs3Settings) -> Result<()>
 {
-	return match getConfigDir(true)
+	return match getSettingsDir(true)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(

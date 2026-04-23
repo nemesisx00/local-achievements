@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use anyhow::{Result, anyhow};
-use data::io::{getConfigDir, getDataDir, readDataFromFile, readRawDataFromFile,
-	writeDataToFile};
+use data::io::{getDataDir, getSettingsDir, readDataFromFile,
+	readRawDataFromFile, writeDataToFile};
 use tracing::warn;
 use crate::data::settings::RetroAchievementsSettings;
 use crate::data::user::RetroAchievementsUser;
@@ -34,7 +34,7 @@ Read the RetroAchievements settings data from file.
 */
 fn loadSettings() -> Result<RetroAchievementsSettings>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, RetroAchievementsSettings::FileName.into()),
@@ -73,7 +73,7 @@ Write the RetroAchievements settings data to file.
 */
 pub fn saveSettings(auth: &RetroAchievementsSettings) -> Result<()>
 {
-	return match getConfigDir(true)
+	return match getSettingsDir(true)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, RetroAchievementsSettings::FileName.into(), auth),

@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use anyhow::{Result, anyhow};
-use data::io::{getConfigDir, getDataDir, readDataFromFile, readRawDataFromFile,
-	writeDataToFile};
+use data::io::{getDataDir, getSettingsDir, readDataFromFile,
+	readRawDataFromFile, writeDataToFile};
 use tracing::warn;
 use crate::data::settings::SteamSettings;
 use crate::data::user::SteamUser;
@@ -20,7 +20,7 @@ Read the Steam settings data from file.
 */
 fn loadSettings() -> Result<SteamSettings>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, SteamSettings::FileName.into()),
@@ -73,7 +73,7 @@ Write the Steam settings data to file.
 */
 pub fn saveSettings(settings: &SteamSettings) -> Result<()>
 {
-	return match getConfigDir(true)
+	return match getSettingsDir(true)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, SteamSettings::FileName.into(), settings),

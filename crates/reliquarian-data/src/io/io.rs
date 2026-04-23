@@ -15,6 +15,8 @@ const Application: &str = "reliquarian";
 const Organization: &str = "";
 const Qualifier: &str = "";
 
+const SettingsFragment: &str = "settings";
+
 /**
 Retrieve the image from a `url` and store it in the cache directory.
 */
@@ -118,15 +120,35 @@ pub fn getDataDir(create: bool) -> Option<String>
 	return Some(path);
 }
 
+/**
+Get the configuration directory specific to this application.
+*/
+pub fn getSettingsDir(create: bool) -> Option<String>
+{
+	let dirs = ProjectDirs::from(Qualifier, Organization, Application)?;
+	let path = dirs.config_dir()
+		.to_owned()
+		.join(SettingsFragment)
+		.to_str()?
+		.to_string();
+	
+	if create
+	{
+		_ = create_dir_all(&path);
+	}
+	
+	return Some(path);
+}
+
 pub fn getSecretsKeyPath() -> Option<PathBuf>
 {
-	return Some(Path::new(&getConfigDir(true)?)
+	return Some(Path::new(&getSettingsDir(true)?)
 		.join(SecretsKeyFileName));
 }
 
 pub fn getSecretsVaultPath() -> Option<PathBuf>
 {
-	return Some(Path::new(&getConfigDir(true)?)
+	return Some(Path::new(&getSettingsDir(true)?)
 		.join(SecretsVaultFileName));
 }
 
@@ -163,7 +185,7 @@ Read the application's settings data from file.
 */
 pub fn loadAppSettings() -> Result<AppSettings>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(false)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => readDataFromFile(dir, AppSettings::FileName.into()),
@@ -229,7 +251,7 @@ Write the application's settings data to file.
 */
 pub fn saveAppSettings(settings: &AppSettings) -> Result<()>
 {
-	return match getConfigDir(false)
+	return match getSettingsDir(true)
 	{
 		None => Err(anyhow!(ErrorKind::NotFound)),
 		Some(dir) => writeDataToFile(dir, AppSettings::FileName.into(), settings),
