@@ -1,19 +1,19 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
+use components::input::filter::GamesFilter;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	Path_Games, RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
-use data::filter::Filterable;
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
-	Input, IntoElement, KeyboardEventData, ProgressBar,
-	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
-	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
-	rect, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
+	IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt,
+	ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
+	VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
 use macros::join;
 use crate::data::user::Rpcs3User;
 use crate::api::api::Rpcs3Api;
@@ -28,9 +28,16 @@ impl Component for GameList
 		let user = use_radio::<Rpcs3User, GamePlatforms>(GamePlatforms::Rpcs3);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		let caseSensitive = use_state(bool::default);
 		let search = use_state(String::default);
 		
-		let games = user.read().filter(search.read().clone());
+		let games = user.read().filter(FilterCriteria
+		{
+			caseSensitive: caseSensitive(),
+			text: search.read().clone(),
+			..Default::default()
+		});
+		
 		let gamesLength = games.len();
 		
 		return rect()
@@ -58,8 +65,8 @@ impl Component for GameList
 			)
 			
 			.child(
-				Input::new(search)
-					.placeholder("Search by game title")
+				GamesFilter::new(caseSensitive, search)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 					.width(Size::percent(50.0))
 			)
 			

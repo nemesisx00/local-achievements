@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
+use components::input::filter::GamesFilter;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	FileName_GameIcon, Path_Games, RetroAchievementsGameBeaten,
 	RetroAchievementsGameBeatenCasual, RetroAchievementsGameComplete,
@@ -14,7 +15,7 @@ use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Event, EventHandlersExt,
-	FontWeight, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Layer,
+	FontWeight, Gaps, ImageViewer, IntoElement, KeyboardEventData, Layer,
 	LayerExt, Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
 	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
 	VirtualScrollView, label, paragraph, rect, svg, use_scroll_controller,
@@ -37,11 +38,14 @@ impl Component for GameList
 		let user = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		let caseSensitive = use_state(bool::default);
+		let nameOnly = use_state(bool::default);
 		let search = use_state(String::default);
 		
 		let games = user.read().filter(FilterCriteria
 		{
-			nameOnly: false,
+			caseSensitive: caseSensitive(),
+			nameOnly: nameOnly(),
 			text: search.read().clone(),
 			..Default::default()
 		});
@@ -72,8 +76,9 @@ impl Component for GameList
 			)
 			
 			.child(
-				Input::new(search)
-					.placeholder("Search by game title")
+				GamesFilter::new(caseSensitive, search)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
+					.nameOnly(nameOnly)
 					.width(Size::percent(50.0))
 			)
 			

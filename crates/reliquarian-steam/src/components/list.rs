@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
+use components::input::filter::GamesFilter;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	FileName_GameHeader, Path_Games, RetroAchievementsProgressColorBackground,
 	SteamContrast};
@@ -10,11 +11,10 @@ use data::settings::AppSettings;
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
-	Input, IntoElement, KeyboardEventData, ProgressBar,
-	ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span,
-	StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph,
-	rect, use_scroll_controller, use_state};
 use freya::radio::{IntoWritable, use_radio};
+	IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt,
+	ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
+	VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
 use macros::{join, jpg};
 use crate::api::SteamApi;
 use crate::data::user::SteamUser;
@@ -30,11 +30,14 @@ impl Component for GameList
 		let user = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
+		let caseSensitive = use_state(bool::default);
 		let search = use_state(String::default);
+		let showAll = use_state(|| appSettings.read().displayGamesWithoutAchievements);
 		
 		let games = user.read().filter(FilterCriteria
 		{
-			showAll: appSettings.read().displayGamesWithoutAchievements,
+			caseSensitive: caseSensitive(),
+			showAll: showAll(),
 			text: search.read().clone(),
 			..Default::default()
 		});
@@ -66,8 +69,9 @@ impl Component for GameList
 			)
 			
 			.child(
-				Input::new(search)
-					.placeholder("Search by game title")
+				GamesFilter::new(caseSensitive, search)
+					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
+					.showAll(showAll)
 					.width(Size::percent(50.0))
 			)
 			
