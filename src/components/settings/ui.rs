@@ -5,7 +5,7 @@ use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
 	Gaps, IntoElement, MenuItem, Select, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, spawn, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use strum::IntoEnumIterator;
 use tracing::{info, warn};
 use super::toggles::PlatformToggles;
@@ -164,12 +164,12 @@ impl Component for UiSettings
 			)
 			
 			.child(PlatformToggles::new(
-				enabledBNet.into_writable(),
-				enabledEgs.into_writable(),
-				enabledGog.into_writable(),
-				enabledRA.into_writable(),
-				enabledRpcs3.into_writable(),
-				enabledSteam.into_writable()
+				enabledBNet,
+				enabledEgs,
+				enabledGog,
+				enabledRA,
+				enabledRpcs3,
+				enabledSteam
 			));
 	}
 }

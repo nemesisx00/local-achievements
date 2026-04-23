@@ -13,7 +13,7 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
 	Size, Span, StyleExt, TextStyleExt, WritableUtils, label, paragraph, rect,
 	spawn, svg, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use macros::png;
 use net::{RateLimiter, RequestEvent};
 use crate::api::RetroAchievementsApi;
@@ -184,10 +184,7 @@ impl Component for RetroAchievementsUserProfile
 			)
 			
 			.maybe_child(showConfirmationDialog().then(||
-				ConfirmRefresh::new(
-					cancelled.into_writable(),
-					confirmed.into_writable()
-				)
+				ConfirmRefresh::new(cancelled, confirmed)
 			));
 	}
 }

@@ -10,7 +10,7 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	IntoElement, Size, StyleExt, Switch, TextAlign, TextDecoration,
 	TextStyleExt, WritableUtils, label, rect, use_hook, use_side_effect,
 	use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use tracing::{info, warn};
 use crate::data::io::saveSettings;
 use crate::data::settings::SteamSettings;
@@ -127,7 +127,7 @@ impl Component for SteamSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeId.into_writable()))
+					.child(InputModeSwitch(inputModeId))
 			)
 			
 			.child(
@@ -162,7 +162,7 @@ impl Component for SteamSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeApiKey.into_writable()))
+					.child(InputModeSwitch(inputModeApiKey))
 			)
 			
 			.child(
@@ -262,7 +262,7 @@ impl Component for SteamSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeFamilyToken.into_writable()))
+					.child(InputModeSwitch(inputModeFamilyToken))
 			))
 	}
 }

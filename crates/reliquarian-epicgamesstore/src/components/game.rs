@@ -13,7 +13,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign,
 	TextStyleExt, VirtualScrollView, WritableUtils, label, rect, spawn,
 	use_scroll_controller, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
 use crate::api::EgsApi;
@@ -153,10 +153,10 @@ impl Component for GameElement
 			
 			.child(
 				AchievementsFilter::new(
-					caseSensitive.into_writable(),
-					locked.into_writable(),
-					nameOnly.into_writable(),
-					search.into_writable()
+					caseSensitive,
+					locked,
+					nameOnly,
+					search
 				)
 					.margin(Gaps::new(5.0, 0.0, 0.0, 0.0))
 					.width(Size::percent(50.0))
@@ -181,10 +181,7 @@ impl Component for GameElement
 			)
 			
 			.maybe_child(showConfirmationDialog().then(||
-				ConfirmRefresh::new(
-					cancelled.into_writable(),
-					confirmed.into_writable()
-				)
+				ConfirmRefresh::new(cancelled, confirmed)
 			));
 	}
 }

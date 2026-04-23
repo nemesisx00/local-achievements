@@ -12,7 +12,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth, Button,
 	FontWeight, Gaps, ImageViewer, Input, IntoElement, Layer, LayerExt,
 	Position, Size, StyleExt, TextAlign, TextStyleExt, WritableUtils, label,
 	rect, spawn, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use freya::winit::dpi::PhysicalSize;
 use macros::jpg;
 use net::{RateLimiter, RequestEvent};
@@ -141,10 +141,7 @@ impl Component for GogUserProfile
 			)
 			
 			.maybe_child(showConfirmationDialog().then(||
-				ConfirmRefresh::new(
-					cancelled.into_writable(),
-					confirmed.into_writable()
-				)
+				ConfirmRefresh::new(cancelled, confirmed)
 			))
 			
 			.maybe_child(showAuthOverlay().then(||

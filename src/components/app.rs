@@ -19,8 +19,7 @@ use freya::prelude::{App, ChildrenExt, ContainerSizeExt,
 	ContainerWithContentExt, Direction, Element, IntoElement, LayerExt,
 	Platform, StyleExt, WinitPlatformExt, WritableUtils, rect, spawn,
 	use_init_theme, use_side_effect, use_state};
-use freya::radio::{IntoWritable, Radio, Writable, use_init_radio_station,
-	use_radio};
+use freya::radio::{Radio, Writable, use_init_radio_station, use_radio};
 use freya::winit::dpi::PhysicalSize;
 use gog::components::content::GogContentElement;
 use gog::components::refresh::handleGogOperation;
@@ -115,7 +114,7 @@ impl App for LocalAchievementsApp
 		};
 		
 		use_side_effect(move || processRateLimiter(
-			limiterSpawned.into_writable(),
+			limiterSpawned,
 			requestEvent.clone(),
 			rateLimiter.clone(),
 			appSettings.read().language,
@@ -262,7 +261,7 @@ async fn processSteamResult(
 }
 
 fn processRateLimiter(
-	mut limiterSpawned: Writable<bool>,
+	limiterSpawned: impl Into<Writable<bool>>,
 	mut requestEvent: Radio<RequestEvent, DataChannel>,
 	rateLimiter: Radio<RateLimiter, DataChannel>,
 	language: Language,
@@ -274,6 +273,8 @@ fn processRateLimiter(
 	steamUser: Radio<SteamUser, GamePlatforms>,
 )
 {
+	let mut limiterSpawned = limiterSpawned.into();
+	
 	if !*limiterSpawned.read()
 		&& *requestEvent.read() != RequestEvent::Done
 		&& !rateLimiter.read().blockingIsEmpty()

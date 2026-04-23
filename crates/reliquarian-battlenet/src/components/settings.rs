@@ -7,7 +7,7 @@ use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, spawn, use_hook, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use strum::IntoEnumIterator;
 use tracing::{info, warn};
 use crate::api::BattleNetSettings;
@@ -111,7 +111,7 @@ impl Component for BattleNetSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeClientId.into_writable()))
+					.child(InputModeSwitch(inputModeClientId))
 			)
 			
 			.child(
@@ -146,7 +146,7 @@ impl Component for BattleNetSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeClientSecret.into_writable()))
+					.child(InputModeSwitch(inputModeClientSecret))
 			)
 			
 			.child(

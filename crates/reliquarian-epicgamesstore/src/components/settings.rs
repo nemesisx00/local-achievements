@@ -5,7 +5,6 @@ use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, Size, TextAlign, TextStyleExt, label, rect,
 	use_memo, use_state};
-use freya::radio::IntoWritable;
 use crate::secure::{getEpicGamesStoreAccountId, setEpicGamesStoreAccountId};
 
 #[derive(Clone, PartialEq)]
@@ -74,7 +73,7 @@ impl Component for EgsSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeId.into_writable()))
+					.child(InputModeSwitch(inputModeId))
 			);
 	}
 }

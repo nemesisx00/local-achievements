@@ -9,7 +9,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
 	Size, StyleExt, WritableUtils, rect, spawn, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use macros::png;
 use net::{RateLimiter, RequestEvent};
 use crate::api::EgsApi;
@@ -106,10 +106,7 @@ impl Component for EgsUserProfile
 			)
 			
 			.maybe_child(showConfirmationDialog().then(||
-				ConfirmRefresh::new(
-					cancelled.into_writable(),
-					confirmed.into_writable()
-				)
+				ConfirmRefresh::new(cancelled, confirmed)
 			));
 	}
 }

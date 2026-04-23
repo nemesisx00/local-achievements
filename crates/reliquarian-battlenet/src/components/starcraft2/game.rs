@@ -6,7 +6,7 @@ use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
 	EventHandlersExt, Gaps, IntoElement, KeyboardEventData, ScrollConfig,
 	ScrollPosition, Size, VirtualScrollView, rect, use_scroll_controller,
 	use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use crate::data::user::BattleNetUser;
 use super::achievement::sc2Achievement;
 use super::campaigns::sc2Campaigns;
@@ -129,10 +129,10 @@ impl Component for Sc2Element
 							
 							.child(
 								AchievementsFilter::new(
-									caseSensitive.into_writable(),
-									locked.into_writable(),
-									nameOnly.into_writable(),
-									search.into_writable()
+									caseSensitive,
+									locked,
+									nameOnly,
+									search
 								)
 									.width(Size::percent(100.0))
 							)

@@ -10,7 +10,6 @@ use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
-use freya::radio::{IntoWritable, use_radio};
 	IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt,
 	ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
 	VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_state};
@@ -161,7 +160,7 @@ impl Component for GameListNode
 					.width(Size::percent(50.0))
 					
 					.pressableWithHover(
-						hovering.into_writable(),
+						hovering,
 						move |_| **selectedGameId.write() = Some(game.sandboxId.clone())
 					)
 					

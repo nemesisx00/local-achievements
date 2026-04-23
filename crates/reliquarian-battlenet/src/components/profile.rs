@@ -9,7 +9,7 @@ use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
 	Size, StyleExt, WritableUtils, rect, spawn, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use macros::jpgAlt;
 use net::{RateLimiter, RequestEvent};
 use crate::api::{BattleNetApi, BattleNetSettings, Starcraft2};
@@ -146,10 +146,7 @@ impl Component for BattleNetUserProfile
 			)
 			
 			.maybe_child(showAuthorizationOverlay().then(||
-				OAuth2Overlay::new(
-					cancelled.into_writable(),
-					authDone.into_writable()
-				)
+				OAuth2Overlay::new(cancelled, authDone)
 					.platformName(GamePlatforms::BattleNet.as_ref())
 			));
 	}

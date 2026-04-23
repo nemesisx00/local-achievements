@@ -139,13 +139,13 @@ impl Component for ConfirmRefresh
 impl ConfirmRefresh
 {
 	pub fn new(
-		cancelled: Writable<bool>,
-		confirmed: Writable<bool>
+		cancelled: impl Into<Writable<bool>>,
+		confirmed: impl Into<Writable<bool>>
 	) -> Self
 	{
 		return Self {
-			cancelled,
-			confirmed,
+			cancelled: cancelled.into(),
+			confirmed: confirmed.into(),
 			invertCancelled: false,
 		};
 	}

@@ -3,8 +3,9 @@ use freya::prelude::{Alignment, ChildrenExt, ContainerSizeExt,
 	ContainerWithContentExt, InputMode, IntoElement, Size, Switch, rect};
 use freya::radio::Writable;
 
-pub fn InputModeSwitch(mut inputMode: Writable<InputMode>) -> impl IntoElement
+pub fn InputModeSwitch(inputMode: impl Into<Writable<InputMode>>) -> impl IntoElement
 {
+	let mut inputMode = inputMode.into();
 	let value = inputMode.read().clone();
 	
 	return rect()

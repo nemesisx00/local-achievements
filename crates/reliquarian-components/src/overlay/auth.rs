@@ -134,13 +134,13 @@ impl Component for OAuth2Overlay
 impl OAuth2Overlay
 {
 	pub fn new(
-		cancelled: Writable<bool>,
-		done: Writable<bool>,
+		cancelled: impl Into<Writable<bool>>,
+		done: impl Into<Writable<bool>>,
 	) -> Self
 	{
 		return Self {
-			cancelled,
-			done,
+			cancelled: cancelled.into(),
+			done: done.into(),
 			platformName: None,
 		};
 	}

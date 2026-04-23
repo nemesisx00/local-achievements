@@ -10,7 +10,7 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	Direction, Event, EventHandler, Gaps, ImageViewer, IntoElement, Layer,
 	LayerExt, Position, PressEventData, Size, StyleExt, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, use_side_effect, use_state};
-use freya::radio::{IntoWritable, Writable, use_radio};
+use freya::radio::{Writable, use_radio};
 use net::RequestEvent;
 use super::ProfileState;
 use super::about::About;
@@ -33,7 +33,7 @@ pub fn NavBar() -> impl IntoElement
 	let aboutOverlay = match showAbout()
 	{
 		false => None,
-		true => Some(About::new(closeAbout.into_writable()))
+		true => Some(About::new(closeAbout))
 	};
 	
 	let count = match requestEvent.read().clone()
@@ -184,9 +184,9 @@ pub fn NavBar() -> impl IntoElement
 				.maybe_child(steam)
 				
 				.child(navBottom(
-					showAbout.into_writable(),
+					showAbout,
 					count,
-					selected.into_writable()
+					selected
 				))
 		)
 		

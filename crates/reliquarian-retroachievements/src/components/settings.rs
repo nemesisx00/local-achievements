@@ -6,7 +6,7 @@ use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, use_hook, use_side_effect, use_state};
-use freya::radio::{IntoWritable, use_radio};
+use freya::radio::use_radio;
 use tracing::{info, warn};
 use crate::data::io::saveSettings;
 use crate::data::settings::RetroAchievementsSettings;
@@ -106,7 +106,7 @@ impl Component for RetroAchievementsSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeUsername.into_writable()))
+					.child(InputModeSwitch(inputModeUsername))
 			)
 			
 			.child(
@@ -141,7 +141,7 @@ impl Component for RetroAchievementsSettingsElement
 							.text("Show")
 					)
 					
-					.child(InputModeSwitch(inputModeApiKey.into_writable()))
+					.child(InputModeSwitch(inputModeApiKey))
 			)
 			
 			.child(
