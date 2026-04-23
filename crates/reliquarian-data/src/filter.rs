@@ -16,6 +16,9 @@ pub struct FilterCriteria
 	/// Should the text be searched for in the name only
 	pub nameOnly: bool,
 	
+	/// Show all items when there is a boolean test that could hide some (i.e. games with no achievements metadata)
+	pub showAll: bool,
+	
 	/// Search text to filter by name and description
 	pub text: String,
 }

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,23 +20,39 @@ pub struct EgsUser
 	pub name: String,
 }
 
+impl Filterable<EgsGame> for EgsUser
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<EgsGame>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut games = self.games.iter()
+			.filter(|g| match caseSensitive
+			{
+				false => g.name.to_lowercase().contains(&search),
+				true => g.name.contains(&search),
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		games.sort();
+		
+		return games;
+	}
+}
+
 impl RadioChannel<EgsUser> for GamePlatforms {}
 
 impl EgsUser
 {
 	pub const FileName: &str = "egs.json";
-	
-	pub fn filterGames(&self, search: impl Into<String>) -> Vec<EgsGame>
-	{
-		let text = search.into().to_lowercase();
-		let mut games = self.games.iter()
-			.filter(|g| g.name.to_lowercase().contains(&text))
-			.cloned()
-			.collect::<Vec<_>>();
-		games.sort();
-		
-		return games;
-	}
 	
 	pub fn getAchievement(&self, sandboxId: &String, achievementId: &String) -> Option<EgsAchievement>
 	{

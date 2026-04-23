@@ -1,5 +1,5 @@
 use anyhow::Result;
-use data::enums::GamePlatforms;
+use data::{enums::GamePlatforms, filter::{FilterCriteria, Filterable}};
 use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -20,6 +20,34 @@ pub struct Rpcs3User
 	pub points: u64,
 }
 
+impl Filterable<Game> for Rpcs3User
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Game>
+	{
+		let filter = filter.into();
+		
+		let caseSensitive = filter.caseSensitive;
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut games = self.games.iter()
+			.filter(|g| match caseSensitive
+			{
+				false => g.name.to_lowercase().contains(&search),
+				true => g.name.contains(&search),
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		games.sort();
+		
+		return games;
+	}
+}
+
 impl RadioChannel<Rpcs3User> for GamePlatforms {}
 
 impl Rpcs3User
@@ -31,18 +59,6 @@ impl Rpcs3User
 	{
 		self.points = self.games.iter()
 			.fold(0, |acc, g| acc + g.points());
-	}
-	
-	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
-	{
-		let searchText = search.into();
-		let mut games = self.games.iter()
-			.filter(|g| g.name.to_lowercase().contains(&searchText.to_lowercase()))
-			.cloned()
-			.collect::<Vec<_>>();
-		games.sort();
-		
-		return games;
 	}
 	
 	pub fn formatAccountId(&self) -> String

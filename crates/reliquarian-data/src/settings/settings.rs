@@ -12,6 +12,9 @@ pub struct AppSettings
 	pub defaultActivePlatform: ActiveContent,
 	
 	#[serde(default)]
+	pub displayGamesWithoutAchievements: bool,
+	
+	#[serde(default)]
 	pub enabledPlatforms: EnabledPlatforms,
 	
 	#[serde(default)]
@@ -29,6 +32,7 @@ impl Default for AppSettings
 		return Self
 		{
 			defaultActivePlatform: Default::default(),
+			displayGamesWithoutAchievements: bool::default(),
 			enabledPlatforms: Default::default(),
 			language: Default::default(),
 			notificationDuration: DefaultNotificationDuration,

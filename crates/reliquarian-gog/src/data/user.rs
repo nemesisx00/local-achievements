@@ -2,6 +2,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use chrono::serde::ts_seconds;
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -18,6 +19,36 @@ pub struct GogUser
 	pub games: Vec<Game>,
 	pub id: String,
 	pub name: String,
+}
+
+impl Filterable<Game> for GogUser
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Game>
+	{
+		let filter = filter.into();
+		
+		let allGames = filter.showAll;
+		let caseSensitive = filter.caseSensitive;
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut games = self.games.iter()
+			.filter(|g| allGames || g.hasAchievements.is_none_or(|b| b))
+			.filter(|g| match caseSensitive
+			{
+				false => g.name.to_lowercase().contains(&search),
+				true => g.name.contains(&search),
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		games.sort();
+		
+		return games;
+	}
 }
 
 impl RadioChannel<GogUser> for GamePlatforms {}
@@ -116,18 +147,6 @@ impl GogUser
 		}
 		
 		return Ok(user);
-	}
-	
-	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
-	{
-		let text = search.into().to_lowercase();
-		let mut games = self.games.iter()
-			.filter(|g| g.name.to_lowercase().contains(&text))
-			.cloned()
-			.collect::<Vec<_>>();
-		games.sort();
-		
-		return games;
 	}
 	
 	pub fn getAchievement(&self, gameId: impl Into<u64>, achievementId: impl Into<String>) -> Option<GogAchievement>

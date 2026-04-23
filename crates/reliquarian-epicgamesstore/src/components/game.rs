@@ -7,7 +7,12 @@ use data::enums::{DataChannel, GamePlatforms};
 use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
-use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement, KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign, TextStyleExt, VirtualScrollView, WritableUtils, label, rect, spawn, use_scroll_controller, use_side_effect, use_state};
+use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
+	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
+	EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement,
+	KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign,
+	TextStyleExt, VirtualScrollView, WritableUtils, label, rect, spawn,
+	use_scroll_controller, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, jpg};
 use net::{RateLimiter, RequestEvent};
@@ -50,6 +55,7 @@ impl Component for GameElement
 			locked: locked(),
 			nameOnly: nameOnly(),
 			text: search.read().clone(),
+			..Default::default()
 		});
 		let achievementsListLength = achievements.len();
 		

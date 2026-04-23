@@ -3,7 +3,7 @@ use data::io::saveAppSettings;
 use data::settings::{AppSettings, Language};
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
-	Gaps, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,
+	Gaps, IntoElement, MenuItem, Select, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, spawn, use_side_effect, use_state};
 use freya::radio::{IntoWritable, use_radio};
 use strum::IntoEnumIterator;
@@ -23,6 +23,7 @@ impl Component for UiSettings
 		let mut appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		
 		let mut defaultActiveContent = use_state(|| appSettings.read().defaultActivePlatform);
+		let mut displayGamesWithoutAchievements = use_state(|| appSettings.read().displayGamesWithoutAchievements);
 		let enabledBNet = use_state(|| appSettings.read().enabledPlatforms.battleNet);
 		let enabledEgs = use_state(|| appSettings.read().enabledPlatforms.epicGamesStores);
 		let enabledGog = use_state(|| appSettings.read().enabledPlatforms.gog);
@@ -33,6 +34,7 @@ impl Component for UiSettings
 		
 		use_side_effect(move || {
 			appSettings.write().defaultActivePlatform = defaultActiveContent.read().clone();
+			appSettings.write().displayGamesWithoutAchievements = displayGamesWithoutAchievements();
 			appSettings.write().enabledPlatforms.battleNet = enabledBNet();
 			appSettings.write().enabledPlatforms.epicGamesStores = enabledEgs();
 			appSettings.write().enabledPlatforms.gog = enabledGog();
@@ -137,6 +139,26 @@ impl Component for UiSettings
 												.into()
 										})
 									)
+							)
+					)
+					
+					.child(
+						rect()
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child("Show All Games")
+							
+							.child(
+								Switch::new()
+									.toggled(*displayGamesWithoutAchievements.read())
+									.on_toggle(move |_| {
+										let value = *displayGamesWithoutAchievements.read();
+										*displayGamesWithoutAchievements.write() = !value;
+									})
 							)
 					)
 			)

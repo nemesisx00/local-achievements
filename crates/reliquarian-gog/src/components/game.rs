@@ -55,6 +55,7 @@ impl Component for GameElement
 			locked: locked(),
 			nameOnly: nameOnly(),
 			text: search.read().clone(),
+			..Default::default()
 		});
 		
 		let achievementsListLength = achievements.len();

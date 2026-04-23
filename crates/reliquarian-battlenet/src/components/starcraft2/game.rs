@@ -46,6 +46,7 @@ impl Component for Sc2Element
 			locked: locked(),
 			nameOnly: nameOnly(),
 			text: search.read().clone(),
+			..Default::default()
 		});
 		
 		let achievementsLength = achievements.len();

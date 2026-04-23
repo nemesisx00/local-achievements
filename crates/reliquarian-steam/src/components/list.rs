@@ -3,8 +3,10 @@ use components::extensions::PressableExt;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	FileName_GameHeader, Path_Games, RetroAchievementsProgressColorBackground,
 	SteamContrast};
-use data::enums::GamePlatforms;
+use data::enums::{DataChannel, GamePlatforms};
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
+use data::settings::AppSettings;
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
 	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
@@ -24,12 +26,19 @@ impl Component for GameList
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let user = use_radio::<SteamUser, GamePlatforms>(GamePlatforms::Steam);
 		
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
 		let search = use_state(String::default);
 		
-		let games = user.read().filterGames(search.read().clone());
+		let games = user.read().filter(FilterCriteria
+		{
+			showAll: appSettings.read().displayGamesWithoutAchievements,
+			text: search.read().clone(),
+			..Default::default()
+		});
+		
 		let gamesLength = games.len();
 		
 		return rect()

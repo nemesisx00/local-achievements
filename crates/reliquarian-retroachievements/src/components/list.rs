@@ -8,6 +8,7 @@ use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
@@ -38,7 +39,12 @@ impl Component for GameList
 		let mut scrollController = use_scroll_controller(ScrollConfig::default);
 		let search = use_state(String::default);
 		
-		let games = user.read().filterGames(search.read().clone());
+		let games = user.read().filter(FilterCriteria
+		{
+			nameOnly: false,
+			text: search.read().clone(),
+			..Default::default()
+		});
 		let gamesLength = games.len();
 		
 		return rect()

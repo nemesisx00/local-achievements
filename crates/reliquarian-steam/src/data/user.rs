@@ -1,5 +1,6 @@
 use anyhow::Result;
 use data::enums::GamePlatforms;
+use data::filter::{FilterCriteria, Filterable};
 use freya::radio::RadioChannel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -30,6 +31,36 @@ pub struct SteamUser
 	/// The user's current publicly visible display name.
 	#[serde(default)]
 	pub name: String,
+}
+
+impl Filterable<Game> for SteamUser
+{
+	fn filter(&self, filter: impl Into<FilterCriteria>) -> Vec<Game>
+	{
+		let filter = filter.into();
+		
+		let allGames = filter.showAll;
+		let caseSensitive = filter.caseSensitive;
+		let search = match caseSensitive
+		{
+			false => filter.text.to_lowercase(),
+			true => filter.text.clone(),
+		};
+		
+		let mut games = self.games.iter()
+			.filter(|g| allGames || !g.loaded || g.hasAchievements)
+			.filter(|g| match caseSensitive
+			{
+				false => g.name.to_lowercase().contains(&search),
+				true => g.name.contains(&search),
+			})
+			.cloned()
+			.collect::<Vec<_>>();
+		
+		games.sort();
+		
+		return games;
+	}
 }
 
 impl RadioChannel<SteamUser> for GamePlatforms {}
@@ -116,18 +147,6 @@ impl SteamUser
 		}
 		
 		return Ok(user);
-	}
-	
-	pub fn filterGames(&self, search: impl Into<String>) -> Vec<Game>
-	{
-		let text = search.into().to_lowercase();
-		let mut games = self.games.iter()
-			.filter(|g| g.name.to_lowercase().contains(&text))
-			.cloned()
-			.collect::<Vec<_>>();
-		games.sort();
-		
-		return games;
 	}
 	
 	pub fn getGame(&self, appId: u64) -> Option<Game>
