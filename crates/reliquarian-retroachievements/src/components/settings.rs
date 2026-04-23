@@ -1,11 +1,13 @@
 use components::settings::switch::InputModeSwitch;
 use components::settings::util::separatorElement;
 use data::constants::InputModeHiddenChar;
+use data::enums::GamePlatforms;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
-	InputMode, IntoElement, Size, TextAlign, TextStyleExt, WritableUtils, label,
-	rect, use_hook, use_side_effect, use_state};
-use freya::radio::IntoWritable;
+	InputMode, IntoElement, Size, Switch, TextAlign, TextStyleExt,
+	WritableUtils, label, rect, use_hook, use_side_effect, use_state};
+use freya::radio::{IntoWritable, use_radio};
+use crate::data::settings::RetroAchievementsSettings;
 use crate::secure::{getRetroAchievementsAuth, setRetroAchievementsApiKey,
 	setRetroAchievementsUsername};
 
@@ -19,14 +21,19 @@ impl Component for RetroAchievementsSettingsElement
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let mut settings = use_radio::<RetroAchievementsSettings, GamePlatforms>(GamePlatforms::RetroAchievements);
+		
 		let mut apiKey = use_state(String::default);
-		let mut username = use_state(String::default);
 		let inputModeApiKey = use_state(|| InputMode::Hidden(InputModeHiddenChar));
 		let inputModeUsername = use_state(|| InputMode::Hidden(InputModeHiddenChar));
+		let mut showGameAwards = use_state(|| settings.read().showGameAwardBadges);
+		let mut username = use_state(String::default);
 		
 		use_side_effect(move || {
 			_ = setRetroAchievementsApiKey(apiKey.read().clone());
 			_ = setRetroAchievementsUsername(username.read().clone());
+			
+			settings.write().showGameAwardBadges = showGameAwards();
 		});
 		
 		use_hook(|| {
@@ -124,6 +131,35 @@ impl Component for RetroAchievementsSettingsElement
 					)
 					
 					.child(InputModeSwitch(inputModeApiKey.into_writable()))
+			)
+			
+			.child(
+				rect()
+					.content(Content::Flex)
+					.direction(Direction::Horizontal)
+					.main_align(Alignment::Center)
+					.spacing(10.0)
+					.width(Size::percent(75.0))
+					
+					.child(
+						rect()
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child("Show Award Badges in Games List")
+							
+							.child(
+								Switch::new()
+									.toggled(*showGameAwards.read())
+									.on_toggle(move |_| {
+										let value = *showGameAwards.read();
+										*showGameAwards.write() = !value;
+									})
+							)
+					)
 			);
 	}
 }

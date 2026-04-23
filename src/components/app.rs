@@ -31,7 +31,9 @@ use net::{DataOperation, RateLimiter, RequestEvent};
 use reqwest::Client;
 use retroachievements::components::content::RetroAchievementsContent;
 use retroachievements::components::refresh::handleRetroAchievementsOperation;
-use retroachievements::data::io::loadUserData_RetroAchievements;
+use retroachievements::data::io::{loadSettings_RetroAchievements,
+	loadUserData_RetroAchievements};
+use retroachievements::data::settings::RetroAchievementsSettings;
 use retroachievements::data::user::RetroAchievementsUser;
 use rpcs3::components::content::Rpcs3ContentElement;
 use rpcs3::data::io::{loadSettings_Rpcs3, loadUserData_Rpcs3};
@@ -71,6 +73,7 @@ impl App for LocalAchievementsApp
 		use_init_radio_station::<BattleNetUser, GamePlatforms>(loadUserData_BattleNet);
 		use_init_radio_station::<EgsUser, GamePlatforms>(loadUserData_EpicGamesStore);
 		use_init_radio_station::<GogUser, GamePlatforms>(loadUserData_Gog);
+		use_init_radio_station::<RetroAchievementsSettings, GamePlatforms>(loadSettings_RetroAchievements);
 		use_init_radio_station::<RetroAchievementsUser, GamePlatforms>(loadUserData_RetroAchievements);
 		use_init_radio_station::<Rpcs3Settings, GamePlatforms>(loadSettings_Rpcs3);
 		use_init_radio_station::<Rpcs3User, GamePlatforms>(loadUserData_Rpcs3);

@@ -1,9 +1,19 @@
 use std::io::ErrorKind;
 use anyhow::{Result, anyhow};
-use data::io::{getDataDir, readDataFromFile, readRawDataFromFile,
+use data::io::{getConfigDir, getDataDir, readDataFromFile, readRawDataFromFile,
 	writeDataToFile};
 use tracing::warn;
+use crate::data::settings::RetroAchievementsSettings;
 use crate::data::user::RetroAchievementsUser;
+
+/**
+Read the RetroAchievements settings data from file.
+*/
+pub fn loadSettings_RetroAchievements() -> RetroAchievementsSettings
+{
+	return loadSettings()
+		.unwrap_or_default();
+}
 
 pub fn loadUserData_RetroAchievements() -> RetroAchievementsUser
 {
@@ -16,6 +26,18 @@ pub fn loadUserData_RetroAchievements() -> RetroAchievementsUser
 				.unwrap_or_default()
 		},
 		Ok(user) => user,
+	};
+}
+
+/**
+Read the RetroAchievements settings data from file.
+*/
+fn loadSettings() -> Result<RetroAchievementsSettings>
+{
+	return match getConfigDir(false)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => readDataFromFile(dir, RetroAchievementsSettings::FileName.into()),
 	};
 }
 
@@ -43,6 +65,18 @@ fn loadUserData_lossy() -> Result<RetroAchievementsUser>
 			let json = readRawDataFromFile(dir, RetroAchievementsUser::FileName.into())?;
 			RetroAchievementsUser::parseJsonLossy(json)
 		},
+	};
+}
+
+/**
+Write the RetroAchievements settings data to file.
+*/
+pub fn saveSettings(auth: &RetroAchievementsSettings) -> Result<()>
+{
+	return match getConfigDir(true)
+	{
+		None => Err(anyhow!(ErrorKind::NotFound)),
+		Some(dir) => writeDataToFile(dir, RetroAchievementsSettings::FileName.into(), auth),
 	};
 }
 

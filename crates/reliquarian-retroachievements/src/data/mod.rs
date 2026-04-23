@@ -7,6 +7,7 @@ pub mod operation;
 pub mod progress;
 pub mod rank;
 pub mod result;
+pub mod settings;
 pub mod system;
 pub mod user;
 

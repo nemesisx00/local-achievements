@@ -1,22 +1,29 @@
 use std::path::PathBuf;
 use components::extensions::PressableExt;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
-	FileName_GameIcon, Path_Games, RetroAchievementsProgressColorBackground,
+	FileName_GameIcon, Path_Games, RetroAchievementsGameBeaten,
+	RetroAchievementsGameBeatenCasual, RetroAchievementsGameComplete,
+	RetroAchievementsGameMastered, RetroAchievementsGameUnfinished,
+	RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorCasual,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
-use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
-	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
-	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
-	Input, IntoElement, KeyboardEventData, Layer, LayerExt, Position,
-	ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size,
-	Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label,
-	paragraph, rect, use_scroll_controller, use_state};
+use freya::icons::lucide;
+use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
+	ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt,
+	ContainerWithContentExt, Content, Direction, Event, EventHandlersExt,
+	FontWeight, Gaps, ImageViewer, Input, IntoElement, KeyboardEventData, Layer,
+	LayerExt, Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
+	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
+	VirtualScrollView, label, paragraph, rect, svg, use_scroll_controller,
+	use_state};
 use freya::radio::{IntoWritable, use_radio};
 use macros::{join, png};
 use crate::api::RetroAchievementsApi;
+use crate::data::kind::AwardKind;
 use crate::data::mode::RetroAchievementsMode;
+use crate::data::settings::RetroAchievementsSettings;
 use crate::data::user::RetroAchievementsUser;
 
 #[derive(Clone, PartialEq)]
@@ -99,6 +106,7 @@ impl Component for GameListNode
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let settings = use_radio::<RetroAchievementsSettings, GamePlatforms>(GamePlatforms::RetroAchievements);
 		let user = use_radio::<RetroAchievementsUser, GamePlatforms>(GamePlatforms::RetroAchievements);
 		let mut selectedGameId = use_radio::<Option<u64>, GamePlatforms>(GamePlatforms::RetroAchievements);
 		
@@ -118,6 +126,12 @@ impl Component for GameListNode
 		{
 			false => Color::TRANSPARENT,
 			true => ButtonBackgroundColor,
+		};
+		
+		let awardImage = match settings.read().showGameAwardBadges
+		{
+			false => None,
+			true => awardImageElement(game.highestAward)
 		};
 		
 		let progressCasual = game.percentUnlocked(RetroAchievementsMode::Casual);
@@ -151,6 +165,7 @@ impl Component for GameListNode
 					))
 					.content(Content::Flex)
 					.corner_radius(CornerRadius)
+					.cross_align(Alignment::Center)
 					.direction(Direction::Horizontal)
 					.min_width(Size::px(540.0))
 					.padding(Gaps::new_symmetric(10.0, 15.0))
@@ -195,6 +210,8 @@ impl Component for GameListNode
 									)
 							)
 					)
+					
+					.maybe_child(awardImage)
 					
 					.child(
 						rect()
@@ -281,4 +298,52 @@ impl GameListNode
 			gameId: gameId.into(),
 		};
 	}
+}
+
+fn awardImageElement(award: Option<AwardKind>) -> Option<impl IntoElement>
+{
+	let size = Size::px(24.0);
+	
+	return match award
+	{
+		None => None,
+		Some(award) => match award
+		{
+			AwardKind::BeatenCasual => Some(
+				svg(lucide::circle())
+					.a11y_alt("Beaten (Casual)")
+					.color(RetroAchievementsGameBeatenCasual)
+					.fill(RetroAchievementsGameUnfinished)
+					.height(size.clone())
+					.width(size.clone())
+			),
+			
+			AwardKind::BeatenHardcore => Some(
+				svg(lucide::circle())
+					.a11y_alt("Beaten")
+					.color(RetroAchievementsGameBeaten)
+					.fill(RetroAchievementsGameBeaten)
+					.height(size.clone())
+					.width(size.clone())
+			),
+			
+			AwardKind::Completed => Some(
+				svg(lucide::circle())
+					.a11y_alt("Completed")
+					.color(RetroAchievementsGameComplete)
+					.fill(RetroAchievementsGameUnfinished)
+					.height(size.clone())
+					.width(size.clone())
+			),
+			
+			AwardKind::Mastered => Some(
+				svg(lucide::circle())
+					.a11y_alt("Mastered")
+					.color(RetroAchievementsGameMastered)
+					.fill(RetroAchievementsGameMastered)
+					.height(size.clone())
+					.width(size.clone())
+			),
+		}
+	};
 }
