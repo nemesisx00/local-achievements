@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use strum_macros::AsRefStr;
 use super::Variables;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -33,21 +32,8 @@ pub struct BaseOfferForSandbox
 pub struct KeyImage
 {
 	pub url: String,
-	pub r#type: KeyImageType,
-	pub alt: String,
-}
-
-#[derive(AsRefStr, Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub enum KeyImageType
-{
-	#[serde(alias = "featuredMedia")]
-	FeaturedMedia,
-	#[serde(alias = "heroCarouselVideo")]
-	HeroCarouselVideo,
-	#[default]
-	OfferImageWide,
-	OfferImageTall,
-	Thumbnail,
+	pub r#type: String,
+	pub alt: Option<String>,
 }
 
 #[allow(non_camel_case_types)]

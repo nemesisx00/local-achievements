@@ -3,7 +3,7 @@ use data::io::FileLocation;
 use macros::{join, jpg, png};
 use net::{DataOperation, DataRequest};
 use tracing::{info, warn};
-use crate::api::{EgsApi, KeyImageType};
+use crate::api::EgsApi;
 use crate::data::io::saveUserData;
 use crate::data::operation::EgsOperation;
 use crate::data::result::EgsOperationResult;
@@ -216,7 +216,7 @@ fn refreshEgsPlayerProfilePrivate(mut user: EgsUser) -> EgsOperationResult
 				for summary in payload.data.PlayerProfile.playerProfile.achievementsSummaries.data.iter()
 				{
 					if let Some(keyImage) = summary.baseOfferForSandbox.keyImages.iter()
-						.find(|ki| ki.r#type == KeyImageType::OfferImageWide)
+						.find(|ki| &ki.r#type == "OfferImageWide")
 					{
 						requests.push(DataRequest
 						{
