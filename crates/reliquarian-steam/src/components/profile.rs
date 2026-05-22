@@ -7,7 +7,7 @@ use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
-	Size, StyleExt, rect, spawn};
+	Size, StyleExt, label, rect, spawn};
 use freya::radio::use_radio;
 use net::{RateLimiter, RequestEvent};
 use crate::api::SteamApi;
@@ -67,7 +67,11 @@ impl Component for SteamProfile
 					.main_align(Alignment::SpaceBetween)
 					.width(Size::flex(1.0))
 					
-					.child(username)
+					.child(
+						label()
+							.min_width(Size::px(10.0))
+							.text(username)
+					)
 					
 					.child(
 						IconButton::new(lucide::refresh_ccw())

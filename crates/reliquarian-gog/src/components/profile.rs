@@ -117,7 +117,11 @@ impl Component for GogUserProfile
 					.main_align(Alignment::SpaceBetween)
 					.width(Size::flex(1.0))
 					
-					.child(username)
+					.child(
+						label()
+							.min_width(Size::px(10.0))
+							.text(username)
+					)
 					
 					.child(
 						IconButton::new(lucide::refresh_ccw())

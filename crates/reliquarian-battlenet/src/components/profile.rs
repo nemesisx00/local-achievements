@@ -8,7 +8,7 @@ use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
-	Size, StyleExt, WritableUtils, rect, spawn, use_side_effect, use_state};
+	Size, StyleExt, WritableUtils, label, rect, spawn, use_side_effect, use_state};
 use freya::radio::use_radio;
 use macros::jpgAlt;
 use net::{RateLimiter, RequestEvent};
@@ -115,7 +115,11 @@ impl Component for BattleNetUserProfile
 					.spacing(5.0)
 					.width(Size::flex(1.0))
 					
-					.child(user.read().battleTag.clone())
+					.child(
+						label()
+							.min_width(Size::px(10.0))
+							.text(user.read().battleTag.clone())
+					)
 					
 					.child(
 						IconButton::new(lucide::refresh_ccw())

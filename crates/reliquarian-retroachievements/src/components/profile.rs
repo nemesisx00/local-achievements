@@ -133,7 +133,11 @@ impl Component for RetroAchievementsUserProfile
 									.spacing(5.0)
 									.width(Size::flex(1.0))
 									
-									.child(username)
+									.child(
+										label()
+											.min_width(Size::px(10.0))
+											.text(username)
+									)
 									
 									.child(
 										paragraph()
