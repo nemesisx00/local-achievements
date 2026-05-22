@@ -6,6 +6,7 @@ pub enum DataOperation
 {
 	CacheImage(bool),
 	Platform(GamePlatforms, String),
+	PlatformBool(GamePlatforms, String, bool),
 	PlatformGameId(GamePlatforms, String, u64),
 	PlatformGameIdBool(GamePlatforms, String, u64, bool),
 	PlatformGameIdString(GamePlatforms, String, String),

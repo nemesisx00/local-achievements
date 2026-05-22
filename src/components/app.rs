@@ -330,6 +330,12 @@ fn processRateLimiter(
 								_ => {}
 							}
 							
+							DataOperation::PlatformBool(platform, _, _) => match platform
+							{
+								GamePlatforms::Steam => processSteamResult(request.operation, steamUser, rateLimiter, language).await,
+								_ => {}
+							}
+							
 							DataOperation::PlatformGameId(platform, _, _) => match platform
 							{
 								GamePlatforms::Gog => processGogResult(request.operation, gogUser, rateLimiter).await,

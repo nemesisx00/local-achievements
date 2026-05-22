@@ -91,7 +91,7 @@ impl Component for SteamProfile
 										ops.push(SteamOperation::GetSharedLibraryApps.into());
 									}
 									
-									ops.push(SteamOperation::GetGameList.into());
+									ops.push(SteamOperation::GetGameList(true).into());
 									ops.push(SteamOperation::SaveToFile.into());
 									
 									rateLimiter.read().pushAll(ops).await;

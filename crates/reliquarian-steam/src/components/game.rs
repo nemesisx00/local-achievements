@@ -117,7 +117,7 @@ impl Component for GameElement
 										SteamOperation::GetPlayerAchievements(gameId).into(),
 										SteamOperation::GetGlobalPercentages(gameId).into(),
 										SteamOperation::SetGameLoaded(gameId, true).into(),
-										SteamOperation::GetGameList.into(), // Primarily to update the `lastPlayed` value without having to do the profile refresh
+										SteamOperation::GetGameList(false).into(), // Update the `lastPlayed` value without having to do the profile refresh
 										SteamOperation::SaveToFile.into(),
 									]).await;
 									

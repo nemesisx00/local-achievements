@@ -19,8 +19,8 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 		Err(_) => None,
 		Ok(operation) => match operation
 		{
-			SteamOperation::GetGameList => {
-				let user = refreshGameList(user).await;
+			SteamOperation::GetGameList(refreshImages) => {
+				let user = refreshGameList(user, refreshImages).await;
 				info!("[Steam API] Refreshed game list");
 				
 				Some(user.into())
@@ -91,7 +91,7 @@ pub async fn handleSteamOperation(mut user: SteamUser, dataOperation: DataOperat
 	};
 }
 
-async fn refreshGameList(mut user: SteamUser) -> SteamOperationResult
+async fn refreshGameList(mut user: SteamUser, refreshImages: bool) -> SteamOperationResult
 {
 	let mut requests = vec![];
 	if getSteamAuth().is_ok_and(|a| a.validate())
@@ -100,11 +100,14 @@ async fn refreshGameList(mut user: SteamUser) -> SteamOperationResult
 		if let Ok(payload) = api.getOwnedGames().await
 		{
 			user.processOwnedGames(payload);
-			
-			// Cache game images
-			for game in user.games.iter()
+
+			if refreshImages
 			{
-				requests.push(SteamOperation::GetGameImage(game.id, false).into());
+				// Cache game images
+				for game in user.games.iter()
+				{
+					requests.push(SteamOperation::GetGameImage(game.id, false).into());
+				}
 			}
 		}
 	}

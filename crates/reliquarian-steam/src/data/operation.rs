@@ -7,7 +7,7 @@ use strum_macros::{AsRefStr, EnumString};
 #[derive(AsRefStr, Clone, Copy, Debug, Eq, EnumString, PartialEq, PartialOrd, Ord)]
 pub enum SteamOperation
 {
-	GetGameList,
+	GetGameList(bool),
 	GetGlobalPercentages(u64),
 	GetGameImage(u64, bool),
 	GetPlayerAchievements(u64),
@@ -24,12 +24,18 @@ impl From<SteamOperation> for DataOperation
 	{
 		return match value
 		{
-			SteamOperation::GetGameList
-				| SteamOperation::GetPlayerSummary
+			SteamOperation::GetPlayerSummary
 				| SteamOperation::GetSharedLibraryApps
 			=> DataOperation::Platform(
 				GamePlatforms::Steam,
 				value.as_ref().to_string()
+			),
+
+			SteamOperation::GetGameList(refreshImages)
+			=> DataOperation::PlatformBool(
+				GamePlatforms::Steam,
+				value.as_ref().to_string(),
+				refreshImages
 			),
 			
 			SteamOperation::GetGlobalPercentages(gameId)
@@ -80,12 +86,23 @@ impl TryFrom<DataOperation> for SteamOperation
 				{
 					GamePlatforms::Steam => match SteamOperation::from_str(&operationName)?
 					{
-						Self::GetGameList => Ok(Self::GetGameList),
 						Self::GetPlayerSummary => Ok(Self::GetPlayerSummary),
 						Self::GetSharedLibraryApps => Ok(Self::GetSharedLibraryApps),
 						_ => Err(anyhow!("Invalid Steam operation")),
 					},
 					_ => Err(anyhow!("Invalid Steam operation")),
+				}
+			
+			DataOperation::PlatformBool(platform, operationName, refreshImages)
+				=> match platform
+				{
+					GamePlatforms::Steam => match SteamOperation::from_str(&operationName)?
+					{
+						Self::GetGameList(_) => Ok(Self::GetGameList(refreshImages)),
+						_ => Err(anyhow!("Steam operation parameter mismatch"))
+					}
+					
+					_ => Err(anyhow!("Invalid Steam operation"))
 				}
 			
 			DataOperation::PlatformGameId(platform, operationName, gameId)
