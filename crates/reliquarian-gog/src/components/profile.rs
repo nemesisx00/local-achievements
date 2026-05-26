@@ -5,6 +5,7 @@ use data::constants::{BorderColor, CornerRadius, OverlayBackgroundColor,
 	OverlayGreyoutColor, Path_Avatars};
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
+use data::settings::AppSettings;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth, Button,
 	ButtonLayoutThemePartialExt, ChildrenExt, Component, ContainerExt,
@@ -29,6 +30,7 @@ impl Component for GogUserProfile
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let user = use_radio::<GogUser, GamePlatforms>(GamePlatforms::Gog);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
@@ -134,6 +136,10 @@ impl Component for GogUserProfile
 								if validSession
 								{
 									showConfirmationDialog.set(true);
+									if appSettings.read().hideRefreshOverlay
+									{
+										confirmed.set(true);
+									}
 								}
 								else
 								{

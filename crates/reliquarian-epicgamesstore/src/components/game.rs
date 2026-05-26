@@ -66,24 +66,21 @@ impl Component for GameElement
 		use_side_effect(move || {
 			if (cancelled() || confirmed()) && showConfirmationDialog()
 			{
-				if confirmed()
+				if confirmed() && !sandboxId.is_empty()
 				{
-					if !sandboxId.is_empty()
-					{
-						spawn({
-							let productId = game.productId.clone();
-							let sandboxId = sandboxId.clone();
-							async move {
-								rateLimiter.read().pushAll(vec![
-									EgsOperation::GetAchievementsList(sandboxId).into(),
-									EgsOperation::GetAchievementProgress(productId).into(),
-									EgsOperation::SaveToFile.into(),
-								]).await;
-								
-								**requestEvent.write() = RequestEvent::Added;
-							}
-						});
-					}
+					spawn({
+						let productId = game.productId.clone();
+						let sandboxId = sandboxId.clone();
+						async move {
+							rateLimiter.read().pushAll(vec![
+								EgsOperation::GetAchievementsList(sandboxId).into(),
+								EgsOperation::GetAchievementProgress(productId).into(),
+								EgsOperation::SaveToFile.into(),
+							]).await;
+							
+							**requestEvent.write() = RequestEvent::Added;
+						}
+					});
 				}
 				
 				cancelled.set(false);
@@ -142,7 +139,13 @@ impl Component for GameElement
 					.child(
 						IconButton::new(lucide::refresh_ccw())
 							.alt("Refresh")
-							.onPress(move |_| showConfirmationDialog.set(true))
+							.onPress(move |_| {
+								showConfirmationDialog.set(true);
+								if appSettings.read().hideRefreshOverlay
+								{
+									confirmed.set(true);
+								}
+							})
 					)
 			)
 			

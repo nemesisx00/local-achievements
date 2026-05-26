@@ -1,13 +1,16 @@
 use data::constants::{BorderColor, OverlayBackgroundColor, OverlayGreyoutColor};
 use data::enums::DataChannel;
+use data::io::saveAppSettings;
+use data::settings::AppSettings;
 use freya::prelude::{Alignment, Border, BorderAlignment, Button,
 	ButtonLayoutThemePartialExt, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, CornerRadius, Direction,
 	FontWeight, Gaps, IntoElement, Layer, LayerExt, Position, Size, StyleExt,
-	TextAlign, TextStyleExt, WritableUtils, label, rect, use_side_effect,
-	use_state};
+	Switch, TextAlign, TextStyleExt, WritableUtils, label, rect, spawn,
+	use_side_effect, use_state};
 use freya::radio::{Writable, use_radio};
 use freya::winit::dpi::PhysicalSize;
+use tracing::{info, warn};
 
 #[derive(Clone, PartialEq)]
 pub struct ConfirmRefresh
@@ -15,7 +18,7 @@ pub struct ConfirmRefresh
 	cancelled: Writable<bool>,
 	confirmed: Writable<bool>,
 	
-	/// Set the `cancelled` `Writable` to `false`` when Cancel is clicked rather than `true`.
+	/// Set the `cancelled` `Writable` to `false` when Cancel is clicked rather than `true`.
 	invertCancelled: bool,
 }
 
@@ -23,10 +26,12 @@ impl Component for ConfirmRefresh
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let mut appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let windowSize = use_radio::<PhysicalSize<u32>, DataChannel>(DataChannel::WindowSize);
 		
 		let mut cancelledState = use_state(bool::default);
 		let mut confirmedState = use_state(bool::default);
+		let mut hideRefreshOverlay = use_state(|| appSettings.read().hideRefreshOverlay);
 		
 		use_side_effect({
 			let mut cancelled = self.cancelled.clone();
@@ -34,6 +39,16 @@ impl Component for ConfirmRefresh
 			move || {
 				*cancelled.write() = cancelledState();
 				*confirmed.write() = confirmedState();
+
+				appSettings.write().hideRefreshOverlay = hideRefreshOverlay();
+				
+				spawn(async move {
+					match saveAppSettings(&appSettings.read())
+					{
+						Err(e) => warn!("[Reliquarian] Error saving app settings: {:?}", e),
+						Ok(_) => info!("[Reliquarian] Saved app settings"),
+					}
+				});
 			}
 		});
 		
@@ -108,10 +123,32 @@ impl Component for ConfirmRefresh
 									.text("Do you want to continue?")
 							)
 					)
+
+					.child(
+						rect()
+							.content(Content::Flex)
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(15.0)
+							.width(Size::percent(100.0))
+
+							.child(
+								Switch::new()
+									.toggled(hideRefreshOverlay())
+									.on_toggle(move |_| {
+										let value = hideRefreshOverlay();
+										hideRefreshOverlay.set(!value);
+									})
+							)
+							
+							.child("Do not show this again")
+					)
 					
 					.child(
 						rect()
 							.content(Content::Flex)
+							.cross_align(Alignment::Center)
 							.direction(Direction::Horizontal)
 							.main_align(Alignment::SpaceEvenly)
 							.spacing(15.0)

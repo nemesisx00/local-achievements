@@ -3,7 +3,7 @@ use data::io::saveAppSettings;
 use data::settings::{AppSettings, Language};
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
-	Gaps, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,
+	Gaps, IntoElement, MenuItem, Select, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, spawn, use_side_effect, use_state};
 use freya::radio::use_radio;
 use strum::IntoEnumIterator;
@@ -29,6 +29,7 @@ impl Component for UiSettings
 		let enabledRA = use_state(|| appSettings.read().enabledPlatforms.retroAchievements);
 		let enabledRpcs3 = use_state(|| appSettings.read().enabledPlatforms.rpcs3);
 		let enabledSteam = use_state(|| appSettings.read().enabledPlatforms.steam);
+		let mut hideRefreshOverlay = use_state(|| appSettings.read().hideRefreshOverlay);
 		let mut language = use_state(|| appSettings.read().language.clone());
 		
 		use_side_effect(move || {
@@ -39,6 +40,7 @@ impl Component for UiSettings
 			appSettings.write().enabledPlatforms.retroAchievements = enabledRA();
 			appSettings.write().enabledPlatforms.rpcs3 = enabledRpcs3();
 			appSettings.write().enabledPlatforms.steam = enabledSteam();
+			appSettings.write().hideRefreshOverlay = hideRefreshOverlay();
 			appSettings.write().language = language.read().clone();
 			
 			spawn(async move {
@@ -137,6 +139,26 @@ impl Component for UiSettings
 												.into()
 										})
 									)
+							)
+					)
+					
+					.child(
+						rect()
+							.cross_align(Alignment::Center)
+							.direction(Direction::Horizontal)
+							.main_align(Alignment::Center)
+							.spacing(10.0)
+							.width(Size::flex(1.0))
+							
+							.child("Show Refresh Dialog")
+							
+							.child(
+								Switch::new()
+									.toggled(hideRefreshOverlay())
+									.on_toggle(move |_| {
+										let value = hideRefreshOverlay();
+										hideRefreshOverlay.set(!value);
+									})
 							)
 					)
 			)

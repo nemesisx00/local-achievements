@@ -17,6 +17,9 @@ pub struct AppSettings
 	
 	#[serde(default)]
 	pub enabledPlatforms: EnabledPlatforms,
+
+	#[serde(default)]
+	pub hideRefreshOverlay: bool,
 	
 	#[serde(default)]
 	pub language: Language,
@@ -35,6 +38,7 @@ impl Default for AppSettings
 			defaultActivePlatform: Default::default(),
 			filterCriteria: Default::default(),
 			enabledPlatforms: Default::default(),
+			hideRefreshOverlay: Default::default(),
 			language: Default::default(),
 			notificationDuration: DefaultNotificationDuration,
 		};

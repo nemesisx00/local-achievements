@@ -4,6 +4,7 @@ use components::overlay::refresh::ConfirmRefresh;
 use data::constants::{BorderColor, CornerRadius, Path_Avatars};
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
+use data::settings::AppSettings;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,
@@ -23,6 +24,7 @@ impl Component for EgsUserProfile
 {
 	fn render(&self) -> impl IntoElement
 	{
+		let appSettings = use_radio::<AppSettings, DataChannel>(DataChannel::Settings);
 		let user = use_radio::<EgsUser, GamePlatforms>(GamePlatforms::EpicGamesStore);
 		let rateLimiter = use_radio::<RateLimiter, DataChannel>(DataChannel::RateLimiter);
 		let mut requestEvent = use_radio::<RequestEvent, DataChannel>(DataChannel::RateLimiter);
@@ -105,7 +107,13 @@ impl Component for EgsUserProfile
 							.innerHeight(Size::px(24.0))
 							.innerWidth(Size::px(24.0))
 							.width(Size::px(32.0))
-							.onPress(move |_| showConfirmationDialog.set(true))
+							.onPress(move |_| {
+								showConfirmationDialog.set(true);
+								if appSettings.read().hideRefreshOverlay
+								{
+									confirmed.set(true);
+								}
+							})
 					)
 			)
 			

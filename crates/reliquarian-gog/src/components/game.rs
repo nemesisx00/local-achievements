@@ -139,7 +139,13 @@ impl Component for GameElement
 					.child(
 						IconButton::new(lucide::refresh_ccw())
 							.alt("Refresh")
-							.onPress(move |_| showConfirmationDialog.set(true))
+							.onPress(move |_| {
+								showConfirmationDialog.set(true);
+								if appSettings.read().hideRefreshOverlay
+								{
+									confirmed.set(true);
+								}
+							})
 					)
 			)
 			
