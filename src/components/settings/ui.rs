@@ -150,7 +150,7 @@ impl Component for UiSettings
 							.spacing(10.0)
 							.width(Size::flex(1.0))
 							
-							.child("Show Refresh Dialog")
+							.child("Hide Refresh Dialog")
 							
 							.child(
 								Switch::new()
