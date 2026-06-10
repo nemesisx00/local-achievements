@@ -10,7 +10,7 @@ use freya::prelude::{ButtonLayoutThemePreference, ColorsSheet, Gaps, Preference,
 	ProgressBarThemePreference, Size, Theme, dark_theme};
 use securestore::{KeySource, SecretsManager};
 use tokio::sync::Mutex;
-use crate::constants::{BorderColor, ButtonBackgroundColor, ButtonHoverColor,
+use crate::constants::{BorderColor, ButtonBackgroundColor,
 	CornerRadius, RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorCasual, TextColor};
 use crate::io::{getSecretsKeyPath, getSecretsVaultPath};
@@ -50,7 +50,6 @@ pub fn localAchievementsTheme() -> Theme {
 		background: ButtonBackgroundColor,
 		border: BorderColor,
 		border_focus: BorderColor,
-		hover: ButtonHoverColor,
 		text_primary: TextColor,
 		..dark_theme().colors
 	};
