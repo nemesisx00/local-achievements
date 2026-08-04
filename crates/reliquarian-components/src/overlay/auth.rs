@@ -1,5 +1,6 @@
 use data::constants::{BorderColor, OverlayBackgroundColor, OverlayGreyoutColor};
 use data::enums::DataChannel;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Border, BorderAlignment, Button,
 	ButtonLayoutThemePartialExt, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, CornerRadius, Direction,

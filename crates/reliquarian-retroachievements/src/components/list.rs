@@ -12,6 +12,8 @@ use data::enums::{DataChannel, GamePlatforms};
 use data::filter::Filterable;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use data::settings::AppSettings;
+use freya::components::SvgViewer;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt,
@@ -19,7 +21,7 @@ use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	FontWeight, Gaps, ImageViewer, IntoElement, KeyboardEventData, Layer,
 	LayerExt, Position, ProgressBar, ProgressBarThemePartialExt, ScrollConfig,
 	ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
-	VirtualScrollView, label, paragraph, rect, svg, use_scroll_controller,
+	VirtualScrollView, label, paragraph, rect, use_scroll_controller,
 	use_side_effect, use_state};
 use freya::radio::use_radio;
 use macros::{join, png};
@@ -323,7 +325,7 @@ fn awardImageElement(award: Option<AwardKind>) -> Option<impl IntoElement>
 		Some(award) => match award
 		{
 			AwardKind::BeatenCasual => Some(
-				svg(lucide::circle())
+				SvgViewer::new(lucide::circle())
 					.a11y_alt("Beaten (Casual)")
 					.color(RetroAchievementsGameBeatenCasual)
 					.fill(RetroAchievementsGameUnfinished)
@@ -332,7 +334,7 @@ fn awardImageElement(award: Option<AwardKind>) -> Option<impl IntoElement>
 			),
 			
 			AwardKind::BeatenHardcore => Some(
-				svg(lucide::circle())
+				SvgViewer::new(lucide::circle())
 					.a11y_alt("Beaten")
 					.color(RetroAchievementsGameBeaten)
 					.fill(RetroAchievementsGameBeaten)
@@ -341,7 +343,7 @@ fn awardImageElement(award: Option<AwardKind>) -> Option<impl IntoElement>
 			),
 			
 			AwardKind::Completed => Some(
-				svg(lucide::circle())
+				SvgViewer::new(lucide::circle())
 					.a11y_alt("Completed")
 					.color(RetroAchievementsGameComplete)
 					.fill(RetroAchievementsGameUnfinished)
@@ -350,7 +352,7 @@ fn awardImageElement(award: Option<AwardKind>) -> Option<impl IntoElement>
 			),
 			
 			AwardKind::Mastered => Some(
-				svg(lucide::circle())
+				SvgViewer::new(lucide::circle())
 					.a11y_alt("Mastered")
 					.color(RetroAchievementsGameMastered)
 					.fill(RetroAchievementsGameMastered)

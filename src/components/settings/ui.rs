@@ -1,7 +1,8 @@
 use data::enums::{ActiveContent, DataChannel};
 use data::io::saveAppSettings;
 use data::settings::{AppSettings, Language};
-use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
+use freya::elements::extensions::ContainerPositionExt;
+use freya::prelude::{Alignment, ChildrenExt, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
 	Gaps, IntoElement, MenuItem, Select, Size, Switch, TextAlign, TextStyleExt,
 	WritableUtils, label, rect, spawn, use_side_effect, use_state};

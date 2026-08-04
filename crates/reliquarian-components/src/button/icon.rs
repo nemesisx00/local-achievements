@@ -1,7 +1,9 @@
 use data::constants::TextColor;
+use freya::components::SvgViewer;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{AccessibilityExt, Button, ButtonLayoutThemePartialExt,
-	Bytes, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt, Event,
-	EventHandler, Gaps, IntoElement, Position, PressEventData, Size, rect, svg};
+	Bytes, ChildrenExt, Color, Component, ContainerSizeExt, Event,
+	EventHandler, Gaps, IntoElement, Position, PressEventData, Size, rect};
 
 #[derive(Clone, PartialEq)]
 pub struct IconButton
@@ -38,7 +40,7 @@ impl Component for IconButton
 					.width(self.width.clone())
 					
 					.child(
-						svg(self.icon.clone())
+						SvgViewer::new(self.icon.clone())
 							.color(self.color.clone())
 							.height(self.innerHeight.clone())
 							.width(self.innerWidth.clone())

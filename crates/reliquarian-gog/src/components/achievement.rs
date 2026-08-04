@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Component,
 	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction,
 	Gaps, ImageViewer, IntoElement, Size, StyleExt, TextStyleExt, label, rect};

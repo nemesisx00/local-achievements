@@ -3,6 +3,7 @@ use components::button::icon::IconButton;
 use data::constants::{BorderColor, CornerRadius, Path_Avatars};
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,

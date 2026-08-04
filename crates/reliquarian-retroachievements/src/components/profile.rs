@@ -8,12 +8,14 @@ use data::constants::{BorderColor, CornerRadius, Path_Avatars,
 use data::enums::{DataChannel, GamePlatforms};
 use data::io::{FileLocation, filePathExists, getImagePath};
 use data::settings::AppSettings;
+use freya::components::SvgViewer;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	BorderWidth, ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, ImageViewer, IntoElement,
 	Size, Span, StyleExt, TextStyleExt, WritableUtils, label, paragraph, rect,
-	spawn, svg, use_side_effect, use_state};
+	spawn, use_side_effect, use_state};
 use freya::radio::use_radio;
 use macros::png;
 use net::{RateLimiter, RequestEvent};
@@ -213,7 +215,7 @@ fn awardElement(award: AwardKind, height: impl Into<Size>, value: usize) -> impl
 {
 	let height = height.into();
 	
-	let mut circle = svg(lucide::circle())
+	let mut circle = SvgViewer::new(lucide::circle())
 		.height(Size::px(12.0))
 		.width(Size::px(12.0));
 	

@@ -4,6 +4,7 @@ use components::settings::util::separatorElement;
 use data::constants::{BorderColor, ButtonBackgroundColor, CornerRadius,
 	InputModeHiddenChar, LinkBlue};
 use data::enums::GamePlatforms;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	BorderWidth, ChildrenExt, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, Input, InputMode,

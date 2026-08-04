@@ -2,8 +2,9 @@ use data::constants::TextColor;
 use data::enums::DataChannel;
 use data::io::saveAppSettings;
 use data::settings::AppSettings;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
-use freya::prelude::{Alignment, Checkbox, ChildrenExt, Component, ContainerExt,
+use freya::prelude::{Alignment, Checkbox, ChildrenExt, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	IntoElement, Size, Tile, WritableUtils, rect, spawn, use_side_effect,
 	use_state};

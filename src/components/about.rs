@@ -2,6 +2,7 @@ use components::button::icon::IconButton;
 use components::extensions::PressableExt;
 use data::constants::{BorderColor, LinkBlue, OverlayBackgroundColor, OverlayGreyoutColor, TextColor};
 use data::enums::DataChannel;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	ChildrenExt, Component, ContainerExt, ContainerSizeExt,

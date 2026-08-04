@@ -3,6 +3,7 @@ use components::button::icon::IconButton;
 use data::constants::{BackgroundColor, BorderColor, TextColor};
 use data::enums::{ActiveContent, DataChannel};
 use data::settings::AppSettings;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{AccessibilityExt, Alignment, Border, BorderAlignment,
 	BorderWidth, Button, ButtonLayoutThemePartialExt, ChildrenExt,

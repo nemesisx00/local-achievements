@@ -1,6 +1,7 @@
 use components::input::number::NumericInput;
 use data::enums::DataChannel;
 use data::settings::AppSettings;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps,
 	IntoElement, Size, TextAlign, TextStyleExt, label, rect, use_side_effect,

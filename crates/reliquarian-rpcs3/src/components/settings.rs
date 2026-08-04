@@ -1,6 +1,7 @@
 use components::input::number::NumericInput;
 use components::settings::util::separatorElement;
 use data::enums::GamePlatforms;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	IntoElement, Size, TextAlign, TextStyleExt, label, rect, spawn,

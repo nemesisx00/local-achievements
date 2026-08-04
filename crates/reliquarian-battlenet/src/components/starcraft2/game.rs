@@ -2,7 +2,8 @@ use components::input::filter::AchievementsFilter;
 use data::enums::{DataChannel, GamePlatforms};
 use data::filter::Filterable;
 use data::settings::AppSettings;
-use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
+use freya::elements::extensions::ContainerPositionExt;
+use freya::prelude::{Alignment, ChildrenExt, Code, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, Gaps, IntoElement, KeyboardEventData, ScrollConfig,
 	ScrollPosition, Size, VirtualScrollView, rect, use_scroll_controller,

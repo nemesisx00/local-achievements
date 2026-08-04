@@ -1,6 +1,7 @@
 use data::constants::BorderColor;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
-	ChildrenExt, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	ChildrenExt, ContainerSizeExt, ContainerWithContentExt,
 	Direction, Gaps, IntoElement, Size, StyleExt, rect};
 
 pub fn separatorElement() -> impl IntoElement

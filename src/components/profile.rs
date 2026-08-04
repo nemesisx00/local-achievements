@@ -4,6 +4,7 @@ use data::enums::DataChannel;
 use data::settings::AppSettings;
 use epicgamesstore::components::profile::EgsUserProfile;
 use freya::animation::{AnimNum, Ease, Function, use_animation};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Border, BorderAlignment, BorderWidth, ChildrenExt,
 	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
 	Direction, Gaps, IntoElement, LayerExt, Position, ScrollView, Size,

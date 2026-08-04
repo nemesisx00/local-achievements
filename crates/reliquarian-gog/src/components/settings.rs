@@ -1,5 +1,6 @@
 use components::settings::util::separatorElement;
-use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
+use freya::elements::extensions::ContainerPositionExt;
+use freya::prelude::{Alignment, Button, ChildrenExt, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps,
 	IntoElement, Size, TextAlign, TextStyleExt, label, rect};
 use tracing::{info, warn};

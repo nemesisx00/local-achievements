@@ -5,6 +5,7 @@ use data::constants::{BorderColor, CornerRadius, Icon_Locked, Path_Games,
 	RetroAchievementsProgressColorHardcore};
 use data::enums::GamePlatforms;
 use data::io::{FileLocation, filePathExists, getImagePath};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Color,
 	Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content,
 	Direction, FontWeight, Gaps, ImageViewer, IntoElement, Layer, LayerExt,

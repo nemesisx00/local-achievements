@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use components::settings::util::separatorElement;
 use data::io::{getCacheDir, getConfigDir, getDataDir};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputValidator, IntoElement, Size, TextAlign, TextStyleExt, Writable, label,

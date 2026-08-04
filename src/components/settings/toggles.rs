@@ -1,4 +1,5 @@
-use freya::prelude::{Alignment, ChildrenExt, Component, ContainerExt,
+use freya::elements::extensions::ContainerPositionExt;
+use freya::prelude::{Alignment, ChildrenExt, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, FontWeight,
 	Gaps, IntoElement, Size, Switch, TextAlign, TextStyleExt, label, rect};
 use freya::radio::Writable;

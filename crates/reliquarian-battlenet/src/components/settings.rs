@@ -3,6 +3,7 @@ use components::settings::switch::InputModeSwitch;
 use components::settings::util::separatorElement;
 use data::constants::InputModeHiddenChar;
 use data::enums::GamePlatforms;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Button, ChildrenExt, Component, ContainerExt,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Gaps, Input,
 	InputMode, IntoElement, MenuItem, Select, Size, TextAlign, TextStyleExt,

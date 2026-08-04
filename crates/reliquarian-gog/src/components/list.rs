@@ -8,7 +8,14 @@ use data::enums::{DataChannel, GamePlatforms};
 use data::filter::Filterable;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use data::settings::AppSettings;
-use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code, Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt, ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt, VirtualScrollView, label, paragraph, rect, use_scroll_controller, use_side_effect, use_state};
+use freya::elements::extensions::ContainerPositionExt;
+use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Code,
+	Color, Component, ContainerExt, ContainerSizeExt, ContainerWithContentExt,
+	Content, Direction, Event, EventHandlersExt, FontWeight, Gaps, ImageViewer,
+	IntoElement, KeyboardEventData, ProgressBar, ProgressBarThemePartialExt,
+	ScrollConfig, ScrollPosition, Size, Span, StyleExt, TextAlign, TextStyleExt,
+	VirtualScrollView, label, paragraph, rect, use_scroll_controller,
+	use_side_effect, use_state};
 use freya::radio::use_radio;
 use macros::{join, jpg};
 use crate::api::GogApi;

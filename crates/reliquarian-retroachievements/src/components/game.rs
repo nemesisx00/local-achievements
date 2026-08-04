@@ -7,8 +7,9 @@ use data::enums::{DataChannel, GamePlatforms};
 use data::filter::Filterable;
 use data::io::{FileLocation, filePathExists, getImagePath};
 use data::settings::AppSettings;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
-use freya::prelude::{Alignment, ChildrenExt, Code, Component, ContainerExt,
+use freya::prelude::{Alignment, ChildrenExt, Code, Component,
 	ContainerSizeExt, ContainerWithContentExt, Content, Direction, Event,
 	EventHandlersExt, FontWeight, Gaps, ImageViewer, IntoElement,
 	KeyboardEventData, ScrollConfig, ScrollPosition, Size, TextAlign,

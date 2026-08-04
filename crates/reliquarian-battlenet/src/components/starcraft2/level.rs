@@ -1,6 +1,7 @@
 use data::constants::{BorderColor, CornerRadius,
 	RetroAchievementsProgressColorBackground,
 	RetroAchievementsProgressColorHardcore};
+use freya::elements::extensions::ContainerPositionExt;
 use freya::prelude::{Alignment, Border, BorderAlignment, ChildrenExt, Component,
 	ContainerExt, ContainerSizeExt, ContainerWithContentExt, Content, Direction,
 	Gaps, IntoElement, ProgressBar, ProgressBarThemePartialExt, Size, StyleExt,

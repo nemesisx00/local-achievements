@@ -3,11 +3,13 @@ use data::constants::{BorderColor, CornerRadius,
 	RetroAchievementsProgressColorHardcore, TextColor};
 use data::enums::GamePlatforms;
 use data::format::truncateF32;
+use freya::components::SvgViewer;
+use freya::elements::extensions::ContainerPositionExt;
 use freya::icons::lucide;
 use freya::prelude::{Alignment, Border, BorderAlignment, BorderWidth,
 	ChildrenExt, Color, Component, ContainerExt, ContainerSizeExt,
 	ContainerWithContentExt, Content, Direction, Gaps, IntoElement, ProgressBar,
-	ProgressBarThemePartialExt, Size, StyleExt, label, rect, spawn, svg};
+	ProgressBarThemePartialExt, Size, StyleExt, label, rect, spawn};
 use freya::radio::use_radio;
 use crate::components::refresh::refreshUserData;
 use crate::data::settings::Rpcs3Settings;
@@ -128,7 +130,7 @@ impl Component for Rpcs3ProfileElement
 							.width(Size::flex(0.5))
 							
 							.child(
-								svg(lucide::trophy())
+								SvgViewer::new(lucide::trophy())
 									.color(Color::from_rgb(229, 228, 226))
 									.height(Size::px(16.0))
 									.width(Size::px(16.0))
