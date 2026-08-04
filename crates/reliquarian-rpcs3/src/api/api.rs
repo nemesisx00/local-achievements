@@ -1,6 +1,6 @@
 use std::fs::{File, copy, read, read_dir, read_to_string};
 use std::io::{self, Cursor};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use anyhow::Result;
 use data::constants::Path_Games;
 use data::io::{FileLocation, generateImageCacheDir, getImagePath};
@@ -73,10 +73,8 @@ impl Rpcs3Api
 		let platform = Self::Platform.into();
 		
 		generateImageCacheDir(&platform, &group)?;
-		
-		let gamePath = Path::new(&self.rootDir)
-			.join(Self::RelativeConfigDir)
-			.join(Self::RelativeHomeDir)
+
+		let gamePath = self.formatHomeDirPath()?
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
 			.join(npCommId);
@@ -111,6 +109,42 @@ impl Rpcs3Api
 		}
 		
 		return Ok(());
+	}
+	
+	fn formatAccountId(&self) -> String
+	{
+		return format!("{:08}", self.accountId);
+	}
+	
+	fn formatHomeDirPath(&self) -> Result<PathBuf>
+	{
+		let mut homePath = Path::new(&self.rootDir)
+			.join(Self::RelativeHomeDir);
+		
+		if !homePath.try_exists()?
+		{
+			homePath = Path::new(&self.rootDir)
+				.join(Self::RelativeConfigDir)
+				.join(Self::RelativeHomeDir);
+		}
+		
+		return Ok(homePath);
+	}
+
+	//TODO: More discretely account for different potential installation methods (appimage/flatpak/etc)
+	fn formatRpcnRootPath(&self) -> Result<PathBuf>
+	{
+		let mut rpcnPath = Path::new(&self.rootDir)
+			.join(Self::RpcnFileName);
+		
+		if !rpcnPath.try_exists()?
+		{
+			rpcnPath = Path::new(&self.rootDir)
+				.join(Self::RelativeConfigDir)
+				.join(Self::RpcnFileName);
+		}
+		
+		return Ok(rpcnPath);
 	}
 	
 	pub fn generateGameList(&self) -> Result<Vec<Game>>
@@ -160,9 +194,7 @@ impl Rpcs3Api
 	
 	pub fn getNpCommIdList(&self) -> Result<Vec<String>>
 	{
-		let trophiesPath = Path::new(&self.rootDir)
-			.join(Self::RelativeConfigDir)
-			.join(Self::RelativeHomeDir)
+		let trophiesPath = self.formatHomeDirPath()?
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir);
 		
@@ -184,9 +216,7 @@ impl Rpcs3Api
 	
 	pub fn parseDatFile(&self, npCommId: String) -> Result<DatFile>
 	{
-		let datPath = Path::new(&self.rootDir)
-			.join(Self::RelativeConfigDir)
-			.join(Self::RelativeHomeDir)
+		let datPath = self.formatHomeDirPath()?
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
 			.join(npCommId)
@@ -201,10 +231,7 @@ impl Rpcs3Api
 	
 	pub fn getRpcnId(&self) -> Result<String>
 	{
-		let rpcnPath = Path::new(&self.rootDir)
-			.join(Self::RelativeConfigDir)
-			.join(Self::RpcnFileName);
-		
+		let rpcnPath = self.formatRpcnRootPath()?;
 		let file = File::open(rpcnPath)?;
 		let data = io::read_to_string(file)?;
 		let yaml = Yaml::load_from_str(&data.as_str())?;
@@ -243,9 +270,7 @@ impl Rpcs3Api
 	
 	pub fn parseTrophyConf(&self, npCommId: String) -> Result<TrophyConf>
 	{
-		let confPath = Path::new(&self.rootDir)
-			.join(Self::RelativeConfigDir)
-			.join(Self::RelativeHomeDir)
+		let confPath = self.formatHomeDirPath()?
 			.join(self.formatAccountId())
 			.join(Self::RelativeUserTrophyDir)
 			.join(npCommId)
@@ -254,11 +279,6 @@ impl Rpcs3Api
 		let xml = read_to_string(confPath)?;
 		let trophyConf = serde_xml_rs::from_str::<TrophyConf>(&xml)?;
 		return Ok(trophyConf);
-	}
-	
-	fn formatAccountId(&self) -> String
-	{
-		return format!("{:08}", self.accountId);
 	}
 }
 
