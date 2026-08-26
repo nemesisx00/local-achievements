@@ -217,7 +217,7 @@ impl SteamAchievement
 	
 	pub fn updateState(&mut self, achievement: &PlayerAchievement)
 	{
-		if achievement.unlocktime > 0
+		if achievement.achieved > 0
 		{
 			self.timestamp = Some(achievement.unlocktime * 1000);
 		}
